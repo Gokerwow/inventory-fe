@@ -1,0 +1,18 @@
+import './App.css'
+import SideBar from './components/sidebar'
+import TopBar from './components/topBar'
+
+function App() {
+  return (
+    <div className="flex flex-col h-screen">
+      <img src="" alt="" />
+      <TopBar/>
+      <div className="flex flex-1">
+        <SideBar />
+        <div className="flex-1 bg-gray-100">Content</div>
+      </div>
+    </div>
+  )
+}
+
+export default App
