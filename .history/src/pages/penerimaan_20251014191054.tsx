@@ -117,7 +117,7 @@ export default function Penerimaan() {
                         </thead>
                         <tbody className="">
                             {data.map((item) => (
-                                <tr key={item.id} className="hover:bg-blue-100 bg-[#FFFFFF] rounded-lg overflow-hidden">
+                                <tr key={item.id} className="hover:bg-blue-100 bg-[#FFFFFF] rounded-lg">
                                     <td className='w-full h-full bg-[#deebf5] rounded-l-md'>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

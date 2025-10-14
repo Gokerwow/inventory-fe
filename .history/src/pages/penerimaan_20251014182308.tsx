@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import EyeIcon from '../assets/eye.svg?react';
 
 export default function Penerimaan() {
     const [activeTab, setActiveTab] = useState('penerimaan');
@@ -56,7 +55,7 @@ export default function Penerimaan() {
         <div className="bg-[#F3F7FA]  relative z-10 rounded-lg overflow-hidden">
             {/* Header */}
             <div className="bg-blue-900 text-white px-6 py-4 h-[60px]">
-
+                
             </div>
 
             {/* Tabs */}
@@ -65,18 +64,18 @@ export default function Penerimaan() {
                     <div className="flex gap-8 justify-center items-center">
                         <button
                             onClick={() => setActiveTab('penerimaan')}
-                            className={`py-4 font-bold border-b-4 transition-colors cursor-pointer ${activeTab === 'penerimaan'
-                                ? 'border-blue-900 text-[#152F54]'
-                                : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
+                            className={`py-4 font-bold border-b-4 transition-colors ${activeTab === 'penerimaan'
+                                    ? 'border-blue-900 text-[#152F54]'
+                                    : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Penerimaan
                         </button>
                         <button
                             onClick={() => setActiveTab('riwayat')}
-                            className={`py-4 font-bold border-b-4 transition-colors cursor-pointer ${activeTab === 'riwayat'
-                                ? 'border-blue-900 text-[#152F54]'
-                                : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
+                            className={`py-4 font-bold border-b-4 transition-colors ${activeTab === 'riwayat'
+                                    ? 'border-blue-900 text-[#152F54]'
+                                    : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Riwayat Penerimaan
@@ -86,12 +85,11 @@ export default function Penerimaan() {
             </div>
 
             {/* Table */}
-            <div className="pt-6 bg-[#F3F7FA]">
-                <div className="w-full overflow-hidden">
-                    <table className="w-full mx-auto table-fixed border-separate border-spacing-y-4 px-4">
+            <div className="pt-6 bg-[#F3F7FA] w-full">
+                <div className="overflow-hidden flex flex-col w-full justify-center items-center">
+                    <table className="w-full inline-block">
                         <thead className="">
                             <tr>
-                                <th className="w-[24px]"></th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Nama PPK
                                 </th>
@@ -117,9 +115,7 @@ export default function Penerimaan() {
                         </thead>
                         <tbody className="">
                             {data.map((item) => (
-                                <tr key={item.id} className="hover:bg-blue-100 bg-[#FFFFFF] rounded-lg overflow-hidden">
-                                    <td className='w-full h-full bg-[#deebf5] rounded-l-md'>
-                                    </td>
+                                <tr key={item.id} className="hover:bg-blue-100">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {item.namaPPK}
                                     </td>
@@ -137,7 +133,7 @@ export default function Penerimaan() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         <button className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900">
-                                            <EyeIcon />
+                                            {/* <Eye size={16} /> */}
                                             <span>Lihat</span>
                                         </button>
                                     </td>

@@ -25,7 +25,7 @@ function Layout() {
                 {/* Content Area */}
                 <div className="flex flex-col flex-1 ml-[394px]">
                     <TopBar />
-                    <div className="flex-1 overflow-auto mb-4  p-3 px-6">
+                    <div className="flex-1 bg-gray-100 overflow-auto mb-4  p-3 px-6">
                         <Outlet/>
                     </div>
                 </div>

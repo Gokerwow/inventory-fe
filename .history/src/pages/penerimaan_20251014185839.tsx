@@ -65,7 +65,7 @@ export default function Penerimaan() {
                     <div className="flex gap-8 justify-center items-center">
                         <button
                             onClick={() => setActiveTab('penerimaan')}
-                            className={`py-4 font-bold border-b-4 transition-colors cursor-pointer ${activeTab === 'penerimaan'
+                            className={`py-4 font-bold border-b-4 transition-colors ${activeTab === 'penerimaan'
                                 ? 'border-blue-900 text-[#152F54]'
                                 : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
                                 }`}
@@ -74,7 +74,7 @@ export default function Penerimaan() {
                         </button>
                         <button
                             onClick={() => setActiveTab('riwayat')}
-                            className={`py-4 font-bold border-b-4 transition-colors cursor-pointer ${activeTab === 'riwayat'
+                            className={`py-4 font-bold border-b-4 transition-colors ${activeTab === 'riwayat'
                                 ? 'border-blue-900 text-[#152F54]'
                                 : 'border-[#9C9C9C] text-gray-500 hover:text-gray-700'
                                 }`}
@@ -117,7 +117,7 @@ export default function Penerimaan() {
                         </thead>
                         <tbody className="">
                             {data.map((item) => (
-                                <tr key={item.id} className="hover:bg-blue-100 bg-[#FFFFFF] rounded-lg overflow-hidden">
+                                <tr key={item.id} className="hover:bg-blue-100 bg-[#FFFFFF]">
                                     <td className='w-full h-full bg-[#deebf5] rounded-l-md'>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
