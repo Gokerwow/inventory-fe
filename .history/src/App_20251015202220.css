@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* globals.css atau index.css */
+@layer utilities {
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+        @apply bg-gray-100 rounded-lg;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        @apply bg-gradient-to-b from-red-500 to-red-600 rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-300;
+    }
+
+    /* Firefox */
+    .scrollbar-custom {
+        scrollbar-width: thin;
+        scrollbar-color: #3b82f6 #f1f5f9;
+    }
+}
+
+body {
+  background-color: #cadcf2;
+}

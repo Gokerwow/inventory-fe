@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* globals.css atau index.css */
+@layer utilities {
+
+
+
+
+
+    /* Firefox */
+
+}
+
+body {
+  background-color: #cadcf2;
+}

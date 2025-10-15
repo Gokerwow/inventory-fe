@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* globals.css atau index.css */
+@layer utilities {
+
+}
+
+body {
+  background-color: #cadcf2;
+}

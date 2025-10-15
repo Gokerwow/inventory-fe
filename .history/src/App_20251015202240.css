@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* globals.css atau index.css */
+@layer utilities {
+
+
+
+
+
+    /* Firefox */
+    .scrollbar-custom {
+        scrollbar-width: thin;
+        scrollbar-color: #3b82f6 #f1f5f9;
+    }
+}
+
+body {
+  background-color: #cadcf2;
+}
