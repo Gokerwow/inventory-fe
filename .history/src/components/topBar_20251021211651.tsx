@@ -1,0 +1,30 @@
+import NotifIcon from '../assets/Notification.png';
+import PfpExample from '../assets/Pfp Example.jpeg';
+import { NavLink } from 'react-router-dom';
+
+
+export default function TopBar() {
+    return (
+        <div className="w-full flex items-center justify-between bg-amber-600 shadow-lg z-50 ">
+            <div className='overflow-hidden flex h-20 items-stretch flex-1 justify-between'>
+                <div className='text-2xl font-bold h-full flex flex-col items-center justify-center'>
+                    <p className='text-center'>Selamat Datang</p>
+                    <p className='text-center text-[#4D5ED1]'>Admin Gudang Umum 👋🏻!</p>
+                </div>
+                <NavLink to={'/profil'}>
+                    <div className='flex items-center justify-center gap-4  bg-gray-40 h-full cursor-pointer hover:bg-gray-200 transition-colors duration-200'>
+                        <div className='bg-white rounded-full w-9 h-9 flex items-center justify-center'>
+                            <img src={NotifIcon} alt="Notification Icon" className='h-6' />
+                        </div>
+                        <div className='flex items-center gap-4'>
+                            <div className='bg-white rounded-full w-10 h-10 flex items-center justify-center overflow-hidden'>
+                                <img src={PfpExample} alt="Profile Picture" className='w-full' />
+                            </div>
+                            <span className='max-w-[100px] break-words leading-tight font-semibold text-sm'>Admin Club Yuna</span>
+                        </div>
+                    </div>
+                </NavLink>
+            </div>
+        </div>
+    )
+}
