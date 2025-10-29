@@ -12,11 +12,14 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@tailwindcss/vite": "^4.1.14",
+    "date-fns": "^4.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-error-boundary": "^6.0.0",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.4",
     "recharts": "^3.2.1",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.14"
   },
   "devDependencies": {
