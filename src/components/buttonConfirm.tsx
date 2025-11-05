@@ -5,8 +5,9 @@ type ButtonConfirmProps = {
     text: string;
     className?: string;
     to?: string; 
-    onClick?: () => void;
-    type?: "button" | "submit" | "reset"; 
+    onClick?: (e: React.MouseEvent<HTMLButtonElement | HTMLFormElement>) => void;
+    type?: "button" | "submit" | "reset";
+    disabled?: boolean;
 };
 
 export default function ButtonConfirm({ 
@@ -14,7 +15,8 @@ export default function ButtonConfirm({
     className, 
     to, 
     onClick, 
-    type = "button"
+    type = "button",
+    disabled = false
 }: ButtonConfirmProps) {
     
     const classes = twMerge(`hover:bg-green-600 text-black hover:text-white border-2 border-gray-400 hover:border-none py-2 w-25 rounded-lg hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer text-center ${className}`);
@@ -28,7 +30,7 @@ export default function ButtonConfirm({
     }
 
     return (
-        <button type={type} onClick={onClick} className={classes}>
+        <button disabled={disabled} type={type} onClick={onClick} className={classes}>
             {text}
         </button>
     );

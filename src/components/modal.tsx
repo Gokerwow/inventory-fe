@@ -1,7 +1,5 @@
 import { Transition } from '@headlessui/react';
 import React, { Fragment } from 'react'; // Pastikan untuk mengimpor Fragment
-import ButtonConfirm from './buttonConfirm';
-import WarnButton from './warnButton';
 import simbaLogo from '../assets/Light Logo new 1.png'
 
 // Komponen sekarang menerima 'isOpen', 'children', dan 'onClose'
@@ -47,19 +45,6 @@ export default function Modal({ isOpen, children, onClose, onConfirm, text }: { 
                         >
                             <img src={simbaLogo} alt="" />
                             <h1 className="text-2xl text-center select-none">{ text }</h1>
-
-                            <div className="flex gap-4 justify-end">
-                                <ButtonConfirm
-                                    text="Iya"
-                                    // to={PATHS.PENERIMAAN.TAMBAH}
-                                    type="submit"
-                                    onClick={onConfirm}
-                                />
-                                <WarnButton
-                                    onClick={onClose}
-                                    text="Tidak"
-                                />
-                            </div>
                             {children}
                         </div>
                     </Transition.Child>

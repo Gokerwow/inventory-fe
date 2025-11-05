@@ -1,32 +1,26 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-interface DiagramBatangProps {
-    type: 'masuk' | 'keluar';
+// --- TAMBAHAN: Tentukan tipe data yang diharapkan ---
+interface ChartData {
+    bulan: string;
+    value: number;
 }
 
-const DiagramBatang: React.FC<DiagramBatangProps> = ({ type }) => {
-    const data = [
-        {
-            bulan: 'Agustus',
-            value: type === 'masuk' ? 55 : 32,
-        },
-        {
-            bulan: 'September',
-            value: type === 'masuk' ? 28 : 48,
-        },
-        {
-            bulan: 'Oktober',
-            value: type === 'masuk' ? 65 : 42,
-        },
-        {
-            bulan: 'November',
-            value: type === 'masuk' ? 38 : 60,
-        },
-        {
-            bulan: 'Desember',
-            value: type === 'masuk' ? 45 : 95,
-        },
-    ];
+interface DiagramBatangProps {
+    type: 'masuk' | 'keluar';
+    data: ChartData[]; // <-- UBAHAN: Terima data sebagai prop
+}
+
+const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <-- UBAHAN: Terima 'data'
+    
+    // --- HAPUS: Blok data hardcoded di bawah ini dihapus ---
+    // const data = [
+    //     {
+    //         bulan: 'Agustus',
+    //         value: type === 'masuk' ? 55 : 32,
+    //     },
+    //     ...
+    // ];
 
     const chartConfig = {
         masuk: {
@@ -45,7 +39,7 @@ const DiagramBatang: React.FC<DiagramBatangProps> = ({ type }) => {
         <div className="bg-white rounded-lg">
             <ResponsiveContainer width="100%" height={500}>
                 <BarChart
-                    data={data}
+                    data={data} // <-- UBAHAN: Gunakan data dari props
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />

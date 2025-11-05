@@ -2,11 +2,17 @@ import Input from "../components/input"
 import PencilIcon from '../assets/pencil Icon.svg?react'
 import ButtonConfirm from "../components/buttonConfirm"
 import { useNavigate, useLocation } from "react-router-dom"
-import React, { useEffect, useRef, useState, type ChangeEvent } from "react"
+// --- UBAHAN: Tambahkan useEffect dan useMemo ---
+import React, { useEffect, useRef, useState, type ChangeEvent, useMemo } from "react"
 import Modal from "../components/modal"
 import { PATHS } from "../Routes/path"
+// --- TAMBAHAN: Impor service, auth, dan toast ---
+import { createAkun, updateAkun } from "../services/akunService"
+import { useToast } from "../context/toastContext"
+// ---------------------------------------------
 import { useAuthorization } from "../hooks/useAuthorization"
 import { useAuth } from "../hooks/useAuth"
+import WarnButton from "../components/warnButton"
 
 
 export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean }) {
@@ -15,6 +21,11 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
     const navigate = useNavigate()
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // --- TAMBAHAN: State untuk loading submit ---
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { showToast } = useToast();
+    // -------------------------------------------
 
     const defaultFormData = () => {
         const currentTimestamp = new Date().toISOString();
@@ -22,7 +33,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
             user_id: Date.now(),
             sso_user_id: Date.now(),
             username: '',
-            avatarUrl: '/default-avatar.png',
+            avatarUrl: selectedAvatar || '/default-avatar.png', // <-- Gunakan avatar yg di-upload
             email: '',
             password: '',
             role: 'user',
@@ -38,8 +49,17 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
 
     const location = useLocation();
     const { data, isEmployeeEdit } = location.state || {};
-
-    // Check apakah yang diedit adalah karyawan
+    
+    // --- TAMBAHAN: Otorisasi (kita aktifkan) ---
+    // Logika: Super Admin bisa, atau user biasa HANYA jika 'isEdit' dan 'data.user_id' cocok
+    const { user } = useAuth();
+    const isOwner = isEdit && data?.user_id === user?.user_id;
+    const allowedRoles = useMemo(() => 
+        (isEdit && !isEmployeeEdit) ? ['Super Admin', 'Admin Gudang Umum', 'Tim PPK', 'Tim Teknis', 'Penanggung Jawab', 'Instalasi'] : ['Super Admin'],
+      [isEdit, isEmployeeEdit]
+    );
+    const { checkAccess, hasAccess } = useAuthorization(allowedRoles);
+    // ---------------------------------------------
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -50,19 +70,34 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         }));
     };
 
-    // const { checkAccess, hasAccess } = useAuthorization('Super Admin');
-    // const { user } = useAuth()
+    // --- UBAHAN: useEffect untuk otorisasi & memuat data edit ---
+    useEffect(() => {
+        // Cek otorisasi
+        // Jika Super Admin, boleh.
+        // Jika bukan Super Admin, cek apakah dia mengedit profilnya sendiri
+        if (user?.role !== 'Super Admin' && !isOwner) {
+            checkAccess(user?.role); // Ini akan redirect jika tidak boleh
+        }
 
-    // useEffect(() => {
-    //     checkAccess(user?.role);
-    // }, [user, checkAccess]);
+        // Jika mode edit, isi form dengan data dari location
+        if (isEdit && data) {
+            setFormData(data);
+            if (data.avatarUrl) {
+                setSelectedAvatar(data.avatarUrl); // Tampilkan avatar yang ada
+            }
+        }
+    }, [user, checkAccess, isEdit, data, isOwner]);
 
-    // if (!hasAccess(user?.role)) {
-    //     return null;
-    // }
+    // Early return jika tidak punya akses
+    if (user?.role !== 'Super Admin' && !isOwner && !hasAccess(user?.role)) {
+       return null; // Otorisasi sudah di-handle 'checkAccess', tapi ini utk safety
+    }
+    // -----------------------------------------------------------
 
     const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
+    const handleCloseModal = () => {
+        if (!isSubmitting) setIsModalOpen(false); // Jangan tutup jika sedang loading
+    }
 
     const handlePencilClick = () => {
         fileInputRef.current?.click();
@@ -72,24 +107,22 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         const file = event.target?.files?.[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                alert('Harap pilih file gambar saja!');
+                showToast('Harap pilih file gambar saja!', 'error');
                 return;
             }
-
             if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB');
+                showToast('Ukuran file maksimal 5MB', 'error');
                 return;
             }
-
             console.log('File selected:', file);
-
             const reader = new FileReader();
             reader.onload = (e) => {
-                if (typeof e.target?.result === 'string') {
-                    setSelectedAvatar(e.target.result);
+                const result = e.target?.result as string;
+                if (result) {
+                    setSelectedAvatar(result);
                     setFormData(prevState => ({
                         ...prevState,
-                        avatarUrl: e.target?.result as string
+                        avatarUrl: result // Simpan avatar baru (sebagai base64 string)
                     }));
                 }
             };
@@ -97,21 +130,59 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         }
     };
 
-    const handleConfirmSubmit = () => {
-        console.log('Data barang:', formData);
+    // --- UBAHAN: Logika submit sekarang memanggil service ---
+    const handleConfirmSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
 
-        navigate(-1, {
-            state: {
-                data: formData,
-                toastMessage: isEdit ? 'Anda berhasil mengedit akun!' : 'Anda berhasil membuat akun!'
+        try {
+            let message = '';
+            
+            // Tentukan data yang akan dikirim
+            const dataToSubmit = {
+                ...formData,
+                avatarUrl: selectedAvatar || formData.avatarUrl, // Pastikan avatar terkirim
+            };
+
+            if (isEdit) {
+                // Mode Edit
+                await updateAkun(data.user_id, dataToSubmit);
+                message = isEmployeeEdit ? 'Anda berhasil mengedit karyawan!' : 'Anda berhasil mengedit profil!';
+            } else {
+                // Mode Tambah Akun Baru
+                await createAkun(dataToSubmit);
+                message = 'Anda berhasil membuat akun baru!';
             }
-        });
-        handleCloseModal();
+            
+            // Jika sukses, tutup modal dan kembali
+            handleCloseModal();
+            navigate(-1, { // Kembali ke halaman sebelumnya
+                state: {
+                    toastMessage: message
+                }
+            });
+
+        } catch (err) {
+            console.error(err);
+            showToast(isEdit ? "Gagal mengupdate akun." : "Gagal membuat akun.", "error");
+            setIsSubmitting(false); // Tetap di modal jika error
+        } 
+        // 'finally' tidak perlu setIsSubmitting(false) karena kita navigasi jika sukses
     };
+    // ---------------------------------------------------------
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Data barang:', formData);
+        // Validasi sederhana
+        if (!isEmployeeEdit && (!formData.username || !formData.role)) {
+            showToast("Username dan Role wajib diisi!", "error");
+            return;
+        }
+        if (isEmployeeEdit && !formData.phone) {
+             showToast("Nomor HP wajib diisi!", "error");
+             return;
+        }
+        console.log('Form data disiapkan:', formData);
         handleOpenModal()
     };
 
@@ -126,27 +197,24 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                     <div className="flex flex-col items-center">
                         <div className="py-10">
                             <div className="relative">
-                                {isEdit ?
-                                    <div className="bg-gray-600 rounded-full w-[279px] h-[279px] shadow-lg">
+                                {/* --- UBAHAN: Logika menampilkan gambar --- */}
+                                <div className="bg-gray-600 rounded-full w-[279px] h-[279px] shadow-lg overflow-hidden">
+                                    {selectedAvatar ? (
                                         <img
-                                            src={data?.avatarUrl}
-                                            alt="Selected Avatar"
+                                            src={selectedAvatar}
+                                            alt="Avatar Preview"
                                             className="w-full h-full rounded-full object-cover"
                                         />
-                                    </div>
-                                    :
-                                    selectedAvatar ?
-                                        <div className="bg-gray-600 rounded-full w-[279px] h-[279px] shadow-lg">
+                                    ) : (
+                                        data?.avatarUrl && (
                                             <img
-                                                src={selectedAvatar}
-                                                alt="Selected Avatar"
+                                                src={data.avatarUrl}
+                                                alt="Current Avatar"
                                                 className="w-full h-full rounded-full object-cover"
                                             />
-                                        </div>
-                                        :
-                                        <div className="bg-gray-600 rounded-full w-[279px] h-[279px] shadow-lg">
-                                        </div>
-                                }
+                                        )
+                                    )}
+                                </div>
                                 <input
                                     aria-label="avatar input"
                                     type="file"
@@ -162,7 +230,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                             </div>
                         </div>
 
-                        {/* Conditional rendering berdasarkan apakah edit karyawan atau bukan */}
+                        {/* --- UBAHAN: Pastikan 'value' di-bind ke state 'formData' --- */}
                         {isEmployeeEdit ? (
                             // Tampilan untuk edit karyawan - hanya nomor HP
                             <div className="w-full flex gap-4">
@@ -170,15 +238,16 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                     id="phone"
                                     judul="Nomor HP"
                                     placeholder="Nomor HP"
-                                    value={data?.phone || ''}
+                                    value={formData.phone || ''} // <-- Bind ke state
                                     name="phone"
                                     onChange={handleChange}
                                     className="flex-1"
                                 />
                                 <ButtonConfirm
-                                    text="Selesai"
+                                    text={isSubmitting ? "Menyimpan..." : "Selesai"}
                                     className="place-self-end mt-5"
                                     type="submit"
+                                    disabled={isSubmitting} // <-- Disable saat loading
                                 />
                             </div>
                         ) : (
@@ -189,7 +258,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                         id="role"
                                         judul="Role"
                                         placeholder="Role"
-                                        value={isEdit ? data?.role : null}
+                                        value={formData.role || ''} // <-- Bind ke state
                                         name="role"
                                         onChange={handleChange}
                                     />
@@ -197,7 +266,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                         id="username"
                                         judul="Username"
                                         placeholder="Username"
-                                        value={isEdit ? data?.username : null}
+                                        value={formData.username || ''} // <-- Bind ke state
                                         name="username"
                                         onChange={handleChange}
                                     />
@@ -206,16 +275,17 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                     <Input
                                         id="password"
                                         judul="Password"
-                                        placeholder="password"
-                                        value={isEdit ? data?.password : null}
+                                        placeholder={isEdit ? "(Biarkan kosong jika tidak berubah)" : "Password"}
+                                        value={formData.password || ''} // <-- Bind ke state
                                         name="password"
                                         onChange={handleChange}
+                                        type="password"
                                     />
                                     <Input
                                         id="email"
                                         judul="Email"
                                         placeholder="Email"
-                                        value={isEdit ? data?.email : null}
+                                        value={formData.email || ''} // <-- Bind ke state
                                         name="email"
                                         onChange={handleChange}
                                     />
@@ -225,9 +295,10 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                     </div>
                     {!isEmployeeEdit &&
                         <ButtonConfirm
-                            text="Selesai"
+                            text={isSubmitting ? "Menyimpan..." : "Selesai"}
                             className="place-self-end mt-5"
                             type="submit"
+                            disabled={isSubmitting} // <-- Disable saat loading
                         />
                     }
                 </form>
@@ -238,6 +309,20 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                     onConfirm={handleConfirmSubmit}
                     text={isEdit ? "Apa anda yakin mengedit akun ini?" : "Apa anda yakin membuat akun baru?"}
                 >
+                    {/* --- UBAHAN: Beri tombol dinamis di dalam Modal --- */}
+                    <div className="flex gap-4 justify-end">
+                        <ButtonConfirm
+                            text={isSubmitting ? "Menyimpan..." : "Iya"}
+                            type="button"
+                            onClick={handleConfirmSubmit}
+                            disabled={isSubmitting}
+                        />
+                        <WarnButton
+                            onClick={handleCloseModal}
+                            text="Tidak"
+                            disabled={isSubmitting}
+                        />
+                    </div>
                 </Modal>
             </div>
         </div>

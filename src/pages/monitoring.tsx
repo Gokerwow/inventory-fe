@@ -2,10 +2,11 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale'; // Impor locale Indonesia
 import BurgerDot from '../assets/burgerDot.svg?react'
 import Status from '../components/status';
-import { logAktivitas, type SortOption } from '../Mock Data/data';
 import Pagination from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
-import { sortOptions } from '../Mock Data/data'
+import { sortOptions, type SortOption } from '../Mock Data/data'; // Biarkan 'SortOption'
+import { getLogAktivitas } from '../services/monitoringServices'; // <-- Impor service
+import { logAktivitas } from '../Mock Data/data'; // <-- Impor tipe datanya saja
 import { Transition } from '@headlessui/react';
 import Dropdown from '../components/dropdown';
 import { useAuthorization } from '../hooks/useAuthorization';
@@ -14,6 +15,8 @@ import { useAuth } from '../hooks/useAuth';
 interface FormatTanggalProps {
     isoString: string;
 }
+
+type LogItem = typeof logAktivitas[0];
 
 function FormatTanggal({ isoString }: FormatTanggalProps) {
     if (!isoString) return null;
@@ -36,10 +39,12 @@ function FormatWaktu({ isoString }: FormatTanggalProps) {
 
 export default function MonitoringPage() {
 
+    const [dataLog, setDataLog] = useState<LogItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = logAktivitas.slice(startIndex, startIndex + itemsPerPage);
 
     const [isOpen, setIsOpen] = useState(false);
     const [selectedSort, setSelectedSort] = useState('A - Z');
@@ -49,9 +54,29 @@ export default function MonitoringPage() {
     const { checkAccess, hasAccess } = useAuthorization('Super Admin');
     const { user } = useAuth()
 
+    // --- TAMBAHAN: useEffect untuk mengambil data ---
     useEffect(() => {
         checkAccess(user?.role);
-    }, [user, checkAccess]);
+        if (!hasAccess(user?.role)) {
+            return;
+        }
+
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const logs = await getLogAktivitas();
+                setDataLog(logs);
+                setError(null);
+            } catch (err) {
+                console.error(err);
+                setError("Gagal memuat log aktivitas.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user, checkAccess, hasAccess]); // <-- Dependensi sudah benar
 
     // Early return jika tidak memiliki akses
     if (!hasAccess(user?.role)) {
@@ -66,7 +91,44 @@ export default function MonitoringPage() {
         setSelectedSort(option.label);
         setIsOpen(false)
         console.log('Sorting by:', option.value);
+
+        // --- TAMBAHAN: Logika sorting ---
+        setDataLog(prevData => {
+            const sortedData = [...prevData];
+            // Contoh sorting berdasarkan role (ganti 'role' jika ingin sort by 'timestamp')
+            sortedData.sort((a, b) => {
+                if (option.value === 'asc') {
+                    return a.role.localeCompare(b.role);
+                } else {
+                    return b.role.localeCompare(a.role);
+                }
+            });
+            return sortedData;
+        });
+        // -------------------------------
     }
+
+    // --- TAMBAHAN: Tampilkan UI Loading ---
+    if (isLoading) {
+        return (
+            <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
+                <p>Memuat log aktivitas...</p>
+            </div>
+        );
+    }
+
+    // --- TAMBAHAN: Tampilkan UI Error ---
+    if (error) {
+        return (
+            <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
+                <p className="text-red-500">{error}</p>
+            </div>
+        );
+    }
+
+    // --- UBAHAN: Pindahkan logika pagination ke sini ---
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentItems = dataLog.slice(startIndex, startIndex + itemsPerPage); // <-- Gunakan dataLog dari state
 
     return (
         <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex flex-col">
@@ -116,9 +178,9 @@ export default function MonitoringPage() {
                     <div className="col-span-2 text-sm font-medium text-gray-500 text-center">Aktivitas</div>
                 </div>
 
-                {currentItems.map((log, index) => (
+                {currentItems.map((log) => (
                     <div
-                        key={index}
+                        key={log.id}
                         className="grid grid-cols-[30px_repeat(9,minmax(0,1fr))] gap-4 items-center bg-white rounded-xl shadow-md"
                     >
                         <div className={`col-span-1 h-full bg-[#EFF8FF] rounded-l-lg py-3`}></div>
@@ -168,7 +230,7 @@ export default function MonitoringPage() {
 
             <Pagination
                 currentPage={currentPage}
-                totalItems={logAktivitas.length}
+                totalItems={dataLog.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={handlePageChange}
             />

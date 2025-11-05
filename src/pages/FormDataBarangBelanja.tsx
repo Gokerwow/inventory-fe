@@ -7,6 +7,11 @@ import { PATHS } from "../Routes/path";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+// --- TAMBAHAN ---
+import { addBarangBelanja } from "../services/penerimaanService"; // <-- Impor service
+import { useToast } from "../context/toastContext"; // <-- Impor useToast untuk error
+// -----------------
+import WarnButton from "../components/warnButton";
 
 const namaOptions = [
     "Ritay Protama",
@@ -27,7 +32,12 @@ const FormDataBarangBelanja = () => {
     });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const navigate = useNavigate()
+    // --- TAMBAHAN: State untuk loading saat submit ---
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    // ------------------------------------------------
+    
+    const navigate = useNavigate();
+    const { showToast } = useToast(); // <-- Panggil hook toast
 
     const { checkAccess, hasAccess } = useAuthorization(['Tim PPK', 'Tim Teknis']);
     const { user } = useAuth()
@@ -52,31 +62,52 @@ const FormDataBarangBelanja = () => {
         }));
     };
 
-    const handleConfirmSubmit = () => {
-        // ← Logic submit dipindahkan ke sini
-        console.log('Data barang:', formData);
+    // --- UBAHAN: Logika submit sekarang memanggil service ---
+    const handleConfirmSubmit = async () => {
+        if (isSubmitting) return; // Mencegah klik ganda
+        
+        setIsSubmitting(true); // Mulai loading
+        
+        try {
+            // 1. Siapkan data untuk dikirim
+            const barangData = {
+                nama_barang: formData.namaBarang,
+                kategori: formData.kategoriBarang,
+                satuan: formData.satuan,
+                jumlah: Number(formData.jumlah) || 0,
+                harga: Number(formData.harga) || 0,
+                total_harga: Number(formData.totalHarga) || 0
+            };
 
-        // Navigate dengan data
-        navigate(PATHS.PENERIMAAN.TAMBAH, {
-            state: {
-                data: {
-                    id: Date.now(),
-                    nama_barang: formData.namaBarang,
-                    kategori: formData.kategoriBarang,
-                    satuan: formData.satuan,
-                    jumlah: formData.jumlah,
-                    harga: formData.harga,
-                    total_harga: formData.totalHarga
-                },
-                toastMessage: 'Berhasil membuat data barang belanja!'
-            }
-        });
-        handleCloseModal();
+            // 2. Panggil service (simulasi kirim ke backend)
+            const barangBaru = await addBarangBelanja(barangData);
+
+            // 3. Navigasi dengan data yang DIKEMBALIKAN service (logika lama Anda)
+            navigate(PATHS.PENERIMAAN.TAMBAH, {
+                state: {
+                    data: barangBaru, // <-- Kirim data baru dari "backend"
+                    toastMessage: 'Berhasil membuat data barang belanja!'
+                }
+            });
+            handleCloseModal();
+
+        } catch (err) {
+            console.error("Gagal menambah barang:", err);
+            // Tampilkan error jika gagal
+            showToast('Gagal menyimpan data barang.', 'error');
+        } finally {
+            setIsSubmitting(false); // Selesai loading
+        }
     };
-
+    // ---------------------------------------------------------
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        // Cek validasi sederhana
+        if (!formData.namaBarang || !formData.satuan || !formData.jumlah) {
+            showToast("Nama Barang, Satuan, dan Jumlah wajib diisi!", "error");
+            return;
+        }
         console.log('Data barang:', formData);
         handleOpenModal()
     };
@@ -93,6 +124,7 @@ const FormDataBarangBelanja = () => {
                             judul="Nama Barang"
                             name="namaBarang"
                             onChange={handleChange}
+                            value={formData.namaBarang} // <-- Tambahkan value
                         />
                         <div className="grid grid-cols-2 gap-10">
                             <Input
@@ -101,6 +133,7 @@ const FormDataBarangBelanja = () => {
                                 judul="Satuan"
                                 name="satuan"
                                 onChange={handleChange}
+                                value={formData.satuan} // <-- Tambahkan value
                             />
                             <Input
                                 id="jumlah"
@@ -109,6 +142,7 @@ const FormDataBarangBelanja = () => {
                                 name="jumlah"
                                 onChange={handleChange}
                                 type="number"
+                                value={formData.jumlah} // <-- Tambahkan value
                             />
                         </div>
                         <Input
@@ -118,15 +152,18 @@ const FormDataBarangBelanja = () => {
                             name="totalHarga"
                             type="number"
                             onChange={handleChange}
-
+                            value={formData.totalHarga} // <-- Tambahkan value
                         />
                     </div>
                     <div className="flex flex-col gap-4">
                         <DropdownInput
                             placeholder="Kategori Barang"
-                            options={namaOptions}
+                            options={namaOptions} // <-- TODO: Ganti ini dengan kategori, bukan nama orang
                             judul="Kategori Barang"
                             type="button"
+                            onChange={(value) => setFormData(p => ({...p, kategoriBarang: value}))} // <-- Update state
+                            value={formData.kategoriBarang} // <-- Tambahkan value
+                            name="kategoriBarang"
                         />
                         <Input
                             id="harga"
@@ -135,13 +172,15 @@ const FormDataBarangBelanja = () => {
                             name="harga"
                             type="number"
                             onChange={handleChange}
+                            value={formData.harga} // <-- Tambahkan value
                         />
                         {/* BUTTON SELESAI */}
                         <ButtonConfirm
-                            text='Selesai'
+                            text={isSubmitting ? "Menyimpan..." : "Selesai"} // <-- UBAHAN: Teks dinamis
                             className="self-end mt-auto"
-                            onClick={handleOpenModal}
                             type="submit"
+                            onClick={handleSubmit} // <-- UBAHAN: pastikan ini submit form
+                            disabled={isSubmitting} // <-- TAMBAHAN: Nonaktifkan saat submitting
                         />
                     </div>
                 </form>
@@ -153,7 +192,21 @@ const FormDataBarangBelanja = () => {
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}
                 text="Apa anda yakin data yang di buat sudah benar?"
-                >
+            >
+                {/* --- TAMBAHAN: Buat tombol 'Iya' tidak bisa diklik saat loading --- */}
+                <div className="flex gap-4 justify-end">
+                    <ButtonConfirm
+                        text={isSubmitting ? "Menyimpan..." : "Iya"}
+                        type="button" // <-- Pastikan tipe button
+                        onClick={handleConfirmSubmit}
+                        disabled={isSubmitting}
+                    />
+                    <WarnButton
+                        onClick={handleCloseModal}
+                        text="Tidak"
+                        disabled={isSubmitting} // <-- Nonaktifkan juga
+                    />
+                </div>
             </Modal>
         </div>
     );

@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale'; // Impor locale Indonesia
-import BurgerDot from '../assets/burgerDot.svg?react'
-import PencilIcon from '../assets/pencilIcon2.svg?react'
-import { MOCK_USERS } from '../Mock Data/data';
+import BurgerDot from '../assets/burgerDot.svg?react';
+import PencilIcon from '../assets/pencilIcon2.svg?react';
+import { getAkunUsers } from '../services/akunService'; // <-- TAMBAHKAN INI
 import Pagination from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Transition } from '@headlessui/react';
@@ -13,7 +13,6 @@ import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { type MockUser } from '../Mock Data/data';
-import { useLocation } from 'react-router-dom';
 
 interface FormatTanggalProps {
     isoString: string;
@@ -48,8 +47,12 @@ export default function MonitoringPage() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = MOCK_USERS.slice(startIndex, startIndex + itemsPerPage);
+    // const startIndex = (currentPage - 1) * itemsPerPage;
+    // const currentItems = MOCK_USERS.slice(startIndex, startIndex + itemsPerPage);
+
+    const [dataAkun, setDataAkun] = useState<MockUser[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const [isOpen, setIsOpen] = useState(false);
     const [selectedSort, setSelectedSort] = useState('A - Z');
@@ -60,6 +63,18 @@ export default function MonitoringPage() {
         setSelectedSort(option.label);
         setIsOpen(false)
         console.log('Sorting by:', option.value);
+        // --- TAMBAHAN: Logika sorting (opsional tapi bagus) ---
+        setDataAkun(prevData => {
+            const sortedData = [...prevData]; // Buat salinan
+            sortedData.sort((a, b) => {
+                if (option.value === 'asc') {
+                    return a.username.localeCompare(b.username);
+                } else {
+                    return b.username.localeCompare(a.username);
+                }
+            });
+            return sortedData;
+        });
     }
 
     const handlePageChange = (page: number) => {
@@ -79,6 +94,30 @@ export default function MonitoringPage() {
         })
     }
 
+    // --- TAMBAHAN: useEffect untuk mengambil data ---
+    useEffect(() => {
+        checkAccess(user?.role); // Cek akses dulu
+        if (!hasAccess(user?.role)) {
+            return; // Berhenti jika tidak ada akses
+        }
+
+        const fetchData = async () => {
+            try {
+                setIsLoading(true); // Mulai loading
+                const users = await getAkunUsers(); // Panggil service
+                setDataAkun(users); // Simpan data ke state
+                setError(null); // Bersihkan error jika sukses
+            } catch (err) {
+                console.error(err);
+                setError('Gagal memuat data akun.'); // Simpan pesan error
+            } finally {
+                setIsLoading(false); // Selesai loading
+            }
+        };
+
+        fetchData();
+    }, [user, checkAccess, hasAccess]); // <-- Dependency array
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -90,14 +129,31 @@ export default function MonitoringPage() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        checkAccess(user?.role);
-    }, [user, checkAccess]);
-
     // Early return jika tidak memiliki akses
     if (!hasAccess(user?.role)) {
         return null;
     }
+
+    // --- TAMBAHAN: Tampilkan UI Loading ---
+    if (isLoading) {
+        return (
+            <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
+                <p>Memuat data...</p>
+            </div>
+        );
+    }
+
+    // --- TAMBAHAN: Tampilkan UI Error ---
+    if (error) {
+        return (
+            <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
+                <p className="text-red-500">{error}</p>
+            </div>
+        );
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentItems = dataAkun.slice(startIndex, startIndex + itemsPerPage); // <-- Gunakan dataAkun dari state
 
     return (
         <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex flex-col">
@@ -148,9 +204,9 @@ export default function MonitoringPage() {
                     <div className="col-span-2 text-sm font-medium text-gray-500 text-center">Aktivitas</div>
                 </div>
 
-                {currentItems.map((user, index) => (
+                {currentItems.map((akun) => (
                     <div
-                        key={index}
+                        key={akun.user_id}
                         className="grid grid-cols-[30px_repeat(12,minmax(0,1fr))] gap-4 items-center bg-white rounded-xl shadow-md"
                     >
                         <div className={`col-span-1 h-full bg-[#EFF8FF] rounded-l-lg py-3`}></div>
@@ -158,7 +214,7 @@ export default function MonitoringPage() {
                         {/* Foto Akun */}
                         <div className="col-span-1 py-3">
                             <img
-                                src={user.avatarUrl}
+                                src={akun.avatarUrl}
                                 alt="Avatar"
                                 className="w-12 h-12 rounded-full"
                             />
@@ -166,31 +222,31 @@ export default function MonitoringPage() {
 
                         {/* Role */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-800 font-medium">{user.role}</p>
+                            <p className="text-gray-800 font-medium">{akun.role}</p>
                         </div>
 
                         {/* Username */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-600">{user.username}</p>
+                            <p className="text-gray-600">{akun.username}</p>
                         </div>
 
                         {/* Email */}
                         <div className="col-span-3 py-3">
-                            <p className="text-gray-600">{user.email}</p>
+                            <p className="text-gray-600">{akun.email}</p>
                         </div>
 
                         {/* Tanggal dibuat */}
                         <div className="col-span-2 py-3">
                             <p className="text-gray-600">
                                 <FormatTanggal
-                                    isoString={user.created_at}
+                                    isoString={akun.created_at}
                                 />
                             </p>
                         </div>
 
                         {/* Aksi */}
                         <div className="col-span-2 flex justify-center py-3">
-                            <button onClick={() => handleEditClick(user)} className="flex items-center space-x-1 text-gray-600 hover:text-blue-800 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200">
+                            <button onClick={() => handleEditClick(akun)} className="flex items-center space-x-1 text-gray-600 hover:text-blue-800 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200">
                                 <PencilIcon />
                                 <span>Edit</span>
                             </button>
@@ -205,7 +261,7 @@ export default function MonitoringPage() {
 
             <Pagination
                 currentPage={currentPage}
-                totalItems={MOCK_USERS.length}
+                totalItems={dataAkun.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={handlePageChange}
             />

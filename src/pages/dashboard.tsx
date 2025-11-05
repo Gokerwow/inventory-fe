@@ -1,21 +1,85 @@
-import { useEffect } from 'react';
-import LineChart from '../components/DiagramBatang';
+import { useEffect, useState } from 'react'; // <-- TAMBAHAN: useState
 import { useAuth } from '../hooks/useAuth';
 import { useAuthorization } from '../hooks/useAuthorization';
 import DiagramBatang from '../components/DiagramBatang';
+// --- TAMBAHAN: Impor service ---
+import { 
+    getDashboardStats, 
+    getChartBarangMasuk, 
+    getChartBarangKeluar 
+} from '../services/dashboardService';
+// ------------------------------
+
+// --- TAMBAHAN: Tipe data ---
+interface ChartData {
+    bulan: string;
+    value: number;
+}
+interface StatsData {
+    totalStok: number;
+    bastDiterima: number;
+    belumBayar: number;
+}
+// ---------------------------
 
 export default function Dashboard() {
     const { checkAccess, hasAccess } = useAuthorization('Admin Gudang Umum');
     const { user } = useAuth()
 
+    // --- TAMBAHAN: State untuk data, loading, dan error ---
+    const [stats, setStats] = useState<StatsData | null>(null);
+    const [chartMasuk, setChartMasuk] = useState<ChartData[]>([]);
+    const [chartKeluar, setChartKeluar] = useState<ChartData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    // ---------------------------------------------------
+
+    // --- UBAHAN: useEffect sekarang mengambil semua data ---
     useEffect(() => {
         checkAccess(user?.role);
-    }, [user, checkAccess]);
+        if (!hasAccess(user?.role)) {
+            return;
+        }
 
-    // Early return jika tidak memiliki akses
+        const fetchDashboardData = async () => {
+            try {
+                setIsLoading(true);
+                // Panggil semua service sekaligus (paralel)
+                const [statsData, masukData, keluarData] = await Promise.all([
+                    getDashboardStats(),
+                    getChartBarangMasuk(),
+                    getChartBarangKeluar()
+                ]);
+                
+                setStats(statsData);
+                setChartMasuk(masukData);
+                setChartKeluar(keluarData);
+                setError(null);
+            } catch (err) {
+                console.error("Gagal memuat data dashboard:", err);
+                setError("Gagal memuat data dashboard.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+    }, [user, checkAccess, hasAccess]); // <-- Dependensi
+    // ----------------------------------------------------
+
+    // Early return (sudah ada, bagus)
     if (!hasAccess(user?.role)) {
         return null;
     }
+
+    // --- TAMBAHAN: Tampilkan UI Loading & Error ---
+    if (isLoading) {
+        return <div className='flex justify-center items-center h-full'>Memuat data dashboard...</div>;
+    }
+    if (error) {
+        return <div className='flex justify-center items-center h-full text-red-500'>{error}</div>;
+    }
+    // ------------------------------------------
 
     return (
         <div className='flex flex-col gap-6 h-full'>
@@ -25,7 +89,8 @@ export default function Dashboard() {
                 <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
                     <h3 className="text-gray-500 text-sm font-medium">Total Stok Barang</h3>
                     <div className="flex items-end mt-2">
-                        <span className="text-3xl font-bold">1.248</span>
+                        {/* --- UBAHAN --- */}
+                        <span className="text-3xl font-bold">{stats?.totalStok || 0}</span>
                         <span className="ml-2 text-green-500 text-sm font-medium flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -39,7 +104,8 @@ export default function Dashboard() {
                 <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
                     <h3 className="text-gray-500 text-sm font-medium">BAST yang sudah diterima</h3>
                     <div className="flex items-end mt-2">
-                        <span className="text-3xl font-bold">9</span>
+                        {/* --- UBAHAN --- */}
+                        <span className="text-3xl font-bold">{stats?.bastDiterima || 0}</span>
                         <span className="ml-2 text-gray-500 text-sm">Dalam bulan ini</span>
                     </div>
                 </div>
@@ -48,7 +114,8 @@ export default function Dashboard() {
                 <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
                     <h3 className="text-gray-500 text-sm font-medium">Barang yang belum dibayar</h3>
                     <div className="flex items-end mt-2">
-                        <span className="text-3xl font-bold">20</span>
+                        {/* --- UBAHAN --- */}
+                        <span className="text-3xl font-bold">{stats?.belumBayar || 0}</span>
                         <span className="ml-2 text-red-500 text-sm font-medium flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -67,7 +134,8 @@ export default function Dashboard() {
                         Penerimaan Barang per Bulan
                     </h1>
                     <div className="p-4 grow">
-                        <DiagramBatang type="masuk" />
+                        {/* --- UBAHAN: Kirim data via prop --- */}
+                        <DiagramBatang type="masuk" data={chartMasuk} />
                     </div>
                 </div>
 
@@ -77,7 +145,8 @@ export default function Dashboard() {
                         Pengeluaran Barang per Bulan
                     </h1>
                     <div className="p-4 grow">
-                        <DiagramBatang type="keluar" />
+                        {/* --- UBAHAN: Kirim data via prop --- */}
+                        <DiagramBatang type="keluar" data={chartKeluar} />
                     </div>
                 </div>
             </div>
