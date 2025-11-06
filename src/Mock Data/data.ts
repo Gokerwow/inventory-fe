@@ -327,6 +327,15 @@ export const sortOptions: SortOption[] = [
     { label: 'Z - A', value: 'desc', icon: '↓' }
 ];
 
+export interface EmployeeType {
+    id: number;
+    name: string;
+    job: string;
+    phone: string;
+    avatarUrl: string;
+    status: string;
+}
+
 export const employees = [
     {
         id: 1,

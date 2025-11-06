@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from "react-router-dom"
 // --- UBAHAN: Tambahkan useEffect dan useMemo ---
 import React, { useEffect, useRef, useState, type ChangeEvent, useMemo } from "react"
 import Modal from "../components/modal"
-import { PATHS } from "../Routes/path"
 // --- TAMBAHAN: Impor service, auth, dan toast ---
 import { createAkun, updateAkun } from "../services/akunService"
 import { useToast } from "../context/toastContext"
@@ -13,6 +12,7 @@ import { useToast } from "../context/toastContext"
 import { useAuthorization } from "../hooks/useAuthorization"
 import { useAuth } from "../hooks/useAuth"
 import WarnButton from "../components/warnButton"
+import { updatePegawai } from "../services/pegawaiService"
 
 
 export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean }) {
@@ -21,7 +21,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
     const navigate = useNavigate()
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     // --- TAMBAHAN: State untuk loading submit ---
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { showToast } = useToast();
@@ -49,15 +49,23 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
 
     const location = useLocation();
     const { data, isEmployeeEdit } = location.state || {};
-    
+
     // --- TAMBAHAN: Otorisasi (kita aktifkan) ---
     // Logika: Super Admin bisa, atau user biasa HANYA jika 'isEdit' dan 'data.user_id' cocok
     const { user } = useAuth();
     const isOwner = isEdit && data?.user_id === user?.user_id;
-    const allowedRoles = useMemo(() => 
-        (isEdit && !isEmployeeEdit) ? ['Super Admin', 'Admin Gudang Umum', 'Tim PPK', 'Tim Teknis', 'Penanggung Jawab', 'Instalasi'] : ['Super Admin'],
-      [isEdit, isEmployeeEdit]
-    );
+    const allRoles = ['Super Admin', 'Admin Gudang Umum', 'Tim PPK', 'Tim Teknis', 'Penanggung Jawab', 'Instalasi'];
+
+    const allowedRoles = useMemo(() => {
+        if (isEmployeeEdit) {
+            return allRoles; // <-- PERUBAHAN: Jika edit karyawan, SEMUA ROLE boleh
+        }
+        if (isEdit && !isEmployeeEdit) {
+            return allRoles; // Jika edit profil sendiri, SEMUA ROLE boleh
+        }
+        return ['Super Admin']; // Jika tambah akun baru, HANYA Super Admin
+    }, [isEdit, isEmployeeEdit]);
+    
     const { checkAccess, hasAccess } = useAuthorization(allowedRoles);
     // ---------------------------------------------
 
@@ -90,7 +98,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
 
     // Early return jika tidak punya akses
     if (user?.role !== 'Super Admin' && !isOwner && !hasAccess(user?.role)) {
-       return null; // Otorisasi sudah di-handle 'checkAccess', tapi ini utk safety
+        return null; // Otorisasi sudah di-handle 'checkAccess', tapi ini utk safety
     }
     // -----------------------------------------------------------
 
@@ -137,23 +145,25 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
 
         try {
             let message = '';
-            
+
             // Tentukan data yang akan dikirim
             const dataToSubmit = {
                 ...formData,
                 avatarUrl: selectedAvatar || formData.avatarUrl, // Pastikan avatar terkirim
             };
 
-            if (isEdit) {
+            if (isEdit && !isEmployeeEdit) {
                 // Mode Edit
                 await updateAkun(data.user_id, dataToSubmit);
                 message = isEmployeeEdit ? 'Anda berhasil mengedit karyawan!' : 'Anda berhasil mengedit profil!';
+            } else if (isEmployeeEdit) {
+                await updatePegawai(data.id, dataToSubmit);
             } else {
                 // Mode Tambah Akun Baru
                 await createAkun(dataToSubmit);
                 message = 'Anda berhasil membuat akun baru!';
             }
-            
+
             // Jika sukses, tutup modal dan kembali
             handleCloseModal();
             navigate(-1, { // Kembali ke halaman sebelumnya
@@ -166,7 +176,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
             console.error(err);
             showToast(isEdit ? "Gagal mengupdate akun." : "Gagal membuat akun.", "error");
             setIsSubmitting(false); // Tetap di modal jika error
-        } 
+        }
         // 'finally' tidak perlu setIsSubmitting(false) karena kita navigasi jika sukses
     };
     // ---------------------------------------------------------
@@ -179,8 +189,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
             return;
         }
         if (isEmployeeEdit && !formData.phone) {
-             showToast("Nomor HP wajib diisi!", "error");
-             return;
+            showToast("Nomor HP wajib diisi!", "error");
+            return;
         }
         console.log('Form data disiapkan:', formData);
         handleOpenModal()
