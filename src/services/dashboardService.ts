@@ -2,6 +2,13 @@ import { simulateApiCall } from './utils';
 
 // Data dari DiagramBatang.tsx (masuk)
 const dataBarangMasuk = [
+    { bulan: 'Januari', value: 40 },
+    { bulan: 'Februari', value: 35 },
+    { bulan: 'Maret', value: 50 },
+    { bulan: 'April', value: 48 },
+    { bulan: 'Mei', value: 60 },
+    { bulan: 'Juni', value: 52 },
+    { bulan: 'Juli', value: 65 },
     { bulan: 'Agustus', value: 55 },
     { bulan: 'September', value: 28 },
     { bulan: 'Oktober', value: 65 },
@@ -11,6 +18,13 @@ const dataBarangMasuk = [
 
 // Data dari DiagramBatang.tsx (keluar)
 const dataBarangKeluar = [
+    { bulan: 'Januari', value: 30 },
+    { bulan: 'Februari', value: 28 },
+    { bulan: 'Maret', value: 45 },
+    { bulan: 'April', value: 40 },
+    { bulan: 'Mei', value: 55 },
+    { bulan: 'Juni', value: 47 },
+    { bulan: 'Juli', value: 55 },
     { bulan: 'Agustus', value: 32 },
     { bulan: 'September', value: 48 },
     { bulan: 'Oktober', value: 42 },

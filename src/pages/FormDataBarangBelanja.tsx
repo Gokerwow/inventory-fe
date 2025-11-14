@@ -7,18 +7,20 @@ import { PATHS } from "../Routes/path";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-// --- TAMBAHAN ---
-import { addBarangBelanja } from "../services/penerimaanService"; // <-- Impor service
-import { useToast } from "../context/toastContext"; // <-- Impor useToast untuk error
-// -----------------
+import { addBarangBelanja } from "../services/penerimaanService";
+import { useToast } from "../hooks/useToast"; 
 import WarnButton from "../components/warnButton";
+import CurrencyInput from "../components/currencyInput";
+import { usePenerimaan } from "../hooks/usePenerimaan";
+import { ROLES } from "../constant/roles";
 
-const namaOptions = [
-    "Ritay Protama",
-    "Aveli Saputra",
-    "Nadia Fitrani",
-    "Sababila Nuratni",
-    "Devil Katitka"
+// TODO: Ganti dengan data kategori yang sebenarnya
+const kategoriOptions = [
+    "Alat Medis",
+    "Obat-obatan",
+    "Peralatan Kesehatan",
+    "Consumable Medical",
+    "Alat Tulis Kantor"
 ];
 
 const FormDataBarangBelanja = () => {
@@ -28,19 +30,20 @@ const FormDataBarangBelanja = () => {
         jumlah: '',
         totalHarga: '',
         kategoriBarang: '',
-        harga: ''
+        harga: '',
+        statusPemeriksaan: ''
     });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // --- TAMBAHAN: State untuk loading saat submit ---
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // ------------------------------------------------
-    
-    const navigate = useNavigate();
-    const { showToast } = useToast(); // <-- Panggil hook toast
 
-    const { checkAccess, hasAccess } = useAuthorization(['Tim PPK', 'Tim Teknis']);
-    const { user } = useAuth()
+    const navigate = useNavigate();
+    const { showToast } = useToast();
+
+    const { checkAccess, hasAccess } = useAuthorization([ROLES.PPK, ROLES.TEKNIS]);
+    const { user } = useAuth();
+
+    const { setBarang } = usePenerimaan();
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -54,6 +57,7 @@ const FormDataBarangBelanja = () => {
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
+    // Handle untuk input biasa
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prevState => ({
@@ -62,14 +66,31 @@ const FormDataBarangBelanja = () => {
         }));
     };
 
-    // --- UBAHAN: Logika submit sekarang memanggil service ---
+    // Handle untuk CurrencyInput
+    const handleCurrencyChange = (name: string, value: string) => {
+        setFormData(prev => {
+            const updated = {
+                ...prev,
+                [name]: value
+            };
+
+            // Auto calculate total harga
+            if (name === 'harga' || name === 'jumlah') {
+                const harga = name === 'harga' ? parseInt(value) || 0 : parseInt(prev.harga) || 0;
+                const jumlah = name === 'jumlah' ? parseInt(value) || 0 : parseInt(prev.jumlah) || 0;
+                updated.totalHarga = (harga * jumlah).toString();
+            }
+
+            return updated;
+        });
+    };
+
+    // Di handleConfirmSubmit, pastikan navigasi mengirim data dengan flag yang jelas
     const handleConfirmSubmit = async () => {
-        if (isSubmitting) return; // Mencegah klik ganda
-        
-        setIsSubmitting(true); // Mulai loading
-        
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
         try {
-            // 1. Siapkan data untuk dikirim
             const barangData = {
                 nama_barang: formData.namaBarang,
                 kategori: formData.kategoriBarang,
@@ -79,132 +100,147 @@ const FormDataBarangBelanja = () => {
                 total_harga: Number(formData.totalHarga) || 0
             };
 
-            // 2. Panggil service (simulasi kirim ke backend)
-            const barangBaru = await addBarangBelanja(barangData);
+            const newBarang = await addBarangBelanja(barangData);
 
-            // 3. Navigasi dengan data yang DIKEMBALIKAN service (logika lama Anda)
-            navigate(PATHS.PENERIMAAN.TAMBAH, {
-                state: {
-                    data: barangBaru, // <-- Kirim data baru dari "backend"
-                    toastMessage: 'Berhasil membuat data barang belanja!'
-                }
-            });
+            setBarang(prev => [...prev, newBarang]);
+
+            // ✅ PENTING: Kirim dengan flag 'newBarang' agar mudah diidentifikasi
+            navigate(PATHS.PENERIMAAN.TAMBAH);
+
             handleCloseModal();
 
         } catch (err) {
             console.error("Gagal menambah barang:", err);
-            // Tampilkan error jika gagal
             showToast('Gagal menyimpan data barang.', 'error');
         } finally {
-            setIsSubmitting(false); // Selesai loading
+            setIsSubmitting(false);
         }
     };
-    // ---------------------------------------------------------
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // Cek validasi sederhana
-        if (!formData.namaBarang || !formData.satuan || !formData.jumlah) {
-            showToast("Nama Barang, Satuan, dan Jumlah wajib diisi!", "error");
+
+        // Validasi
+        if (!formData.namaBarang || !formData.satuan || !formData.jumlah || !formData.harga) {
+            showToast("Semua field wajib diisi!", "error");
             return;
         }
+
         console.log('Data barang:', formData);
-        handleOpenModal()
+        handleOpenModal();
     };
 
     return (
         <div className="h-full">
             <div className="bg-white shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 h-full rounded-xl flex flex-col gap-4">
-                <h1 className="text-3xl font-bold mb-6 text-[#057CFF] text-center">FORM DATA BARANG BELANJA</h1>
+                <h1 className="text-3xl font-bold mb-6 text-[#057CFF] text-center">
+                    FORM DATA BARANG BELANJA
+                </h1>
+
                 <form onSubmit={handleSubmit} className="border-t-2 border-[#CADCF2] grid grid-cols-2 p-8 gap-8">
+                    {/* KOLOM KIRI */}
                     <div className="flex flex-col gap-4">
+                        {/* Nama Barang */}
                         <Input
                             id="namaBarang"
-                            placeholder="Nama Barang"
+                            placeholder="Masukkan nama barang"
                             judul="Nama Barang"
                             name="namaBarang"
                             onChange={handleChange}
-                            value={formData.namaBarang} // <-- Tambahkan value
+                            value={formData.namaBarang}
                         />
+
+                        {/* Satuan & Jumlah */}
                         <div className="grid grid-cols-2 gap-10">
                             <Input
                                 id="satuan"
-                                placeholder="Satuan"
+                                placeholder="Unit, Box, Pack"
                                 judul="Satuan"
                                 name="satuan"
                                 onChange={handleChange}
-                                value={formData.satuan} // <-- Tambahkan value
+                                value={formData.satuan}
                             />
-                            <Input
+
+                            {/* ✅ FIX: Jumlah pakai CurrencyInput tanpa prefix */}
+                            <CurrencyInput
                                 id="jumlah"
-                                placeholder="Jumlah"
+                                placeholder="0"
                                 judul="Jumlah"
                                 name="jumlah"
-                                onChange={handleChange}
-                                type="number"
-                                value={formData.jumlah} // <-- Tambahkan value
+                                prefix=""  // ← Tanpa prefix
+                                onChange={(value) => handleCurrencyChange('jumlah', value)}  // ← FIX
+                                value={formData.jumlah}
                             />
                         </div>
-                        <Input
+
+                        {/* ✅ FIX: Total Harga disabled (auto calculate) */}
+                        <CurrencyInput
                             id="totalHarga"
-                            placeholder="Total Harga"
+                            placeholder="0"
                             judul="Total Harga"
                             name="totalHarga"
-                            type="number"
-                            onChange={handleChange}
-                            value={formData.totalHarga} // <-- Tambahkan value
+                            prefix="Rp"
+                            onChange={(value) => handleCurrencyChange('totalHarga', value)}
+                            value={formData.totalHarga}
+                            disabled  // ← FIX: Disabled karena auto calculate
                         />
                     </div>
+
+                    {/* KOLOM KANAN */}
                     <div className="flex flex-col gap-4">
+                        {/* ✅ FIX: Dropdown dengan kategori yang benar */}
                         <DropdownInput
-                            placeholder="Kategori Barang"
-                            options={namaOptions} // <-- TODO: Ganti ini dengan kategori, bukan nama orang
+                            placeholder="Pilih Kategori"
+                            options={kategoriOptions}  // ← FIX: Kategori bukan nama
                             judul="Kategori Barang"
                             type="button"
-                            onChange={(value) => setFormData(p => ({...p, kategoriBarang: value}))} // <-- Update state
-                            value={formData.kategoriBarang} // <-- Tambahkan value
+                            onChange={(value) => {  // ← FIX: Handle string value
+                                setFormData(p => ({ ...p, kategoriBarang: value }));
+                            }}
+                            value={formData.kategoriBarang}
                             name="kategoriBarang"
                         />
-                        <Input
+
+                        {/* ✅ FIX: Harga pakai CurrencyInput */}
+                        <CurrencyInput
                             id="harga"
-                            placeholder="Harga"
-                            judul="Harga"
+                            placeholder="0"
+                            judul="Harga Satuan"
                             name="harga"
-                            type="number"
-                            onChange={handleChange}
-                            value={formData.harga} // <-- Tambahkan value
+                            prefix="Rp"
+                            onChange={(value) => handleCurrencyChange('harga', value)}  // ← FIX
+                            value={formData.harga}
                         />
-                        {/* BUTTON SELESAI */}
+
+                        {/* Button Selesai */}
                         <ButtonConfirm
-                            text={isSubmitting ? "Menyimpan..." : "Selesai"} // <-- UBAHAN: Teks dinamis
+                            text={isSubmitting ? "Menyimpan..." : "Selesai"}
                             className="self-end mt-auto"
                             type="submit"
-                            onClick={handleSubmit} // <-- UBAHAN: pastikan ini submit form
-                            disabled={isSubmitting} // <-- TAMBAHAN: Nonaktifkan saat submitting
+                            disabled={isSubmitting}
                         />
                     </div>
                 </form>
             </div>
 
             {/* MODAL / POPUP */}
-            <Modal 
-                isOpen={isModalOpen} 
+            <Modal
+                isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin data yang di buat sudah benar?"
+                text="Apa anda yakin data yang dibuat sudah benar?"
             >
-                {/* --- TAMBAHAN: Buat tombol 'Iya' tidak bisa diklik saat loading --- */}
                 <div className="flex gap-4 justify-end">
                     <ButtonConfirm
                         text={isSubmitting ? "Menyimpan..." : "Iya"}
-                        type="button" // <-- Pastikan tipe button
+                        type="button"
                         onClick={handleConfirmSubmit}
                         disabled={isSubmitting}
                     />
                     <WarnButton
                         onClick={handleCloseModal}
                         text="Tidak"
-                        disabled={isSubmitting} // <-- Nonaktifkan juga
+                        disabled={isSubmitting}
                     />
                 </div>
             </Modal>

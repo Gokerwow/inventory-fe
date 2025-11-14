@@ -22,7 +22,7 @@ export default function TopBar() {
                         <div className='bg-white rounded-full w-9 h-9 flex items-center justify-center'>
                             <img src={NotifIcon} alt="Notification Icon" className='h-6' />
                         </div>
-                        <div className='flex items-center gap-4 cursor-pointer  px-4 py-4.5 hover:bg-gray-200 transition-all duration-200'>
+                        <div className='flex items-center gap-4 cursor-pointer w-60 px-4 py-4.5 hover:bg-gray-200 transition-all duration-200'>
                             <div className='bg-white rounded-full w-10 h-10 flex items-center justify-center overflow-hidden'>
                                 <img src={PfpExample} alt="Profile Picture" className='w-full' />
                             </div>

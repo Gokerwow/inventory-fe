@@ -1,6 +1,6 @@
 import {
     PenerimaanData,
-    riwayatUpload,
+    RiwayatPenerimaanData,
     BARANG_BELANJA,
     type TIPE_BARANG_BELANJA
 } from '../Mock Data/data';
@@ -9,7 +9,7 @@ import { simulateApiCall } from './utils';
 // Tipe data dari item di tabel penerimaan
 type PenerimaanItem = typeof PenerimaanData[0];
 // Tipe data dari item di riwayat upload
-type RiwayatUploadItem = typeof riwayatUpload[0];
+type RiwayatUploadItem = typeof RiwayatPenerimaanData[0];
 
 /**
  * Mengambil daftar penerimaan untuk tab "Penerimaan".
@@ -26,8 +26,8 @@ export const getPenerimaanList = (): Promise<PenerimaanItem[]> => {
  */
 export const getRiwayatPenerimaanList = (): Promise<RiwayatUploadItem[]> => {
     console.log("SERVICE: Mengambil riwayat penerimaan...");
-    return simulateApiCall(riwayatUpload);
-};
+    return simulateApiCall(RiwayatPenerimaanData);
+}; 
 
 /**
  * Mengambil detail satu item penerimaan.

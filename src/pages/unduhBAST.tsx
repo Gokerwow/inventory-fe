@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 import ButtonConfirm from "../components/buttonConfirm"
 import { PATHS } from "../Routes/path"
 import { useNavigate } from "react-router-dom"
-import { useToast } from "../context/toastContext"
+import { useToast } from "../hooks/useToast" 
 
 export default function UnduhPage() {
     const location = useLocation()
@@ -33,7 +33,7 @@ export default function UnduhPage() {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            showToast('File berhasil diunduh!', 'success');
+            showToast('Anda berhasil mengunduh File', 'success');
 
             window.URL.revokeObjectURL(url);
         } catch (error) {

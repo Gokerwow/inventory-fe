@@ -7,19 +7,21 @@ import SimbaLogo from '../assets/logoSimbaDark.png';
 import LogoutIcon from '../assets/logout.svg?react'
 import { useAuth } from '../hooks/useAuth';
 import PegawaiIcon from '../assets/hashtag.svg?react'
+import { ROLES } from '../constant/roles';
 
 
 export default function SideBar() {
     const menuItems = [
-        { path: '/akun', icon: PenerimaanIcon, label: 'Akun', role: ['Super Admin'] },
-        { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: ['Super Admin'] },
-        { path: '/monitoring', icon: PenerimaanIcon, label: 'Monitoring', role: ['Super Admin'] },
-        { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: ['Admin Gudang Umum'] },
-        { path: '/stok-barang', icon: ChartIcon, label: 'Stok Barang', role: ['Admin Gudang Umum'] },
-        { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: ['Admin Gudang Umum', 'Tim PPK', 'Tim Teknis'] },
-        { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: ['Penanggung Jawab', 'Admin Gudang Umum'] },
-        { path: '/pemesanan', icon: PengeluaranIcon, label: 'Pengeluaran', role: ['Instalasi'] },
+        { path: '/akun', icon: PenerimaanIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN] },
+        { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN] },
+        { path: '/monitoring', icon: PenerimaanIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN] },
+        { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: [ROLES.ADMIN_GUDANG] },
+        { path: '/stok-barang', icon: ChartIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG] },
+        { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS] },
+        { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG] },
+        { path: '/pemesanan', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.INSTALASI] },
     ];
+    
     const navigate = useNavigate();
 
     const { user, logout } = useAuth();
@@ -39,8 +41,6 @@ export default function SideBar() {
         }
         return menuItem.role.includes(user.role);
     })
-
-    console.log(allowedMenuItems)
 
     return (
         <div className='w-[300px] h-full bg-[#057CFF]'>

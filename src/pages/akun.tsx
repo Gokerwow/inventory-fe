@@ -13,6 +13,8 @@ import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { type MockUser } from '../Mock Data/data';
+import { ROLES } from '../constant/roles';
+import PfpExample from '../assets/Pfp Example.jpeg';
 
 interface FormatTanggalProps {
     isoString: string;
@@ -38,9 +40,8 @@ const sortOptions: SortOption[] = [
     { label: 'Z - A', value: 'desc', icon: '↓' }
 ];
 
-
 export default function MonitoringPage() {
-    const { checkAccess, hasAccess } = useAuthorization('Super Admin');
+    const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
     const { user } = useAuth()
 
     const navigate = useNavigate();
@@ -68,9 +69,9 @@ export default function MonitoringPage() {
             const sortedData = [...prevData]; // Buat salinan
             sortedData.sort((a, b) => {
                 if (option.value === 'asc') {
-                    return a.username.localeCompare(b.username);
+                    return a.nama_pengguna.localeCompare(b.nama_pengguna);
                 } else {
-                    return b.username.localeCompare(a.username);
+                    return b.nama_pengguna.localeCompare(a.nama_pengguna);
                 }
             });
             return sortedData;
@@ -214,7 +215,7 @@ export default function MonitoringPage() {
                         {/* Foto Akun */}
                         <div className="col-span-1 py-3">
                             <img
-                                src={akun.avatarUrl}
+                                src={akun.photo ?? PfpExample}
                                 alt="Avatar"
                                 className="w-12 h-12 rounded-full"
                             />
@@ -227,7 +228,7 @@ export default function MonitoringPage() {
 
                         {/* Username */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-600">{akun.username}</p>
+                            <p className="text-gray-600">{akun.nama_pengguna}</p>
                         </div>
 
                         {/* Email */}

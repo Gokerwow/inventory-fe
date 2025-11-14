@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import ButtonConfirm from '../components/buttonConfirm';
 import { PATHS } from '../Routes/path';
 import { useNavigate } from 'react-router-dom';
+import { ROLES } from '../constant/roles';
 
 // --- TAMBAHAN: Tipe data ---
 type Employee = typeof employees[0];
@@ -94,11 +95,13 @@ function Profil() {
         <div className="bg-white shadow-[0_0_10px_rgba(0,0,0,0.1)] rounded-xl flex flex-col gap-4 w-full pb-15">
             <div className='flex justify-between items-center  p-8 px-15 shadow-lg'>
                 <h1 className="text-3xl font-bold">Profil</h1>
-                <ButtonConfirm
-                    text='Edit'
-                    className='bg-[#F4AF0C] hover:bg-[#ce9206] text-white w-48 border-none'
-                    onClick={() => handleEditProfilClick(user)} // <-- Data 'user' dari useAuth
-                />
+                {user.role === ROLES.SUPER_ADMIN && (
+                    <ButtonConfirm
+                        text='Edit'
+                        className='bg-[#F4AF0C] hover:bg-[#ce9206] text-white w-48 border-none'
+                        onClick={() => handleEditProfilClick(user)} // <-- Data 'user' dari useAuth
+                    />
+                )}
             </div>
 
             <div className="bg-white rounded-lg p-8">
@@ -106,7 +109,7 @@ function Profil() {
                 <div className='flex gap-8'>
                     <div className='p-8'>
                         <div className='bg-white rounded-full w-70 h-70 flex items-center justify-center overflow-hidden shadow-2xl'>
-                            <img src={PfpExample} alt="Profile Picture" className='w-full' />
+                            <img src={user.photo ?? PfpExample} alt="Profile Picture" className='w-full' />
                         </div>
                     </div>
                     <div className='text-xl p-8 gap-8'>
@@ -115,7 +118,7 @@ function Profil() {
                             <tbody> {/* <-- Tambahkan tbody untuk best practice */}
                                 <tr>
                                     <td width="100">Username</td>
-                                    <td className='pl-8'>: {user?.username}</td>
+                                    <td className='pl-8'>: {user?.nama_pengguna}</td>
                                 </tr>
                                 <tr>
                                     <td>Role</td>
@@ -157,7 +160,7 @@ function Profil() {
                                                 <div className="flex justify-center py-4">
                                                     <img
                                                         className="h-12 w-12 rounded-full object-cover"
-                                                        src={employee.avatarUrl}
+                                                        src={employee.photo ?? PfpExample}
                                                         alt={`Foto ${employee.name}`}
                                                     />
                                                 </div>

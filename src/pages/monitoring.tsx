@@ -11,6 +11,8 @@ import { Transition } from '@headlessui/react';
 import Dropdown from '../components/dropdown';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
+import { ROLES } from '../constant/roles';
+import PfpExample from '../assets/Pfp Example.jpeg';
 
 interface FormatTanggalProps {
     isoString: string;
@@ -51,7 +53,7 @@ export default function MonitoringPage() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const transitionRef = useRef(null)
 
-    const { checkAccess, hasAccess } = useAuthorization('Super Admin');
+    const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
     const { user } = useAuth()
 
     // --- TAMBAHAN: useEffect untuk mengambil data ---
@@ -188,7 +190,7 @@ export default function MonitoringPage() {
                         {/* Foto Akun */}
                         <div className="col-span-1 py-3">
                             <img
-                                src={log.avatarUrl}
+                                src={log.photo ?? PfpExample}
                                 alt="Avatar"
                                 className="w-12 h-12 rounded-full"
                             />

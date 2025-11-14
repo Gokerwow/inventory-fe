@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import PencilIcon from '../assets/pencilIcon2.svg?react'
 import { PATHS } from '../Routes/path';
 import EyeIcon from '../assets/eye.svg?react'
+import { ROLES } from '../constant/roles';
 
 // Definisikan interface untuk data
 interface PenerimaanItem {
@@ -41,7 +42,7 @@ export default function PenerimaanTable({
     const navigate = useNavigate()
 
     const handleActionClick = (id: number) => {
-        if (user?.role === 'Tim PPK' || user?.role === 'Tim Teknis') {
+        if (user?.role === ROLES.PPK || user?.role === ROLES.TEKNIS) {
             navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }))
         }
         else {
@@ -55,14 +56,14 @@ export default function PenerimaanTable({
     }
     const renderActionButton = () => {
         switch (user?.role) {
-            case 'Tim PPK':
+            case ROLES.PPK:
                 return (
                     <>
                         <PencilIcon className='w-7 h-7' />
                         <span>Edit</span>
                     </>
                 );
-            case 'Admin Gudang Umum':
+            case ROLES.ADMIN_GUDANG:
                 return (
                     <>
                         <UnduhIcon className='w-7 h-7' />
@@ -81,19 +82,19 @@ export default function PenerimaanTable({
 
     const penerimaanColumns: ColumnDefinition<PenerimaanItem>[] = [
         {
-            header: 'NO SURAT',
+            header: 'No SUrat',
             cell: (item) => <>{item.noSurat}</>
         },
         {
-            header: 'ROLE',
+            header: 'Role',
             cell: (item) => <>{item.role}</>
         },
         {
-            header: 'NAMA PEGAWAI',
+            header: 'Nama Pegawai',
             cell: (item) => <>{item.namaPegawai}</>
         },
         {
-            header: 'KATEGORI',
+            header: 'Kategori',
             cell: (item) => (
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${item.kategori === 'Komputer'
                     ? 'bg-blue-100 text-blue-800'
@@ -104,7 +105,7 @@ export default function PenerimaanTable({
             )
         },
         {
-            header: 'AKSI',
+            header: 'Aksi',
             cell: (item) => (
                 <div onClick={() => handleActionClick(item.id)} className='flex items-center gap-1 w-20 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'>
                     {renderActionButton()}
@@ -112,7 +113,7 @@ export default function PenerimaanTable({
             )
         },
         {
-            header: 'STATUS',
+            header: 'Status',
             cell: (item) => (
                 <Status
                     text={item.status}

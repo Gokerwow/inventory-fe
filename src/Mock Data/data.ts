@@ -3,8 +3,8 @@ import PfpExample from '../assets/Pfp Example.jpeg';
 export interface MockUser {
     user_id: number;
     sso_user_id: number;
-    username: string;
-    avatarUrl: string,
+    nama_pengguna: string;
+    photo: string,
     email: string;
     password: string; // Seharusnya hash, tapi kita ikuti data mock
     role: string;
@@ -14,14 +14,28 @@ export interface MockUser {
     updated_at: string;
 }
 
-export type UserRoles = 'Super Admin' | 'Admin Gudang Umum' | 'Tim PPK' | 'Tim Teknis' | 'Penanggung Jawab' | 'Instalasi';
+export interface FormData {
+    id: number,
+    noSurat: string,
+    namaPihakPertama: string,
+    jabatanPihakPertama: string,
+    NIPPihakPertama: string,
+    alamatSatkerPihakPertama: string,
+    namaPihakKedua: string,
+    jabatanPihakKedua: string,
+    NIPPihakKedua: string,
+    alamatSatkerPihakKedua: string,
+    deskripsiBarang: string,
+}
+
+export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
 export const MOCK_USERS = [
     {
         user_id: 101,
         sso_user_id: 101,
-        username: 'superAdmin',
-        avatarUrl: PfpExample,
+        nama_pengguna: 'superAdmin',
+        photo: PfpExample,
         email: 'admin@rsudbalung.com',
         password: '$2b$10$K.iayq.fC/jCTBGrKxXeL.WAK0nL5MPEPSHn/Fwa.EGay.jS6beHS', // Contoh password hash
         role: 'Super Admin',
@@ -33,8 +47,8 @@ export const MOCK_USERS = [
     {
         user_id: 102,
         sso_user_id: 102,
-        username: 'adminGudangUmum',
-        avatarUrl: PfpExample,
+        nama_pengguna: 'adminGudangUmum',
+        photo: PfpExample,
         email: 'gudang.umum@rsudbalung.com',
         password: '$2b$10$j8.V2lP9YfV/P.6uKxWeO.eF3sN4qD7cI/rT2gW0kL.hY1iE9uJ/i',
         role: 'Admin Gudang Umum',
@@ -46,8 +60,8 @@ export const MOCK_USERS = [
     {
         user_id: 103,
         sso_user_id: 103,
-        username: 'timPPK',
-        avatarUrl: PfpExample,
+        nama_pengguna: 'timPPK',
+        photo: PfpExample,
         email: 'ppk@rsudbalung.com',
         password: '$2b$10$aP.L/oG5rYw.eK8sQwXnL.qR7tG/vB9cI.jA3uD6wO.kY2iF8vM/o',
         role: 'Tim PPK',
@@ -59,8 +73,8 @@ export const MOCK_USERS = [
     {
         user_id: 104,
         sso_user_id: 104,
-        username: 'timTeknis', // Diperbaiki dari 'Admin Gudang Umum'
-        avatarUrl: PfpExample,
+        nama_pengguna: 'timTeknis', // Diperbaiki dari 'Admin Gudang Umum'
+        photo: PfpExample,
         email: 'teknis@rsudbalung.com',
         password: '$2b$10$bQ.M/pG9tZ.wF/rJ7vYxP.oU8uH/wD1dK.lB4eE7xP.mZ3jG9wN/q',
         role: 'Tim Teknis', // Diperbaiki dari 'adminGudangUmum'
@@ -72,8 +86,8 @@ export const MOCK_USERS = [
     { // Typo? Mungkin 'penanggungJawab'
         user_id: 105,
         sso_user_id: 105,
-        username: 'penanggungJawab', // Diperbaiki
-        avatarUrl: PfpExample,
+        nama_pengguna: 'penanggungJawab', // Diperbaiki
+        photo: PfpExample,
         email: 'pj@rsudbalung.com',
         password: '$2b$10$cR.N/qH2uX.yG/tK8wZxQ.pT9vI/xG2eL.mC5fF8yQ.nZ4kH0xO/r',
         role: 'Penanggung Jawab', // Diperbaiki (sesuai key)
@@ -85,8 +99,8 @@ export const MOCK_USERS = [
     {
         user_id: 106,
         sso_user_id: 106,
-        username: 'instalasiBalung', // Dibuat lebih spesifik
-        avatarUrl: PfpExample,
+        nama_pengguna: 'instalasiBalung', // Dibuat lebih spesifik
+        photo: PfpExample,
         email: 'instalasi.farmasi@rsudbalung.com',
         password: '$2b$10$dS.O/rI5wZ.zH/uL9xAyR.qU0wJ/yH3fM.nC6gG9zR.oA5lI1yP/s',
         role: 'Instalasi', // Diperbaiki
@@ -240,11 +254,154 @@ export const PenerimaanData = [
     }
 ];
 
+export const RiwayatPenerimaanData = [
+    {
+        id: 1,
+        noSurat: '903 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Rahardan',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 2,
+        noSurat: '903 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'Admin Gudang Umum',
+        namaPegawai: 'Rendy',
+        kategori: 'Komputer',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF2.pdf',
+        tipe: ''
+    },
+    {
+        id: 3,
+        noSurat: '903 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'Tim Teknis',
+        namaPegawai: 'Almas',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 4,
+        noSurat: '903 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Aldi',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF2.pdf',
+        tipe: ''
+    },
+    {
+        id: 5,
+        noSurat: '903 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Syini',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 6,
+        noSurat: '904 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Fahadza',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF2.pdf',
+        tipe: ''
+    },
+    {
+        id: 7,
+        noSurat: '905 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Nabila',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 8,
+        noSurat: '906 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'Admin Gudang Umum',
+        namaPegawai: 'Budi',
+        kategori: 'Komputer',
+        status: 'BeluTelahm Dikonfirmasi',
+        linkUnduh: '/dummyPDF2.pdf',
+        tipe: ''
+    },
+    {
+        id: 9,
+        noSurat: '907 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'Tim Teknis',
+        namaPegawai: 'Sari',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 10,
+        noSurat: '908 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Dewi',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF2.pdf',
+        tipe: ''
+    },
+    {
+        id: 11,
+        noSurat: '909 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Rizki',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 12,
+        noSurat: '910 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Maya',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '../assets/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 13,
+        noSurat: '911 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'PPK',
+        namaPegawai: 'Ahmad',
+        kategori: 'ATK',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '/dummyPDF.pdf',
+        tipe: ''
+    },
+    {
+        id: 14,
+        noSurat: '912 /3.2c/35.09.61/PPI_085/II/2025',
+        role: 'Admin Gudang Umum',
+        namaPegawai: 'Lina',
+        kategori: 'Komputer',
+        status: 'Telah Dikonfirmasi',
+        linkUnduh: '../assets/dummyPDF.pdf',
+        tipe: ''
+    }
+];
+
 export const logAktivitas = [
     {
         id: 1,
         role: 'AdminGudangUmum',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Logout',
         // '10 Oktober 2025' + '09.20' -> (WIB/UTC+7)
         timestamp: '2025-10-10T02:20:00.000Z',
@@ -252,7 +409,7 @@ export const logAktivitas = [
     {
         id: 2,
         role: 'PenanggungJawab',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Login',
         // '11 Oktober 2025' + '09.20' -> (WIB/UTC+7)
         timestamp: '2025-10-11T02:20:00.000Z',
@@ -260,7 +417,7 @@ export const logAktivitas = [
     {
         id: 3,
         role: 'TimPPK',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Logout',
         // '12 Oktober 2025' + '09.20' -> (WIB/UTC+7)
         timestamp: '2025-10-12T02:20:00.000Z',
@@ -268,7 +425,7 @@ export const logAktivitas = [
     {
         id: 4,
         role: 'Tim Teknis',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Logout',
         // '13 Oktober 2025' + '09.20' -> (WIB/UTC+7)
         timestamp: '2025-10-13T02:20:00.000Z',
@@ -276,7 +433,7 @@ export const logAktivitas = [
     {
         id: 5,
         role: 'Tim Teknis',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Login',
         // '14 Oktober 2025' + '09.20' -> (WIB/UTC+7)
         timestamp: '2025-10-14T02:20:00.000Z',
@@ -285,7 +442,7 @@ export const logAktivitas = [
     {
         id: 6,
         role: 'AdminGudangUmum',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Login',
         // '14 Oktober 2025' + '08.15' -> (WIB/UTC+7)
         timestamp: '2025-10-14T01:15:00.000Z',
@@ -293,7 +450,7 @@ export const logAktivitas = [
     {
         id: 7,
         role: 'Instalasi',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Login',
         // '14 Oktober 2025' + '10.30' -> (WIB/UTC+7)
         timestamp: '2025-10-14T03:30:00.000Z',
@@ -301,7 +458,7 @@ export const logAktivitas = [
     {
         id: 8,
         role: 'Instalasi',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Logout',
         // '14 Oktober 2025' + '16.45' -> (WIB/UTC+7)
         timestamp: '2025-10-14T09:45:00.000Z',
@@ -309,12 +466,27 @@ export const logAktivitas = [
     {
         id: 9,
         role: 'PenanggungJawab',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         aktivitas: 'Melakukan Login',
         // '15 Oktober 2025' + '08.00' -> (WIB/UTC+7)
         timestamp: '2025-10-15T01:00:00.000Z',
     }
 ];
+
+export const dataPihak = [
+    { id: 1, nama: "Ritay Protama", nip: "198503032010011001", jabatan: "Pejabat Pembuat Komitmen" },
+    { id: 2, nama: "Aveli Saputra", nip: "199004152015022003", jabatan: "Staf Administrasi" },
+    { id: 3, nama: "Nadia Fitrani", nip: "198811202014012005", jabatan: "Bendahara" },
+    { id: 4, nama: "Sababila Nuratni", nip: "199207072018031002", jabatan: "Tim Teknis" },
+    { id: 5, nama: "Devil Katitka", nip: "199501012020012001", jabatan: "Penyedia Barang/Jasa" }
+];
+
+export interface TipeDataPihak {
+    id: number;
+    nama: string;
+    nip: string,
+    jabatan: string
+}
 
 export interface SortOption {
     label: string;
@@ -332,7 +504,7 @@ export interface EmployeeType {
     name: string;
     job: string;
     phone: string;
-    avatarUrl: string;
+    photo: string;
     status: string;
 }
 
@@ -342,7 +514,7 @@ export const employees = [
         name: 'Slamet Riyadi',
         job: 'Tim PPK',
         phone: '081234567858',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         status: 'Aktif',
     },
     {
@@ -350,7 +522,7 @@ export const employees = [
         name: 'Cahyo Budi',
         job: 'Tim PPK',
         phone: '081234567858',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         status: 'Aktif',
     },
     {
@@ -358,7 +530,7 @@ export const employees = [
         name: 'Kevin Anggara',
         job: 'Tim PPK',
         phone: '081234567858',
-        avatarUrl: PfpExample,
+        photo: PfpExample,
         status: 'Aktif',
     },
 ];
@@ -393,7 +565,8 @@ export interface TIPE_BARANG_BELANJA {
     satuan: string,
     jumlah: number,
     harga: number,
-    total_harga: number
+    total_harga: number,
+    statusPemeriksaan?: string
 }
 
 export const BARANG_BELANJA: TIPE_BARANG_BELANJA[] = [

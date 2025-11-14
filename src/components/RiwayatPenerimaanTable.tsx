@@ -4,6 +4,7 @@ import EyeIcon from '../assets/eye.svg?react';
 import Status from './status';
 import { useAuth } from '../hooks/useAuth';
 import { PATHS } from '../Routes/path';
+import { ROLES } from '../constant/roles';
 
 
 // Definisikan interface untuk data
@@ -39,7 +40,7 @@ export default function PenerimaanTable({
     const navigate = useNavigate()
 
     const handleActionClick = ( id: number ) => {
-        if (user?.role === 'Admin Gudang Umum') {
+        if (user?.role === ROLES.ADMIN_GUDANG) {
             navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }), {
                 state: {
                     data: currentItems.find(item => item.id === id)
@@ -52,19 +53,19 @@ export default function PenerimaanTable({
 
     const penerimaanColumns: ColumnDefinition<PenerimaanItem>[] = [
         {
-            header: 'NO SURAT',
+            header: 'No Surat',
             cell: (item) => <>{item.noSurat}</>
         },
         {
-            header: 'ROLE',
+            header: 'Role',
             cell: (item) => <>{item.role}</>
         },
         {
-            header: 'NAMA PEGAWAI',
+            header: 'Nama Pegawai',
             cell: (item) => <>{item.namaPegawai}</>
         },
         {
-            header: 'KATEGORI',
+            header: 'Kategori',
             cell: (item) => (
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${item.kategori === 'Komputer'
                     ? 'bg-blue-100 text-blue-800'
@@ -75,7 +76,7 @@ export default function PenerimaanTable({
             )
         },
         {
-            header: 'AKSI',
+            header: 'Aksi',
             cell: (item) => (
                 <div onClick={() => handleActionClick(item.id)} className='flex items-center gap-1 w-20 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'>
                     <EyeIcon className='w-7 h-7'/>
@@ -84,7 +85,7 @@ export default function PenerimaanTable({
             )
         },
         {
-            header: 'STATUS',
+            header: 'Status',
             cell: (item) => (
                 <Status
                     text={item.status}

@@ -7,12 +7,14 @@ import React, { useEffect, useRef, useState, type ChangeEvent, useMemo } from "r
 import Modal from "../components/modal"
 // --- TAMBAHAN: Impor service, auth, dan toast ---
 import { createAkun, updateAkun } from "../services/akunService"
-import { useToast } from "../context/toastContext"
+import { useToast } from "../hooks/useToast" 
 // ---------------------------------------------
 import { useAuthorization } from "../hooks/useAuthorization"
 import { useAuth } from "../hooks/useAuth"
 import WarnButton from "../components/warnButton"
 import { updatePegawai } from "../services/pegawaiService"
+import PasswordInput from "../components/passwordInput"
+import { ROLES } from "../constant/roles"
 
 
 export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean }) {
@@ -32,8 +34,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         return {
             user_id: Date.now(),
             sso_user_id: Date.now(),
-            username: '',
-            avatarUrl: selectedAvatar || '/default-avatar.png', // <-- Gunakan avatar yg di-upload
+            nama_pengguna: '',
+            photo: selectedAvatar || '/default-avatar.png', // <-- Gunakan avatar yg di-upload
             email: '',
             password: '',
             role: 'user',
@@ -54,7 +56,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
     // Logika: Super Admin bisa, atau user biasa HANYA jika 'isEdit' dan 'data.user_id' cocok
     const { user } = useAuth();
     const isOwner = isEdit && data?.user_id === user?.user_id;
-    const allRoles = ['Super Admin', 'Admin Gudang Umum', 'Tim PPK', 'Tim Teknis', 'Penanggung Jawab', 'Instalasi'];
+    console.log(isOwner)
+    const allRoles = Object.values(ROLES);
 
     const allowedRoles = useMemo(() => {
         if (isEmployeeEdit) {
@@ -63,9 +66,9 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         if (isEdit && !isEmployeeEdit) {
             return allRoles; // Jika edit profil sendiri, SEMUA ROLE boleh
         }
-        return ['Super Admin']; // Jika tambah akun baru, HANYA Super Admin
+        return [ROLES.SUPER_ADMIN]; // Jika tambah akun baru, HANYA Super Admin
     }, [isEdit, isEmployeeEdit]);
-    
+
     const { checkAccess, hasAccess } = useAuthorization(allowedRoles);
     // ---------------------------------------------
 
@@ -90,8 +93,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         // Jika mode edit, isi form dengan data dari location
         if (isEdit && data) {
             setFormData(data);
-            if (data.avatarUrl) {
-                setSelectedAvatar(data.avatarUrl); // Tampilkan avatar yang ada
+            if (data.photo) {
+                setSelectedAvatar(data.photo); // Tampilkan avatar yang ada
             }
         }
     }, [user, checkAccess, isEdit, data, isOwner]);
@@ -149,7 +152,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
             // Tentukan data yang akan dikirim
             const dataToSubmit = {
                 ...formData,
-                avatarUrl: selectedAvatar || formData.avatarUrl, // Pastikan avatar terkirim
+                avatarUrl: selectedAvatar || formData.photo, // Pastikan avatar terkirim
             };
 
             if (isEdit && !isEmployeeEdit) {
@@ -184,7 +187,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // Validasi sederhana
-        if (!isEmployeeEdit && (!formData.username || !formData.role)) {
+        if (!isEmployeeEdit && (!formData.nama_pengguna || !formData.role)) {
             showToast("Username dan Role wajib diisi!", "error");
             return;
         }
@@ -262,8 +265,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                             </div>
                         ) : (
                             // Tampilan untuk tambah akun baru atau edit admin
-                            <div className="grid grid-cols-2 flex-1 w-full gap-8">
-                                <div className="flex flex-col gap-4">
+                            <div className="grid grid-rows-2 flex-1 w-full gap-8">
+                                <div className="flex gap-4 w-full">
                                     <Input
                                         id="role"
                                         judul="Role"
@@ -271,26 +274,21 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                         value={formData.role || ''} // <-- Bind ke state
                                         name="role"
                                         onChange={handleChange}
+                                        className="w-1/2"
                                     />
                                     <Input
                                         id="username"
                                         judul="Username"
-                                        placeholder="Username"
-                                        value={formData.username || ''} // <-- Bind ke state
+                                        placeholder={isEdit ? "(Biarkan kosong jika tidak berubah)" : "Username"}
+                                        value={formData.nama_pengguna || ''} // <-- Bind ke state
                                         name="username"
                                         onChange={handleChange}
+                                        type="username"
+                                        className="w-1/2"
                                     />
+
                                 </div>
-                                <div className="flex flex-col gap-4">
-                                    <Input
-                                        id="password"
-                                        judul="Password"
-                                        placeholder={isEdit ? "(Biarkan kosong jika tidak berubah)" : "Password"}
-                                        value={formData.password || ''} // <-- Bind ke state
-                                        name="password"
-                                        onChange={handleChange}
-                                        type="password"
-                                    />
+                                <div className="flex gap-4">
                                     <Input
                                         id="email"
                                         judul="Email"
@@ -298,7 +296,20 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                         value={formData.email || ''} // <-- Bind ke state
                                         name="email"
                                         onChange={handleChange}
+                                        className="w-1/2"
                                     />
+                                    <div className="w-1/2">
+                                        {!isOwner && (
+                                            <PasswordInput
+                                                id="password"
+                                                judul="Password"
+                                                placeholder="Password"
+                                                value={formData.password || ''} // <-- Bind ke state
+                                                name="password"
+                                                onChange={handleChange}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

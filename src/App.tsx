@@ -18,6 +18,7 @@ import Unauthorized from './pages/unauthorized'
 import UnduhBast from './pages/unduhBAST'
 import LihatPenerimaan from './pages/lihatPenerimaan'
 import PemesananPage from './pages/pemesanan'
+import PenerimaanLayout from './components/PenerimaanLayout'
 
 function App() {
   return (
@@ -32,11 +33,13 @@ function App() {
         <Route path={PATHS.STOK_BARANG} element={<StokBarang />} />
         <Route path={PATHS.PENERIMAAN.INDEX}>
           <Route index element={<Penerimaan />} />
-          <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
-          <Route path={PATHS.PENERIMAAN.BARANG_BELANJA} element={<FormDataBarangBelanja />} />
-          <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true}/>} />
-          <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
-          <Route path={PATHS.PENERIMAAN.LIHAT} element={<LihatPenerimaan />} />
+          <Route element={<PenerimaanLayout />}>
+            <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
+            <Route path={PATHS.PENERIMAAN.BARANG_BELANJA} element={<FormDataBarangBelanja />} />
+            <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true}/>} />
+            <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
+            <Route path={PATHS.PENERIMAAN.LIHAT} element={<LihatPenerimaan />} />
+          </Route>
         </Route>
         <Route path={PATHS.PENGELUARAN} element={<Pengeluaran />} />
         <Route path={PATHS.PROFIL.INDEX}>

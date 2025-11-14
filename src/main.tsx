@@ -5,7 +5,7 @@ import App from './App.tsx'
 import ErrorBoundary from './components/errorBoundary.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider.tsx'
-import { ToastProvider } from './context/toastContext.tsx'
+import { ToastProvider } from './context/toastProvider.tsx' 
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

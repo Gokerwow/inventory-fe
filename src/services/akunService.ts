@@ -1,13 +1,35 @@
 import { MOCK_USERS, type MockUser } from '../Mock Data/data';
 import { simulateApiCall } from './utils';
+import apiClient from './api';
 
 /**
  * Mengambil semua data akun pengguna.
  * Digunakan di: src/pages/akun.tsx
  */
-export const getAkunUsers = (): Promise<MockUser[]> => {
+export const getAkunUsers = async (): Promise<MockUser[]> => {
     console.log("SERVICE: Mengambil semua data akun...");
-    return simulateApiCall(MOCK_USERS);
+    try {
+        const response = await apiClient.get('/api/akun')
+        console.log("Data akun diterima:", response.data);
+        const dataAkun = response.data as MockUser[];
+        return dataAkun;
+    } catch (error) {
+        // --- 2. FIX: Tangani error di sini ---
+        const errMsg = (() => {
+            if (error instanceof Error) return error.message;
+            if (typeof error === 'object' && error !== null) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const respMsg = (error as any).response?.data?.message;
+                if (typeof respMsg === 'string') return respMsg;
+            }
+            return String(error);
+        })();
+        console.error("Mengambil data akun gagal:", errMsg);
+        // Anda bisa menampilkan pesan error ini ke pengguna
+        // contoh: setLoginError(error.response.data.message);
+        // Kembalikan fallback (mock) agar fungsi selalu mengembalikan Promise<MockUser[]>
+        return simulateApiCall(MOCK_USERS);
+    }
 };
 
 /**
@@ -29,8 +51,8 @@ export const createAkun = (data: Partial<MockUser>): Promise<MockUser> => {
     const newAkun: MockUser = {
         user_id: Date.now(),
         sso_user_id: Date.now(),
-        username: data.username || 'userBaru',
-        avatarUrl: data.avatarUrl || '/default-avatar.png',
+        nama_pengguna: data.nama_pengguna || 'userBaru',
+        photo: data.photo || '/default-avatar.png',
         email: data.email || '',
         password: data.password || 'hashedpassword',
         role: data.role || 'user',

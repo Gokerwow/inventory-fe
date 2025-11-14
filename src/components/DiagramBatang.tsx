@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 // --- TAMBAHAN: Tentukan tipe data yang diharapkan ---
 interface ChartData {
@@ -12,15 +12,6 @@ interface DiagramBatangProps {
 }
 
 const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <-- UBAHAN: Terima 'data'
-    
-    // --- HAPUS: Blok data hardcoded di bawah ini dihapus ---
-    // const data = [
-    //     {
-    //         bulan: 'Agustus',
-    //         value: type === 'masuk' ? 55 : 32,
-    //     },
-    //     ...
-    // ];
 
     const chartConfig = {
         masuk: {
@@ -33,6 +24,7 @@ const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <--
         }
     };
 
+    const COLORS = ['#5F97DF', '#F28671', '#5EC586'];
     const config = chartConfig[type];
 
     return (
@@ -48,7 +40,7 @@ const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <--
                         tick={{ fill: '#666' }}
                     />
                     <YAxis
-                        label={{ value: 'juta', angle: -90, position: 'insideLeft' }}
+                        label={{ angle: -90, position: 'insideLeft' }}
                         tick={{ fill: '#666' }}
                     />
                     <Tooltip />
@@ -62,7 +54,16 @@ const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <--
                         fill={config.color}
                         name={config.label}
                         radius={[4, 4, 0, 0]}
-                    />
+                    >
+                        {/* --- 4. Petakan data Anda ke <Cell> --- */}
+                        {data.map((_, index) => (
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                            />
+                        ))}
+
+                    </Bar>
                 </BarChart>
             </ResponsiveContainer>
         </div>

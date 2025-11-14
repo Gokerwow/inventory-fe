@@ -1,112 +1,49 @@
 import UserIcon from '../assets/user-square.svg?react'
 import ShopCartIcon from '../assets/shopCart.svg?react'
-import { NavLink, useNavigate, useLocation, useParams } from 'react-router-dom'; // <-- TAMBAHAN: useLocation, useParams
+import { useNavigate, useParams } from 'react-router-dom';
 import DropdownInput from '../components/dropdownInput';
 import Input from '../components/input';
 import ButtonConfirm from '../components/buttonConfirm';
 import WarnButton from '../components/warnButton';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
-// --- UBAHAN: Tambah useEffect, useState, useMemo ---
 import React, { useEffect, useState, useMemo } from 'react';
 import { PATHS } from '../Routes/path';
-import { type TIPE_BARANG_BELANJA } from '../Mock Data/data';
-// --- TAMBAHAN: Impor service, toast, dan modal ---
+import { dataPihak, type TipeDataPihak } from '../Mock Data/data';
 import {
     getPenerimaanDetail,
     getBarangBelanjaByPenerimaanId,
     createPenerimaan,
-    // updatePenerimaan // (Kita akan buat ini di service jika diperlukan)
 } from '../services/penerimaanService';
-import { useToast } from '../context/toastContext';
+import { useToast } from '../hooks/useToast';
 import Modal from '../components/modal';
-// --------------------------------------------------
-
-const namaOptions = [
-    "Ritay Protama",
-    "Aveli Saputra",
-    "Nadia Fitrani",
-    "Sababila Nuratni",
-    "Devil Katitka"
-];
-
-// --- TAMBAHAN: Tipe data untuk form ---
-interface FormData {
-    id: number,
-    noSurat: string,
-    namaPihakPertama: string,
-    jabatanPihakPertama: string,
-    NIPPihakPertama: string,
-    alamatSatkerPihakPertama: string,
-    namaPihakKedua: string,
-    jabatanPihakKedua: string,
-    NIPPihakKedua: string,
-    alamatSatkerPihakKedua: string,
-    deskripsiBarang: string,
-    // barang akan dikelola di state terpisah
-}
-// ------------------------------------
+import { usePenerimaan } from '../hooks/usePenerimaan';
+import { ROLES } from '../constant/roles';
 
 export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean }) {
-
-    // --- UBAHAN: Stabilkan role ---
-    const requiredRoles = useMemo(() => ['Tim PPK', 'Tim Teknis'], []);
+    const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS], []);
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
-    // -------------------------------
-
-    const { user } = useAuth()
+    const { user } = useAuth() // ✅ Ambil data user
     const navigate = useNavigate()
-    const location = useLocation()
-    const { id: paramId } = useParams(); // <-- TAMBAHAN: Ambil 'id' dari URL untuk mode edit
-    const { showToast } = useToast(); // <-- TAMBAHAN
+    const { id: paramId } = useParams();
+    const { showToast } = useToast();
 
-    // --- TAMBAHAN: State untuk loading & submit ---
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // --------------------------------------------
 
-    const [barang, setBarang] = useState<TIPE_BARANG_BELANJA[]>([])
+    const { barang, setBarang, formDataPenerimaan, setFormDataPenerimaan } = usePenerimaan()
 
-    // --- UBAHAN: State form ---
-    const [formDataPenerimaan, setFormDataPenerimaan] = useState<FormData>({
-        id: 0,
-        noSurat: '',
-        namaPihakPertama: '',
-        jabatanPihakPertama: '',
-        NIPPihakPertama: '',
-        alamatSatkerPihakPertama: '',
-        namaPihakKedua: '',
-        jabatanPihakKedua: '',
-        NIPPihakKedua: '',
-        alamatSatkerPihakKedua: '',
-        deskripsiBarang: '',
-    });
-    // ----------------------------
-
-    const { data: dataFromLocation } = location.state || {} // Ganti nama agar tidak bentrok
-
-    // --- UBAHAN: useEffect untuk mengambil data barang baru (dari form sebelah) ---
     useEffect(() => {
-        if (dataFromLocation && dataFromLocation.nama_barang) {
-            // Cek duplikasi
-            setBarang(prev => {
-                const isExist = prev.some(item => item.id === dataFromLocation.id);
-                if (isExist) return prev;
-                return [...prev, dataFromLocation];
-            });
+        // Fungsi ini akan berjalan SETIAP KALI state 'barang' 
+        // selesai diperbarui oleh React.
 
-            // Clear state setelah data diambil
-            navigate(location.pathname, {
-                replace: true,
-                state: null // Hapus state dari lokasi
-            });
-        }
-    }, [dataFromLocation, location.pathname, navigate]);
-    // -------------------------------------------------------------------------
+        console.log("✅ State 'barang' telah diperbarui:", barang);
 
-    // --- TAMBAHAN: useEffect untuk mengambil data (mode edit) ---
+    }, [barang]);
+
+    // useEffect untuk mode edit
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
@@ -117,30 +54,27 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                 setError(null);
                 try {
                     const id = Number(paramId);
-                    // Ambil data detail form dan data barang secara bersamaan
                     const [detailData, barangData] = await Promise.all([
                         getPenerimaanDetail(id),
                         getBarangBelanjaByPenerimaanId(id)
                     ]);
 
                     if (detailData) {
-                        // Isi data form
                         setFormDataPenerimaan({
                             id: detailData.id,
                             noSurat: detailData.noSurat,
-                            namaPihakPertama: detailData.namaPegawai, // Sesuaikan field-nya
-                            // ... isi field lainnya dari detailData
-                            jabatanPihakPertama: 'Jabatan Dummy', // Ganti dengan data asli nanti
-                            NIPPihakPertama: '123456', // Ganti dengan data asli nanti
-                            alamatSatkerPihakPertama: 'Alamat Dummy', // Ganti dengan data asli nanti
-                            namaPihakKedua: 'Pihak Kedua Dummy', // Ganti dengan data asli nanti
-                            jabatanPihakKedua: 'Jabatan Dummy', // Ganti dengan data asli nanti
-                            NIPPihakKedua: '654321', // Ganti dengan data asli nanti
-                            alamatSatkerPihakKedua: 'Alamat Dummy', // Ganti dengan data asli nanti
-                            deskripsiBarang: 'Deskripsi Dummy', // Ganti dengan data asli nanti
+                            namaPihakPertama: detailData.namaPegawai,
+                            jabatanPihakPertama: 'Jabatan Dummy',
+                            NIPPihakPertama: '123456',
+                            alamatSatkerPihakPertama: 'Alamat Dummy',
+                            namaPihakKedua: 'Pihak Kedua Dummy',
+                            jabatanPihakKedua: 'Jabatan Dummy',
+                            NIPPihakKedua: '654321',
+                            alamatSatkerPihakKedua: 'Alamat Dummy',
+                            deskripsiBarang: 'Deskripsi Dummy',
                         });
                     }
-                    setBarang(barangData); // Isi daftar barang
+                    setBarang(barangData);
                 } catch (err) {
                     console.error(err);
                     setError("Gagal memuat data penerimaan.");
@@ -150,17 +84,36 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
             };
             fetchData();
         }
-    }, [isEdit, paramId, user, checkAccess, hasAccess]); // <-- Dependensi
-    // -----------------------------------------------------------
+    }, [isEdit, paramId, user, checkAccess, hasAccess, setFormDataPenerimaan, setBarang]);
 
-    // Early return jika tidak memiliki akses
     if (!hasAccess(user?.role)) {
         return null;
     }
 
-    const handleAddClick = () => { // Hapus parameter 'barang'
-        navigate(PATHS.PENERIMAAN.BARANG_BELANJA) // Langsung navigasi
+    // ✅ FIXED: Handler untuk navigasi ke form barang
+    const handleAddClick = () => {
+        console.log('➕ Navigasi ke form barang belanja');
+        console.log('📊 Barang yang sudah ada:', barang.length);
+
+        navigate(PATHS.PENERIMAAN.BARANG_BELANJA);
     }
+
+    // ✅ TAMBAHAN: Handler untuk hapus barang
+    const handleDeleteBarang = (id: number) => {
+        setBarang(prev => prev.filter(item => item.id !== id));
+        showToast('Barang berhasil dihapus', 'success');
+    };
+
+    // ✅ PERUBAHAN: Handler untuk status barang (Tim Teknis)
+    const handleStatusChange = (id: number, status: 'Layak' | 'Tidak Layak') => {
+        setBarang(prevBarang =>
+            prevBarang.map(item => {
+                console.log(`✅ Barang ID ${item.id} ditandai. Status baru: ${item.statusPemeriksaan}`);
+                return item.id === id ? { ...item, statusPemeriksaan: status } : item;
+            })
+        );
+        showToast(`Barang ditandai ${status}`, 'success');
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -170,14 +123,38 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         }));
     };
 
-    // --- UBAHAN: Logika submit form ---
+    const handlePihakPertamaChange = (pihak: TipeDataPihak | null) => {
+        setFormDataPenerimaan(prev => ({
+            ...prev,
+            namaPihakPertama: pihak ? pihak.nama : '',
+            jabatanPihakPertama: pihak ? pihak.jabatan : '',
+            NIPPihakPertama: pihak ? pihak.nip : '',
+        }));
+    };
+
+    const handlePihakKeduaChange = (pihak: TipeDataPihak | null) => {
+        setFormDataPenerimaan(prev => ({
+            ...prev,
+            namaPihakKedua: pihak ? pihak.nama : '',
+            jabatanPihakKedua: pihak ? pihak.jabatan : '',
+            NIPPihakKedua: pihak ? pihak.nip : '',
+        }));
+    };
+
     const handleConfirmSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
-        // Validasi
         if (!formDataPenerimaan.noSurat || !formDataPenerimaan.namaPihakPertama) {
             showToast("Nomor Surat dan Nama Pihak Pertama wajib diisi!", "error");
+            setIsSubmitting(false);
+            setIsModalOpen(false);
+            return;
+        }
+
+        // ✅ VALIDASI: Pastikan ada barang
+        if (barang.length === 0) {
+            showToast("Tambahkan minimal 1 barang belanja!", "error");
             setIsSubmitting(false);
             setIsModalOpen(false);
             return;
@@ -186,19 +163,18 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         try {
             const dataFinal = {
                 ...formDataPenerimaan,
-                barang: barang // Sertakan daftar barang
+                barang: barang // State 'barang' sudah berisi 'status_pemeriksaan' jika diisi
             };
 
             if (isEdit) {
-                // await updatePenerimaan(dataFinal); // Panggil service update
                 showToast("Berhasil mengupdate data penerimaan!", "success");
             } else {
-                await createPenerimaan(dataFinal); // Panggil service create
+                await createPenerimaan(dataFinal);
                 showToast("Berhasil membuat data penerimaan!", "success");
             }
 
             setIsModalOpen(false);
-            navigate(PATHS.PENERIMAAN.INDEX); // Kembali ke daftar
+            navigate(PATHS.PENERIMAAN.INDEX);
 
         } catch (err) {
             console.error(err);
@@ -211,11 +187,9 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log('Form Data Penerimaan Siap Submit:', { ...formDataPenerimaan, barang });
-        setIsModalOpen(true); // Buka modal konfirmasi
+        setIsModalOpen(true);
     }
-    // ------------------------------------
 
-    // --- TAMBAHAN: Tampilkan UI Loading ---
     if (isLoading) {
         return (
             <div className="bg-white p-8 rounded-xl flex justify-center items-center h-96">
@@ -224,7 +198,6 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         );
     }
 
-    // --- TAMBAHAN: Tampilkan UI Error ---
     if (error) {
         return (
             <div className="bg-white p-8 rounded-xl flex justify-center items-center h-96">
@@ -232,12 +205,10 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
             </div>
         );
     }
-    // ------------------------------------
 
     return (
         <div className="bg-white p-8 rounded-xl">
             <div className="text-center flex flex-col gap-4 p-4">
-                {/* --- UBAHAN: Judul dinamis --- */}
                 <h1 className="text-3xl text-[#057CFF] font-bold">
                     {isEdit ? "Edit Data Penerimaan" : "Form Data Penerimaan"}
                 </h1>
@@ -248,14 +219,16 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                 <div className='grid grid-cols-2 gap-8'>
                     {/* PIHAK PERTAMA */}
                     <div className="flex flex-col gap-6 p-6 bg-white rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.1)]">
-                        {/* ... (UI Pihak Pertama) ... */}
-                        {/* --- UBAHAN: Bind 'value' dan 'onChange' --- */}
+                        <div className='flex gap-2 items-center'>
+                            <UserIcon />
+                            <h1 className='text-xl font-semibold'>Pihak Pertama</h1>
+                        </div>
                         <DropdownInput
-                            options={namaOptions}
+                            options={dataPihak}
                             placeholder='Masukkan Nama'
                             judul='Nama Lengkap'
                             value={formDataPenerimaan.namaPihakPertama}
-                            onChange={(value) => setFormDataPenerimaan(prev => ({ ...prev, namaPihakPertama: value }))}
+                            onChange={handlePihakPertamaChange}
                             name='namaPihakPertama'
                             type='button'
                         />
@@ -266,6 +239,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             onChange={handleChange}
                             name='jabatanPihakPertama'
                             value={formDataPenerimaan.jabatanPihakPertama}
+                            readOnly={true}
                         />
                         <Input
                             id="NIPPihakPertama"
@@ -275,6 +249,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             onChange={handleChange}
                             name='NIPPihakPertama'
                             value={formDataPenerimaan.NIPPihakPertama}
+                            readOnly={true}
                         />
                         <Input
                             id="alamatSatkerPihakPertama"
@@ -288,15 +263,17 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
 
                     {/* PIHAK KEDUA */}
                     <div className="flex flex-col gap-6 p-6 bg-white rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.1)]">
-                        {/* ... (UI Pihak Kedua) ... */}
-                        {/* --- UBAHAN: Bind 'value' dan 'onChange' --- */}
+                        <div className='flex gap-2 items-center'>
+                            <UserIcon />
+                            <h1 className='text-xl font-semibold'>Pihak Kedua</h1>
+                        </div>
                         <DropdownInput
-                            options={namaOptions}
+                            options={dataPihak}
                             placeholder='Masukkan Nama'
                             judul='Nama Lengkap'
                             type='button'
                             value={formDataPenerimaan.namaPihakKedua}
-                            onChange={(value) => setFormDataPenerimaan(prev => ({ ...prev, namaPihakKedua: value }))}
+                            onChange={handlePihakKeduaChange}
                             name='namaPihakKedua'
                         />
                         <Input
@@ -306,6 +283,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             onChange={handleChange}
                             name='jabatanPihakKedua'
                             value={formDataPenerimaan.jabatanPihakKedua}
+                            readOnly={true}
                         />
                         <Input
                             id="NIPPihakKedua"
@@ -315,6 +293,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             onChange={handleChange}
                             name='NIPPihakKedua'
                             value={formDataPenerimaan.NIPPihakKedua}
+                            readOnly={true}
                         />
                         <Input
                             id="alamatSatkerPihakKedua"
@@ -353,7 +332,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                         <label className="mb-2 font-semibold">Deskripsi</label>
                         <div className="relative w-full">
                             <textarea
-                                id="deskripsiBarang" // <-- 'id' harus unik
+                                id="deskripsiBarang"
                                 placeholder='Masukkan Deskripsi Anda'
                                 className="text-[#6E7781] border-2 border-[#CDCDCD] rounded-lg text-sm px-5 py-2.5 w-full h-40 align-top focus:outline-none focus:border-blue-500"
                                 onChange={handleChange}
@@ -366,117 +345,154 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
 
                 {/* BUAT DAFTAR BELANJA */}
                 <div className='shadow-[0_0_10px_rgba(0,0,0,0.1)] rounded-xl'>
-                    {/* --- UBAHAN: Logika tampilan daftar barang --- */}
-                    {!barang || barang.length === 0 ?
-                        (
-                            <div className='flex flex-col py-20 gap-4 items-center cursor-pointer select-none'>
-                                <div onClick={handleAddClick} className='active:scale-95 hover:scale-110 transition-all duration-200'>
-                                    <ShopCartIcon />
-                                </div>
-                                <span className='text-[#057CFF] font-bold text-2xl'>Buat Daftar Belanja</span>
+                    {!barang || barang.length === 0 ? (
+                        <div className='flex flex-col py-20 gap-4 items-center cursor-pointer select-none'>
+                            <div onClick={handleAddClick} className='active:scale-95 hover:scale-110 transition-all duration-200'>
+                                <ShopCartIcon />
                             </div>
-                        ) : (
-                            <>
-                                <div className="flex justify-between items-center border-b border-gray-200 p-6">
-                                    <h2 className="text-3xl font-bold text-gray-800">
-                                        Data Barang Belanja
-                                    </h2>
-                                    <button onClick={handleAddClick} type="button" className="bg-green-500 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 rounded-lg text-white font-medium py-2 px-5 shadow-sm">
-                                        Tambah Barang
-                                    </button>
-                                </div>
+                            <span className='text-[#057CFF] font-bold text-2xl'>Buat Daftar Belanja</span>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex justify-between items-center border-b border-gray-200 p-6">
+                                <h2 className="text-3xl font-bold text-gray-800">
+                                    Data Barang Belanja ({barang.length} item)
+                                </h2>
+                                {user?.role === ROLES.PPK && <button
+                                    onClick={handleAddClick}
+                                    type="button"
+                                    className="bg-green-500 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 rounded-lg text-white font-medium py-2 px-5 shadow-sm"
+                                >
+                                    Tambah Barang
+                                </button>}
+                            </div>
 
-                                <div className="overflow-x-auto min-h-100">
-                                    <table className="min-w-full text-left table-fixed">
-                                        <thead>
-                                            <tr className="border-b border-gray-200">
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                                                    Nama Barang
-                                                </th>
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider ">
-                                                    Kategori
-                                                </th>
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider text-center">
-                                                    Satuan
-                                                </th>
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider text-center">
-                                                    Jumlah
-                                                </th>
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider text-center">
-                                                    Harga
-                                                </th>
-                                                <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider text-center">
-                                                    Total Harga
-                                                </th>
-                                                {user?.role === 'Tim Teknis' &&
-                                                    <th className="py-3 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider text-center col-span-2">
-                                                        Aksi
-                                                    </th>
-                                                }
+                            <div className="overflow-x-auto min-h-100">
+                                <table className="min-w-full text-left table-fixed">
+                                    <thead>
+                                        <tr className="border-b border-gray-200">
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider">
+                                                Nama Barang
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider ">
+                                                Kategori
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
+                                                Satuan
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
+                                                Jumlah
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
+                                                Harga
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
+                                                Total Harga
+                                            </th>
+                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
+                                                Aksi
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {barang.filter(item => item && item.nama_barang).map((item, index) => (
+                                            <tr
+                                                key={item.id || index}
+                                                className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                                            >
+                                                <td className="py-4 px-6 text-[#6E7781] font-medium">
+                                                    {item.nama_barang}
+                                                </td>
+                                                <td className="py-4 px-6 text-[#6E7781]">
+                                                    {item.kategori}
+                                                </td>
+                                                <td className="py-4 px-6 text-[#6E7781] text-center">
+                                                    {item.satuan}
+                                                </td>
+                                                <td className="py-4 px-6 text-[#6E7781] text-center">
+                                                    {item.jumlah}
+                                                </td>
+                                                <td className="py-4 px-6 text-[#6E7781] text-center">
+                                                    Rp {new Intl.NumberFormat('id-ID').format(item.harga)}
+                                                </td>
+                                                <td className="py-4 px-6 text-[#6E7781] text-center">
+                                                    Rp {new Intl.NumberFormat('id-ID').format(item.total_harga)}
+                                                </td>
+
+                                                {/* ✅ PERUBAHAN: Tombol Aksi berdasarkan role */}
+                                                <td className="py-4 px-6 text-center">
+                                                    {user?.role === ROLES.TEKNIS ? (
+                                                        // Jika TIM TEKNIS
+                                                        <>
+                                                            {item.statusPemeriksaan === 'Layak' ? (
+                                                                // Status Layak -> Tampilkan Tag Hijau
+                                                                <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                                    Layak
+                                                                </span>
+                                                            ) : item.statusPemeriksaan === 'Tidak Layak' ? (
+                                                                // Status Tidak Layak -> Tampilkan Tag Merah
+                                                                <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                                    Tidak Layak
+                                                                </span>
+                                                            ) : (
+                                                                // Belum ada status -> Tampilkan Tombol
+                                                                <div className="flex justify-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleStatusChange(item.id, 'Layak')}
+                                                                        className="text-green-500 hover:text-green-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
+                                                                    >
+                                                                        Layak
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleStatusChange(item.id, 'Tidak Layak')}
+                                                                        className="text-red-500 hover:text-red-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
+                                                                    >
+                                                                        Tidak Layak
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        // Jika BUKAN Tim Teknis (misal Tim PPK) -> Tampilkan Hapus
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteBarang(item.id)}
+                                                            className="text-red-500 hover:text-red-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {barang.filter(item => item && item.nama_barang).map((item) => (
-                                                <tr
-                                                    key={item.id}
-                                                    className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
-                                                >
-                                                    <td className="py-4 px-6 text-gray-700 font-medium">
-                                                        {item.nama_barang}
-                                                    </td>
-                                                    <td className="py-4 px-6 text-gray-700 ">
-                                                        {item.kategori}
-                                                    </td>
-                                                    <td className="py-4 px-6 text-gray-700 text-center">
-                                                        {item.satuan}
-                                                    </td>
-                                                    <td className="py-4 px-6 text-gray-700 text-center">
-                                                        {item.jumlah}
-                                                    </td>
-                                                    <td className="py-4 px-6 text-gray-700 text-center">
-                                                        {item.harga}
-                                                    </td>
-                                                    <td className="py-4 px-6 text-gray-700 text-center">
-                                                        {item.total_harga}
-                                                    </td>
-                                                    {user?.role === 'Tim Teknis' &&
-                                                        <td className="flex justify-center items-center py-4 px-6 gap-3 text-white font-semibold">
-                                                            <div className="px-4 py-3 text-center bg-green-500 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 rounded-lg">
-                                                                Layak
-                                                            </div>
-                                                            <div className="px-4 py-3 text-center bg-red-500 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 rounded-lg">
-                                                                Tidak
-                                                            </div>
-                                                        </td>
-                                                    }
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        )}
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div className='flex justify-end gap-4'>
-                    {isEdit && <WarnButton text='Hapus' />}
+                    {isEdit && user?.role === ROLES.PPK && <WarnButton text='Hapus' />}
                     <ButtonConfirm
                         text={isSubmitting ? "Menyimpan..." : "Selesai"}
                         type='submit'
-                        disabled={isSubmitting} // <-- TAMBAHAN
+                        disabled={isSubmitting}
                     />
                 </div>
             </form>
 
-            {/* --- TAMBAHAN: Modal Konfirmasi --- */}
+            {/* Modal Konfirmasi */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin data yang di buat sudah benar?"
+                text="Apa anda yakin data yang dibuat sudah benar?"
             >
-                <div className="flex gap-4 justify-endz`">
+                <div className="flex gap-4 justify-end">
                     <ButtonConfirm
                         text={isSubmitting ? "Menyimpan..." : "Iya"}
                         type="button"

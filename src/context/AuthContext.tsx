@@ -1,11 +1,12 @@
 // src/context/AuthContext.jsx
-import type { MockUser, UserRoles } from '../Mock Data/data.ts'
+import type { Usernames } from '../constant/roles.ts';
+import type { MockUser } from '../Mock Data/data.ts'
 import { createContext } from 'react';
 
 export interface AuthContextType {
     user: MockUser | null;
     isAuthenticated: boolean;
-    login: (role: UserRoles) => void;
+    login: (username: Usernames) => void;
     logout: () => void;
 }
 

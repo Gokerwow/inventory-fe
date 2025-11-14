@@ -8,13 +8,14 @@ import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { PenerimaanData, riwayatUpload } from '../Mock Data/data';
+import { ROLES } from '../constant/roles';
 type PenerimaanItem = typeof PenerimaanData[0];
 type RiwayatItem = typeof riwayatUpload[0];
 
 const PenerimaanPage = () => {
     // --- TAMBAHAN: State untuk loading, error, dan data ---
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);
-    const [riwayatItems, setRiwayatItems] = useState<any[]>([]); // Kita pakai 'any' dulu untuk riwayat
+    const [riwayatItems, setRiwayatItems] = useState<RiwayatItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +25,7 @@ const PenerimaanPage = () => {
     const [activeTab, setActiveTab] = useState('penerimaan');
 
     const requiredRoles = useMemo(() => 
-        ['Admin Gudang Umum', 'Tim PPK', 'Tim Teknis'], 
+        [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], 
         [] // <-- Array dependensi kosong, artinya HANYA dibuat 1x
     );
 
@@ -55,7 +56,7 @@ const PenerimaanPage = () => {
                     // Untuk sekarang, agar tidak error, kita tetap pakai getPenerimaanList()
                     // seperti logika awal Anda.
                     // const data = await getRiwayatPenerimaanList(); // <-- Ini yang seharusnya
-                    const data = await getPenerimaanList(); // <-- Ini mengikuti logika lama Anda agar UI tidak rusak
+                    const data = await getRiwayatPenerimaanList(); // <-- Ini mengikuti logika lama Anda agar UI tidak rusak
                     setRiwayatItems(data);
                 }
             } catch (err) {
@@ -107,7 +108,7 @@ const PenerimaanPage = () => {
                         Riwayat Penerimaan
                     </h1>
                 </div>
-                {user?.role === 'Tim PPK' ?
+                {user?.role === ROLES.PPK && activeTab === 'penerimaan' ?
                     <div className='cursor-pointer hover:scale-110 transition-all duration-200 active:scale-85'>
                         <NavLink to={PATHS.PENERIMAAN.TAMBAH}>
                             <PlusIcon />
