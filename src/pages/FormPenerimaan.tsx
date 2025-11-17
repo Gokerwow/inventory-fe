@@ -23,6 +23,7 @@ import { usePenerimaan } from '../hooks/usePenerimaan';
 import { ROLES, type Kategori, type SelectPihak } from '../constant/roles';
 import { getKategoriList } from '../services/kategoriService';
 import { getPegawaiSelect } from '../services/pegawaiService';
+import axios from 'axios';
 
 export default function TambahPenerimaan({ isEdit = false, isInspect = false }: { isEdit?: boolean, isInspect?: boolean }) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS], []);
@@ -433,11 +434,49 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
             navigate(PATHS.PENERIMAAN.INDEX);
 
         } catch (err) {
-            // --- GAGAL (Umum untuk kedua alur) ---
-            console.error(err);
-            showToast("Terjadi kesalahan saat menyimpan data.", "error");
+            console.error("❌ Error submit:", err);
             setIsSubmitting(false);
             setIsModalOpen(false);
+
+            // ✅ ERROR HANDLING CANGGIH DISINI
+            if (axios.isAxiosError(err) && err.response) {
+                const status = err.response.status;
+                const data = err.response.data;
+
+                // 1. Handle Validasi Laravel (422)
+                if (status === 422) {
+                    if (data.errors) {
+                        // Cek spesifik error No Surat
+                        if (data.errors.no_surat) {
+                            showToast(`Gagal: ${data.errors.no_surat[0]}`, "error");
+                        }
+                        // Cek error lainnya (misal stok_id invalid, dll)
+                        else {
+                            // Ambil pesan error pertama yang ketemu
+                            const firstErrorKey = Object.keys(data.errors)[0];
+                            const firstErrorMessage = data.errors[firstErrorKey][0];
+                            showToast(`Validasi Gagal: ${firstErrorMessage}`, "error");
+                        }
+                    } else {
+                        showToast(data.message || "Data yang dikirim tidak valid.", "error");
+                    }
+                }
+                // 2. Handle Not Found (404)
+                else if (status === 404) {
+                    showToast("Data tidak ditemukan atau URL salah.", "error");
+                }
+                // 3. Handle Server Error (500)
+                else if (status === 500) {
+                    showToast("Terjadi kesalahan di server (Backend Error).", "error");
+                }
+                // 4. Error Lainnya
+                else {
+                    showToast(data.message || `Terjadi kesalahan (${status})`, "error");
+                }
+            } else {
+                // Error bukan dari Axios (misal codingan frontend salah)
+                showToast(err.message || "Terjadi kesalahan sistem.", "error");
+            }
         }
     };
 

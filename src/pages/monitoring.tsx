@@ -1,72 +1,61 @@
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale'; // Impor locale Indonesia
+import { id } from 'date-fns/locale';
 import BurgerDot from '../assets/burgerDot.svg?react'
 import Status from '../components/status';
 import Pagination from '../components/pagination';
-import { useEffect, useRef, useState } from 'react';
-import { sortOptions, type SortOption } from '../Mock Data/data'; // Biarkan 'SortOption'
-import { getLogAktivitas } from '../services/monitoringServices'; // <-- Impor service
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { getLogAktivitas } from '../services/monitoringServices';
 import { Transition } from '@headlessui/react';
 import Dropdown from '../components/dropdown';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
-import { ROLES } from '../constant/roles';
+import { ROLES, type LogItem } from '../constant/roles';
 import PfpExample from '../assets/Pfp Example.jpeg';
-import { type LogItem } from '../constant/roles';
+import type { SortOption } from '../Mock Data/data';
 
-// interface FormatTanggalProps {
-//     isoString: string;
-// }
-
-
-// function FormatTanggal({ isoString }: FormatTanggalProps) {
-//     if (!isoString) return null;
-
-//     const date = new Date(isoString);
-//     const formatted = format(date, 'dd MMMM yyyy', { locale: id })
-
-//     return <>{formatted}</>
-// }
-
-// function FormatWaktu({ isoString }: FormatTanggalProps) {
-//     if (!isoString) return null;
-
-//     const date = new Date(isoString);
-//     const formatted = format(date, 'HH.mm', { locale: id })
-
-//     return <>{formatted}</>
-// }
-
+// ✅ UPDATE: Tambahkan properti 'icon' pada opsi sort
+const sortOptions: SortOption[] = [
+    { label: 'Terbaru', value: 'latest', icon: '↓' }, // Descending (Waktu Besar ke Kecil)
+    { label: 'Terlama', value: 'oldest', icon: '↑' }, // Ascending (Waktu Kecil ke Besar)
+];
 
 export default function MonitoringPage() {
-
     const [dataLog, setDataLog] = useState<LogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 7;
 
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedSort, setSelectedSort] = useState('A - Z');
+
+    // State sorting
+    const [selectedSortValue, setSelectedSortValue] = useState('latest');
+    const [selectedSortLabel, setSelectedSortLabel] = useState('Terbaru');
+
     const dropdownRef = useRef<HTMLDivElement>(null);
     const transitionRef = useRef(null)
 
     const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
     const { user } = useAuth()
 
-    // --- TAMBAHAN: useEffect untuk mengambil data ---
     useEffect(() => {
         checkAccess(user?.role);
-        if (!hasAccess(user?.role)) {
-            return;
-        }
+        if (!hasAccess(user?.role)) return;
 
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const logs = await getLogAktivitas();
-                setDataLog(logs);
+                // Fetch data tanpa sorting backend (atau sesuaikan jika backend support)
+                const response = await getLogAktivitas(currentPage, itemsPerPage);
+
+                if (Array.isArray(response)) {
+                    setDataLog(response);
+                } else {
+                    setDataLog(response.data);
+                    setTotalItems(response.total);
+                }
                 setError(null);
             } catch (err) {
                 console.error(err);
@@ -77,39 +66,37 @@ export default function MonitoringPage() {
         };
 
         fetchData();
-    }, [user, checkAccess, hasAccess]); // <-- Dependensi sudah benar
+    }, [user, checkAccess, hasAccess, currentPage]);
 
-    // Early return jika tidak memiliki akses
-    if (!hasAccess(user?.role)) {
-        return null;
-    }
+    // Logika Sorting Frontend (Updated)
+    const sortedData = useMemo(() => {
+        const dataToSort = [...dataLog];
+
+        return dataToSort.sort((a, b) => {
+            // Pastikan format tanggal valid
+            const dateA = new Date(`${a.tanggal} ${a.waktu}`).getTime();
+            const dateB = new Date(`${b.tanggal} ${b.waktu}`).getTime();
+
+            if (selectedSortValue === 'latest') {
+                return dateB - dateA; // Terbaru (Desc)
+            } else {
+                return dateA - dateB; // Terlama (Asc)
+            }
+        });
+    }, [dataLog, selectedSortValue]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
 
     const handleSelectedSort = (option: SortOption) => {
-        setSelectedSort(option.label);
-        setIsOpen(false)
-        console.log('Sorting by:', option.value);
-
-        // --- TAMBAHAN: Logika sorting ---
-        setDataLog(prevData => {
-            const sortedData = [...prevData];
-            // Contoh sorting berdasarkan role (ganti 'role' jika ingin sort by 'timestamp')
-            sortedData.sort((a, b) => {
-                if (option.value === 'asc') {
-                    return a.role.localeCompare(b.role);
-                } else {
-                    return b.role.localeCompare(a.role);
-                }
-            });
-            return sortedData;
-        });
-        // -------------------------------
+        setSelectedSortLabel(option.label);
+        setSelectedSortValue(option.value);
+        setIsOpen(false);
     }
 
-    // --- TAMBAHAN: Tampilkan UI Loading ---
+    if (!hasAccess(user?.role)) return null;
+
     if (isLoading) {
         return (
             <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
@@ -118,7 +105,6 @@ export default function MonitoringPage() {
         );
     }
 
-    // --- TAMBAHAN: Tampilkan UI Error ---
     if (error) {
         return (
             <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
@@ -127,22 +113,17 @@ export default function MonitoringPage() {
         );
     }
 
-    // --- UBAHAN: Pindahkan logika pagination ke sini ---
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = dataLog.slice(startIndex, startIndex + itemsPerPage); // <-- Gunakan dataLog dari state
-
     return (
         <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex flex-col">
             <div className="relative mb-8" ref={dropdownRef}>
                 <div className="w-full text-center">
-
                     <h1 className="text-2xl font-semibold text-black border-b-4 border-black inline-flex leading-15">
                         Log Aktivitas pengguna
                     </h1>
-
                 </div>
 
-                <button onClick={() => setIsOpen(!isOpen)} aria-label='Menu' className="absolute top-0 right-0 p-3 bg-white rounded-lg shadow-md hover:bg-gray-100 cursor-pointer  hover:scale-110 active:scale-95 transition-all duration-200">
+                {/* Tombol Dropdown Sort */}
+                <button onClick={() => setIsOpen(!isOpen)} className="absolute top-0 right-0 p-3 bg-white rounded-lg shadow-md hover:bg-gray-100 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200">
                     <BurgerDot className='w-10 h-10' />
                 </button>
 
@@ -155,14 +136,11 @@ export default function MonitoringPage() {
                     leaveFrom="transform opacity-100 scale-100 translate-y-0"
                     leaveTo="transform opacity-0 scale-95 -translate-y-2"
                 >
-                    <div
-                        ref={transitionRef}
-                        className="absolute right-0 z-50 w-56 mt-2 origin-top-right" // Pastikan origin-top-right di sini
-                    >
+                    <div ref={transitionRef} className="absolute right-0 z-50 w-56 mt-2 origin-top-right">
                         <Dropdown
                             options={sortOptions}
                             onClick={handleSelectedSort}
-                            selected={selectedSort}
+                            selected={selectedSortLabel}
                         />
                     </div>
                 </Transition>
@@ -179,53 +157,30 @@ export default function MonitoringPage() {
                     <div className="col-span-2 text-sm font-medium text-gray-500 text-center">Aktivitas</div>
                 </div>
 
-                {currentItems.map((log) => (
+                {/* MAPPING DATA TERURUT */}
+                {sortedData.map((log, index) => (
                     <div
-                        key={log.waktu}
+                        key={`${log.waktu}-${index}`}
                         className="grid grid-cols-[30px_repeat(9,minmax(0,1fr))] gap-4 items-center bg-white rounded-xl shadow-md"
                     >
                         <div className={`col-span-1 h-full bg-[#EFF8FF] rounded-l-lg py-3`}></div>
-
-                        {/* Foto Akun */}
                         <div className="col-span-1 py-3">
-                            <img
-                                src={log.foto ?? PfpExample}
-                                alt="Avatar"
-                                className="w-12 h-12 rounded-full"
-                            />
+                            <img src={log.foto ?? PfpExample} alt="Avatar" className="w-12 h-12 rounded-full object-cover" />
                         </div>
-
-                        {/* Role */}
                         <div className="col-span-2 py-3">
                             <p className="text-gray-800 font-medium">{log.role}</p>
                         </div>
-
-                        {/* Waktu */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-600">
-                                {log.waktu}
-                                {/* <FormatWaktu
-                                    isoString={log.timestamp}
-                                /> */}
-                            </p>
+                            <p className="text-gray-600">{log.waktu}</p>
                         </div>
-
-                        {/* Tanggal */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-600">
-                                {log.tanggal}
-                                {/* <FormatTanggal
-                                    isoString={log.timestamp}
-                                /> */}
-                            </p>
+                            <p className="text-gray-600">{log.tanggal}</p>
                         </div>
-
-                        {/* Aktivitas */}
                         <div className="col-span-2 flex justify-center py-3">
                             <Status
                                 text={log.activity}
                                 className="w-48 text-center"
-                                color={log.activity === 'melakukan logout' ? 'bg-[#FF4C4C]' : 'bg-[#00B998]'}
+                                color={log.activity.toLowerCase().includes('logout') ? 'bg-[#FF4C4C]' : 'bg-[#00B998]'}
                             />
                         </div>
                     </div>
@@ -234,11 +189,10 @@ export default function MonitoringPage() {
 
             <Pagination
                 currentPage={currentPage}
-                totalItems={dataLog.length}
+                totalItems={totalItems}
                 itemsPerPage={itemsPerPage}
                 onPageChange={handlePageChange}
             />
-
         </div>
     )
 }

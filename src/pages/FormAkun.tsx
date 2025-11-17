@@ -270,6 +270,7 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                         name="role"
                                         onChange={handleChange}
                                         className="w-1/2"
+                                        readOnly={isEdit} // ReadOnly jika backend belum support edit email via endpoint ini
                                     />
                                     {/* Menggunakan name='nama_pengguna' di state, tapi nanti dikirim sebagai 'name' */}
                                     <Input
