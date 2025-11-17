@@ -250,8 +250,8 @@ const LihatPenerimaan = () => {
                                     </div>
                                     <div className='flex flex-col'>
                                         {/* Sesuaikan field dengan response API */}
-                                        <span className="text-gray-700">{item.fileName || item.no_surat}</span>
-                                        <span className="text-gray-500">{item.uploadDate || item.date || '-'}</span>
+                                        <span className="text-gray-700">{item.filename || item.penerimaan_no_surat}</span>
+                                        <span className="text-gray-500">{item.uploaded_at || '-'}</span>
                                     </div>
                                 </div>
                             ))
