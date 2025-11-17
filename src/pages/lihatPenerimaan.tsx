@@ -18,11 +18,11 @@ const LihatPenerimaan = () => {
     const { showToast } = useToast()
     const navigate = useNavigate()
     const location = useLocation()
-    
+
     // State Data & Loading
     const [isLoading, setIsLoading] = useState(false);
     const [riwayatBastFile, setRiwayatBastFile] = useState<RIWAYATBASTFILEAPI[]>([])
-    
+
     // State Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -39,11 +39,6 @@ const LihatPenerimaan = () => {
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
     const { user } = useAuth();
 
-    // ❌ HAPUS KODE MOCK DATA INI
-    // const startIndex = (currentPage - 1) * itemsPerPage;
-    // const currentItems = riwayatUpload.slice(startIndex, startIndex + itemsPerPage);
-
-    // ✅ UPDATE useEffect
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) {
@@ -54,17 +49,17 @@ const LihatPenerimaan = () => {
             setIsLoading(true);
             try {
                 console.log(`🔄 Fetching BAST FILE data page ${currentPage}...`);
-                
+
                 // Panggil service dengan parameter page & perPage
                 const response = await getRiwayatBASTFile(currentPage, itemsPerPage);
-                
+
                 // Set Data Array
                 setRiwayatBastFile(response.data || []);
-                
+
                 // Set Total Items (Asumsi response API punya field 'total')
                 // Jika PaginationResponse punya field 'meta', sesuaikan (misal: response.meta.total)
                 // Jika response langsung object Laravel paginate, biasanya response.total
-                setTotalItems(response.total || 0); 
+                setTotalItems(response.total || 0);
 
             } catch (err) {
                 console.error("Error fetching history:", err);
@@ -125,12 +120,12 @@ const LihatPenerimaan = () => {
             handleCloseModal();
             return;
         }
-        
+
         // Pastikan ada ID data dari location state
         if (!data?.id) {
-             showToast('ID Penerimaan tidak ditemukan!', 'error');
-             handleCloseModal();
-             return;
+            showToast('ID Penerimaan tidak ditemukan!', 'error');
+            handleCloseModal();
+            return;
         }
 
         try {
@@ -255,7 +250,7 @@ const LihatPenerimaan = () => {
                                     </div>
                                     <div className='flex flex-col'>
                                         {/* Sesuaikan field dengan response API */}
-                                        <span className="text-gray-700">{item.fileName || item.no_surat}</span> 
+                                        <span className="text-gray-700">{item.fileName || item.no_surat}</span>
                                         <span className="text-gray-500">{item.uploadDate || item.date || '-'}</span>
                                     </div>
                                 </div>
