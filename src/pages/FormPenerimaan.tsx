@@ -34,6 +34,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     const { id: paramId } = useParams();
     const { showToast } = useToast();
     const [isDelete, setIsDelete] = useState(false)
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const [deletedIds, setDeletedIds] = useState<number[]>([]);
 
@@ -443,31 +444,33 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                 const status = err.response.status;
                 const data = err.response.data;
 
-                // 1. Handle Validasi Laravel (422)
+                // 2. Handle Validasi Laravel (422) -> Inline Error & Toast
                 if (status === 422) {
                     if (data.errors) {
-                        // Cek spesifik error No Surat
-                        if (data.errors.no_surat) {
-                            showToast(`Gagal: ${data.errors.no_surat[0]}`, "error");
-                        }
-                        // Cek error lainnya (misal stok_id invalid, dll)
-                        else {
-                            // Ambil pesan error pertama yang ketemu
-                            const firstErrorKey = Object.keys(data.errors)[0];
-                            const firstErrorMessage = data.errors[firstErrorKey][0];
-                            showToast(`Validasi Gagal: ${firstErrorMessage}`, "error");
-                        }
+                        // Simpan error ke state untuk ditampilkan di UI
+                        const newErrors: Record<string, string> = {};
+                        Object.keys(data.errors).forEach((key) => {
+                            newErrors[key] = data.errors[key][0];
+                        });
+                        setFormErrors(newErrors);
+
+                        // Toast Pesan Utama
+                        const firstError = Object.values(data.errors)[0] as string[];
+                        showToast(`Gagal: ${firstError[0]}`, "error");
                     } else {
-                        showToast(data.message || "Data yang dikirim tidak valid.", "error");
+                        showToast(data.message || "Data tidak valid.", "error");
                     }
+                }
+                else if (status === 401) {
+                    showToast("Sesi habis. Silakan login ulang.", "error");
+                    // navigate('/login'); 
                 }
                 // 2. Handle Not Found (404)
                 else if (status === 404) {
-                    showToast("Data tidak ditemukan atau URL salah.", "error");
+                    showToast("Data referensi tidak ditemukan (404).", "error");
                 }
-                // 3. Handle Server Error (500)
-                else if (status === 500) {
-                    showToast("Terjadi kesalahan di server (Backend Error).", "error");
+                else if (status >= 500) {
+                    showToast("Terjadi kesalahan server. Hubungi admin.", "error");
                 }
                 // 4. Error Lainnya
                 else {
@@ -645,6 +648,11 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                         value={formDataPenerimaan.no_surat}
                         readOnly={isInspect}
                     />
+                    {formErrors.no_surat && (
+                        <span className="text-red-500 text-xs ml-1">
+                            {formErrors.no_surat}
+                        </span>
+                    )}
                 </div>
 
                 {/* DESKRIPSI BARANG */}

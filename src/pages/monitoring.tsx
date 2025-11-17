@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import BurgerDot from '../assets/burgerDot.svg?react'
 import Status from '../components/status';
 import Pagination from '../components/pagination';
@@ -73,14 +71,19 @@ export default function MonitoringPage() {
         const dataToSort = [...dataLog];
 
         return dataToSort.sort((a, b) => {
-            // Pastikan format tanggal valid
-            const dateA = new Date(`${a.tanggal} ${a.waktu}`).getTime();
-            const dateB = new Date(`${b.tanggal} ${b.waktu}`).getTime();
+            // Gabungkan string tanggal & waktu secara manual agar lebih aman lintas browser
+            // Asumsi format backend: YYYY-MM-DD dan HH:mm:ss
+            // Mengubah spasi menjadi 'T' membantu kompatibilitas ISO (YYYY-MM-DDTHH:mm:ss)
+            const dateStrA = `${a.tanggal}T${a.waktu}`;
+            const dateStrB = `${b.tanggal}T${b.waktu}`;
+
+            const dateA = new Date(dateStrA).getTime() || 0; // Fallback ke 0 jika NaN
+            const dateB = new Date(dateStrB).getTime() || 0;
 
             if (selectedSortValue === 'latest') {
-                return dateB - dateA; // Terbaru (Desc)
+                return dateB - dateA;
             } else {
-                return dateA - dateB; // Terlama (Asc)
+                return dateA - dateB;
             }
         });
     }, [dataLog, selectedSortValue]);

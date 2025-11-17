@@ -69,7 +69,8 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
         if (isEdit && data) {
             let roleValue = '';
             if (data.roles && Array.isArray(data.roles) && data.roles.length > 0) {
-                roleValue = data.roles[0].name;
+                // Gunakan optional chaining (?.) untuk keamanan
+                roleValue = data.roles[0]?.name || '';
             } else if (data.role) {
                 roleValue = data.role;
             }
