@@ -1,63 +1,85 @@
 import React, { useEffect, useState } from "react";
 import Input from "../components/input";
-import DropdownInput from "../components/dropdownInput";
 import ButtonConfirm from "../components/buttonConfirm";
 import Modal from "../components/modal";
-import { PATHS } from "../Routes/path";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { addBarangBelanja } from "../services/penerimaanService";
-import { useToast } from "../hooks/useToast"; 
+import { useLocation, useNavigate } from "react-router-dom";
+import { getBarangBelanja } from "../services/barangService";
+import { useToast } from "../hooks/useToast";
 import WarnButton from "../components/warnButton";
 import CurrencyInput from "../components/currencyInput";
 import { usePenerimaan } from "../hooks/usePenerimaan";
-import { ROLES } from "../constant/roles";
-
-// TODO: Ganti dengan data kategori yang sebenarnya
-const kategoriOptions = [
-    "Alat Medis",
-    "Obat-obatan",
-    "Peralatan Kesehatan",
-    "Consumable Medical",
-    "Alat Tulis Kantor"
-];
+import { ROLES, type TIPE_BARANG_STOK } from "../constant/roles";
+import DropdownInput from "../components/dropdownInput";
 
 const FormDataBarangBelanja = () => {
     const [formData, setFormData] = useState({
-        namaBarang: '',
-        satuan: '',
-        jumlah: '',
-        totalHarga: '',
-        kategoriBarang: '',
-        harga: '',
-        statusPemeriksaan: ''
+        stok_id: 0,
+        quantity: 0,
+        price: 0,
     });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [stok, setStok] = useState<TIPE_BARANG_STOK[]>([]);
+    const [selectedBarang, setSelectedBarang] = useState<TIPE_BARANG_STOK | null>(null);
+
+    // ✅ State terpisah untuk input harga
+    const [jumlah, setJumlah] = useState<number>(0);
+    const [harga, setHarga] = useState<number>(0);
+    const [totalHarga, setTotalHarga] = useState<number>(0);
 
     const navigate = useNavigate();
-    const { showToast } = useToast();
+    const location = useLocation();
+    const { isEdit, returnUrl } = location.state || {};
 
+    const { showToast } = useToast();
     const { checkAccess, hasAccess } = useAuthorization([ROLES.PPK, ROLES.TEKNIS]);
     const { user } = useAuth();
+    const { setBarang, formDataPenerimaan } = usePenerimaan();
 
-    const { setBarang } = usePenerimaan();
+    console.log(isEdit)
+    // ✅ useEffect untuk auto-calculate total harga
+    useEffect(() => {
+        const calculatedTotal = jumlah * harga;
+        setTotalHarga(calculatedTotal);
+        console.log(`📊 Auto calculate: ${jumlah} × ${harga} = ${calculatedTotal}`);
+    }, [jumlah, harga]);
 
     useEffect(() => {
         checkAccess(user?.role);
-    }, [user, checkAccess]);
+        if (!hasAccess(user?.role)) {
+            return;
+        }
 
-    // Early return jika tidak memiliki akses
-    if (!hasAccess(user?.role)) {
-        return null;
-    }
+        const fetchBarangBelanja = async () => {
+            try {
+                const stokData = await getBarangBelanja(formDataPenerimaan.category_id);
+                setStok(stokData);
+            } catch (error) {
+                console.error("Gagal mengambil data barang belanja:", error);
+                showToast('Gagal mengambil data barang belanja.', 'error');
+            }
+        };
+
+        fetchBarangBelanja();
+    }, [user?.role, formDataPenerimaan.category_id]);
 
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
-    // Handle untuk input biasa
+    // ✅ Handler untuk dropdown barang
+    const handleBarangChange = (option: TIPE_BARANG_STOK | null) => {
+        setSelectedBarang(option);
+        if (option) {
+            setFormData(prev => ({
+                ...prev,
+                stok_id: option.id,
+            }));
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prevState => ({
@@ -66,47 +88,47 @@ const FormDataBarangBelanja = () => {
         }));
     };
 
-    // Handle untuk CurrencyInput
-    const handleCurrencyChange = (name: string, value: string) => {
-        setFormData(prev => {
-            const updated = {
-                ...prev,
-                [name]: value
-            };
-
-            // Auto calculate total harga
-            if (name === 'harga' || name === 'jumlah') {
-                const harga = name === 'harga' ? parseInt(value) || 0 : parseInt(prev.harga) || 0;
-                const jumlah = name === 'jumlah' ? parseInt(value) || 0 : parseInt(prev.jumlah) || 0;
-                updated.totalHarga = (harga * jumlah).toString();
-            }
-
-            return updated;
-        });
+    // ✅ Handler untuk jumlah
+    const handleJumlahChange = (value: string) => {
+        const numValue = parseInt(value.replace(/\D/g, '')) || 0;
+        setJumlah(numValue);
+        setFormData(prev => ({
+            ...prev,
+            quantity: numValue
+        }));
     };
 
-    // Di handleConfirmSubmit, pastikan navigasi mengirim data dengan flag yang jelas
+    // ✅ Handler untuk harga
+    const handleHargaChange = (value: string) => {
+        const numValue = parseInt(value.replace(/\D/g, '')) || 0;
+        setHarga(numValue);
+        setFormData(prev => ({
+            ...prev,
+            price: numValue
+        }));
+    };
+
     const handleConfirmSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
+            // ✅ Langsung ambil dari state
             const barangData = {
-                nama_barang: formData.namaBarang,
-                kategori: formData.kategoriBarang,
-                satuan: formData.satuan,
-                jumlah: Number(formData.jumlah) || 0,
-                harga: Number(formData.harga) || 0,
-                total_harga: Number(formData.totalHarga) || 0
+                stok_id: selectedBarang?.id ?? 0,
+                quantity: jumlah,
+                price: harga,
+                total_harga: totalHarga,
+                stok_name: selectedBarang?.name ?? '',
+                satuan_name: selectedBarang?.satuan_name ?? '',
+                is_layak: null
             };
 
-            const newBarang = await addBarangBelanja(barangData);
+            console.log('✅ Barang yang akan ditambahkan:', barangData);
 
-            setBarang(prev => [...prev, newBarang]);
-
-            // ✅ PENTING: Kirim dengan flag 'newBarang' agar mudah diidentifikasi
-            navigate(PATHS.PENERIMAAN.TAMBAH);
-
+            setBarang(prev => [...prev, barangData]);
+            showToast('Barang berhasil ditambahkan!', 'success');
+            navigate(returnUrl, { state: { isEdit, keepLocalData: true } });
             handleCloseModal();
 
         } catch (err) {
@@ -120,15 +142,36 @@ const FormDataBarangBelanja = () => {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Validasi
-        if (!formData.namaBarang || !formData.satuan || !formData.jumlah || !formData.harga) {
-            showToast("Semua field wajib diisi!", "error");
+        // ✅ Validasi
+        if (!selectedBarang) {
+            showToast("Pilih barang terlebih dahulu!", "error");
             return;
         }
 
-        console.log('Data barang:', formData);
+        if (jumlah <= 0) {
+            showToast("Jumlah harus lebih dari 0!", "error");
+            return;
+        }
+
+        if (harga <= 0) {
+            showToast("Harga harus lebih dari 0!", "error");
+            return;
+        }
+
+        console.log('Data barang siap submit:', {
+            stok_id: formData.stok_id,
+            quantity: jumlah,
+            price: harga,
+            stok_name: selectedBarang?.name,
+            satuan_name: selectedBarang?.satuan_name
+        });
+
         handleOpenModal();
     };
+
+    if (!hasAccess(user?.role)) {
+        return null;
+    }
 
     return (
         <div className="h-full">
@@ -141,13 +184,14 @@ const FormDataBarangBelanja = () => {
                     {/* KOLOM KIRI */}
                     <div className="flex flex-col gap-4">
                         {/* Nama Barang */}
-                        <Input
-                            id="namaBarang"
-                            placeholder="Masukkan nama barang"
-                            judul="Nama Barang"
-                            name="namaBarang"
-                            onChange={handleChange}
-                            value={formData.namaBarang}
+                        <DropdownInput<TIPE_BARANG_STOK>
+                            options={stok}
+                            placeholder='Pilih Barang'
+                            judul='Nama Barang'
+                            value={selectedBarang?.name || ''}
+                            onChange={handleBarangChange}
+                            name='namaBarang'
+                            type='button'
                         />
 
                         {/* Satuan & Jumlah */}
@@ -158,58 +202,45 @@ const FormDataBarangBelanja = () => {
                                 judul="Satuan"
                                 name="satuan"
                                 onChange={handleChange}
-                                value={formData.satuan}
+                                value={selectedBarang?.satuan_name || ''}
+                                readOnly
                             />
 
-                            {/* ✅ FIX: Jumlah pakai CurrencyInput tanpa prefix */}
+                            {/* ✅ Jumlah tanpa prefix Rp */}
                             <CurrencyInput
                                 id="jumlah"
                                 placeholder="0"
                                 judul="Jumlah"
                                 name="jumlah"
-                                prefix=""  // ← Tanpa prefix
-                                onChange={(value) => handleCurrencyChange('jumlah', value)}  // ← FIX
-                                value={formData.jumlah}
+                                prefix=""
+                                onChange={handleJumlahChange}
+                                value={jumlah.toString()}
                             />
                         </div>
-
-                        {/* ✅ FIX: Total Harga disabled (auto calculate) */}
-                        <CurrencyInput
-                            id="totalHarga"
-                            placeholder="0"
-                            judul="Total Harga"
-                            name="totalHarga"
-                            prefix="Rp"
-                            onChange={(value) => handleCurrencyChange('totalHarga', value)}
-                            value={formData.totalHarga}
-                            disabled  // ← FIX: Disabled karena auto calculate
-                        />
                     </div>
 
                     {/* KOLOM KANAN */}
                     <div className="flex flex-col gap-4">
-                        {/* ✅ FIX: Dropdown dengan kategori yang benar */}
-                        <DropdownInput
-                            placeholder="Pilih Kategori"
-                            options={kategoriOptions}  // ← FIX: Kategori bukan nama
-                            judul="Kategori Barang"
-                            type="button"
-                            onChange={(value) => {  // ← FIX: Handle string value
-                                setFormData(p => ({ ...p, kategoriBarang: value }));
-                            }}
-                            value={formData.kategoriBarang}
-                            name="kategoriBarang"
-                        />
-
-                        {/* ✅ FIX: Harga pakai CurrencyInput */}
+                        {/* ✅ Harga dengan prefix Rp */}
                         <CurrencyInput
                             id="harga"
                             placeholder="0"
                             judul="Harga Satuan"
                             name="harga"
                             prefix="Rp"
-                            onChange={(value) => handleCurrencyChange('harga', value)}  // ← FIX
-                            value={formData.harga}
+                            onChange={handleHargaChange}
+                            value={harga.toString()}
+                        />
+
+                        {/* ✅ Total Harga (Auto-calculated & Disabled) */}
+                        <CurrencyInput
+                            id="totalHarga"
+                            placeholder="0"
+                            judul="Total Harga"
+                            name="totalHarga"
+                            prefix="Rp"
+                            value={totalHarga.toString()}
+                            disabled
                         />
 
                         {/* Button Selesai */}

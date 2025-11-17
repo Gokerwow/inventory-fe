@@ -6,37 +6,36 @@ import Pagination from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
 import { sortOptions, type SortOption } from '../Mock Data/data'; // Biarkan 'SortOption'
 import { getLogAktivitas } from '../services/monitoringServices'; // <-- Impor service
-import { logAktivitas } from '../Mock Data/data'; // <-- Impor tipe datanya saja
 import { Transition } from '@headlessui/react';
 import Dropdown from '../components/dropdown';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES } from '../constant/roles';
 import PfpExample from '../assets/Pfp Example.jpeg';
+import { type LogItem } from '../constant/roles';
 
-interface FormatTanggalProps {
-    isoString: string;
-}
+// interface FormatTanggalProps {
+//     isoString: string;
+// }
 
-type LogItem = typeof logAktivitas[0];
 
-function FormatTanggal({ isoString }: FormatTanggalProps) {
-    if (!isoString) return null;
+// function FormatTanggal({ isoString }: FormatTanggalProps) {
+//     if (!isoString) return null;
 
-    const date = new Date(isoString);
-    const formatted = format(date, 'dd MMMM yyyy', { locale: id })
+//     const date = new Date(isoString);
+//     const formatted = format(date, 'dd MMMM yyyy', { locale: id })
 
-    return <>{formatted}</>
-}
+//     return <>{formatted}</>
+// }
 
-function FormatWaktu({ isoString }: FormatTanggalProps) {
-    if (!isoString) return null;
+// function FormatWaktu({ isoString }: FormatTanggalProps) {
+//     if (!isoString) return null;
 
-    const date = new Date(isoString);
-    const formatted = format(date, 'HH.mm', { locale: id })
+//     const date = new Date(isoString);
+//     const formatted = format(date, 'HH.mm', { locale: id })
 
-    return <>{formatted}</>
-}
+//     return <>{formatted}</>
+// }
 
 
 export default function MonitoringPage() {
@@ -182,7 +181,7 @@ export default function MonitoringPage() {
 
                 {currentItems.map((log) => (
                     <div
-                        key={log.id}
+                        key={log.waktu}
                         className="grid grid-cols-[30px_repeat(9,minmax(0,1fr))] gap-4 items-center bg-white rounded-xl shadow-md"
                     >
                         <div className={`col-span-1 h-full bg-[#EFF8FF] rounded-l-lg py-3`}></div>
@@ -190,7 +189,7 @@ export default function MonitoringPage() {
                         {/* Foto Akun */}
                         <div className="col-span-1 py-3">
                             <img
-                                src={log.photo ?? PfpExample}
+                                src={log.foto ?? PfpExample}
                                 alt="Avatar"
                                 className="w-12 h-12 rounded-full"
                             />
@@ -204,26 +203,29 @@ export default function MonitoringPage() {
                         {/* Waktu */}
                         <div className="col-span-2 py-3">
                             <p className="text-gray-600">
-                                <FormatWaktu
+                                {log.waktu}
+                                {/* <FormatWaktu
                                     isoString={log.timestamp}
-                                />
+                                /> */}
                             </p>
                         </div>
 
                         {/* Tanggal */}
                         <div className="col-span-2 py-3">
                             <p className="text-gray-600">
-                                <FormatTanggal
+                                {log.tanggal}
+                                {/* <FormatTanggal
                                     isoString={log.timestamp}
-                                />
+                                /> */}
                             </p>
                         </div>
 
                         {/* Aktivitas */}
                         <div className="col-span-2 flex justify-center py-3">
                             <Status
-                                text={log.aktivitas}
-                                color={log.aktivitas === 'Melakukan Logout' ? 'bg-[#FF4C4C]' : 'bg-[#00B998]'}
+                                text={log.activity}
+                                className="w-48 text-center"
+                                color={log.activity === 'melakukan logout' ? 'bg-[#FF4C4C]' : 'bg-[#00B998]'}
                             />
                         </div>
                     </div>

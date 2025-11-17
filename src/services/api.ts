@@ -10,12 +10,12 @@ const apiClient = axios.create();
 apiClient.interceptors.request.use(
     (config) => {
         // 3. Ambil token dari localStorage
-        const token = localStorage.getItem('api_token');
+        // const token = localStorage.getItem('api_token');
 
         // 4. Jika token ada, tambahkan ke header
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        // if (token) {
+        //     config.headers.Authorization = `Bearer ${token}`;
+        // }
 
         // 5. Selalu minta respons JSON
         config.headers.Accept = 'application/json';

@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react'; // <-- TAMBAHKAN useMemo dan useCallback
-import { type Usernames } from '../Mock Data/data.ts'
+import { MOCK_USERS, type Usernames } from '../Mock Data/data.ts'
 import { AuthContext } from './AuthContext.tsx'
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../services/api.ts';
+// import apiClient from '../services/api.ts';
 import { USERNAMES } from '../constant/roles.ts';
 
 const ROLE_PATHS = {
@@ -24,48 +24,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate();
 
     // --- UBAHAN: Stabilkan 'login' dengan useCallback ---
-    const login = useCallback(async (username: Usernames) => {
-        // --- 2. FIX: Tambahkan try...catch untuk menangani error ---
-        try {
-            const response = await apiClient.post('/api/login', {
-                username: username,
-                password: 'password' //
+    const login = useCallback((username: Usernames) => {
+        const userToLogin = MOCK_USERS.find(user => user.nama_pengguna === username);
+        if (userToLogin) {
+            localStorage.setItem('currentUser', JSON.stringify(userToLogin));
+            setUser(userToLogin);
+            const path = ROLE_PATHS[username];
+            navigate(path, { 
+                state: { toastMessage: 'Anda berhasil Login!' } 
             });
-
-            if (response.status === 200) {
-                localStorage.setItem('api_token', response.data.token);
-                setUser(response.data.user);
-
-                // --- 1. FIX: Gunakan JSON.stringify saat menyimpan objek ---
-                localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-
-                const path = ROLE_PATHS[username];
-                navigate(path, {
-                    state: { toastMessage: 'Anda berhasil Login!' }
-                });
-                console.log(`Simulasi: Login sebagai ${username}`);
-            }
-        } catch (error) {
-            // --- 2. FIX: Tangani error di sini ---
-            const errMsg = (() => {
-                if (error instanceof Error) return error.message;
-                if (typeof error === 'object' && error !== null) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const respMsg = (error as any).response?.data?.message;
-                    if (typeof respMsg === 'string') return respMsg;
-                }
-                return String(error);
-            })();
-            console.error("Login gagal:", errMsg);
-            // Anda bisa menampilkan pesan error ini ke pengguna
-            // contoh: setLoginError(error.response.data.message);
-        }
+            console.log(`Simulasi: Login sebagai ${username}`);
+        } 
     }, [navigate]); // <-- Dependency
 
     // --- UBAHAN: Stabilkan 'logout' dengan useCallback ---
     const logout = useCallback(() => {
         navigate('/role-pick');
-        localStorage.removeItem('mockUser');
+        localStorage.removeItem('currentUser');
         setUser(null);
         console.log('Simulasi: Logout');
     }, [navigate]); // <-- Dependency

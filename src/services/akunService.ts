@@ -9,9 +9,9 @@ import apiClient from './api';
 export const getAkunUsers = async (): Promise<MockUser[]> => {
     console.log("SERVICE: Mengambil semua data akun...");
     try {
-        const response = await apiClient.get('/api/akun')
-        console.log("Data akun diterima:", response.data);
-        const dataAkun = response.data as MockUser[];
+        const response = await apiClient.get('/api/v1/account')
+        console.log("Data akun diterima:", response.data.data.data);
+        const dataAkun = response.data.data.data as MockUser[];
         return dataAkun;
     } catch (error) {
         // --- 2. FIX: Tangani error di sini ---
@@ -28,7 +28,7 @@ export const getAkunUsers = async (): Promise<MockUser[]> => {
         // Anda bisa menampilkan pesan error ini ke pengguna
         // contoh: setLoginError(error.response.data.message);
         // Kembalikan fallback (mock) agar fungsi selalu mengembalikan Promise<MockUser[]>
-        return simulateApiCall(MOCK_USERS);
+        return [];
     }
 };
 

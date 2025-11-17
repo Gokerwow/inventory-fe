@@ -1,21 +1,30 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { PenerimaanContext, type PenerimaanContextType } from "./PenerimaanContext";
-import type { TIPE_BARANG_BELANJA, FormData } from "../Mock Data/data";
+import { type FormDataPenerimaan, type Detail_Barang } from "../constant/roles";
+
 
 export function PenerimaanProvider({ children }: { children: ReactNode }) {
-    const [barang, setBarang] = useState<TIPE_BARANG_BELANJA[]>([])
-    const [formDataPenerimaan, setFormDataPenerimaan] = useState<FormData>({
-        id: 0,
-        noSurat: '',
-        namaPihakPertama: '',
-        jabatanPihakPertama: '',
-        NIPPihakPertama: '',
-        alamatSatkerPihakPertama: '',
-        namaPihakKedua: '',
-        jabatanPihakKedua: '',
-        NIPPihakKedua: '',
-        alamatSatkerPihakKedua: '',
-        deskripsiBarang: '',
+    const [barang, setBarang] = useState<Detail_Barang[]>([])
+    const [formDataPenerimaan, setFormDataPenerimaan] = useState<FormDataPenerimaan>({
+        no_surat: '',
+        category_id: 0,
+        category_name: '',
+        deskripsi: '',
+        detail_barangs: [],
+        pegawais: [{
+            pegawai_id_pertama: 0, // dari dropdown pihak
+            pegawai_name_pertama: '',
+            pegawai_NIP_pertama: '',
+            jabatan_name_pertama: '',
+            alamat_staker_pertama: ''
+        },
+        {
+            pegawai_id_kedua: 0, // dari dropdown pihak
+            pegawai_name_kedua: '',
+            pegawai_NIP_kedua: '',
+            jabatan_name_kedua: '',
+            alamat_staker_kedua: ''
+        }]
     });
 
     const value = useMemo<PenerimaanContextType>(() => ({

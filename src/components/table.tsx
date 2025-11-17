@@ -24,6 +24,7 @@ interface ReusableTableProps<T> {
     totalItems: number;
     itemsPerPage: number;
     onPageChange: (page: number) => void;
+    totalPages: number;
 }
 
 // 3. Buat Komponen Generik
@@ -36,7 +37,8 @@ export default function ReusableTable<T extends { id?: number | string }>({
     currentPage = 1,
     totalItems = 0,
     itemsPerPage = 7,
-    onPageChange = () => { }
+    onPageChange = () => { },
+    totalPages = 1
 }: ReusableTableProps<T>) {
     return (
         <>
@@ -49,7 +51,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
                             {columns.map((col) => (
                                 <th
                                     key={col.key || col.header}
-                                    className="px-4 py-3 text-left text-xs font-medium text-gray-600 tracking-wider"
+                                    className={`px-4 py-3 text-xs font-medium text-gray-600 tracking-wider  ${col.header === 'Aksi' || col.header === 'Status' ? 'text-center' : 'text-left'}`}
                                 >
                                     {col.header}
                                 </th>
@@ -67,7 +69,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
                                 {columns.map((col) => (
                                     <td
                                         key={col.key || col.header}
-                                        className="px-4 py-4 whitespace-nowrap text-sm text-gray-800"
+                                        className={`px-4 py-4 whitespace-nowrap text-sm text-gray-800 ${col.header === 'Status' ? 'flex justify-center' : ''}`}
                                     >
                                         {col.cell(item)} {/* INI INTINYA */}
                                     </td>
@@ -84,6 +86,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
                 totalItems={totalItems}
                 itemsPerPage={itemsPerPage}
                 onPageChange={onPageChange}
+                totalPages={totalPages}
             />
         </>
     );

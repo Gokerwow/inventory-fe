@@ -1,11 +1,11 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
-import { type TIPE_BARANG_BELANJA, type FormData } from "../Mock Data/data";
+import { type Detail_Barang, type FormDataPenerimaan } from "../constant/roles";
 
 export type PenerimaanContextType = {
-    barang: TIPE_BARANG_BELANJA[];
-    setBarang: Dispatch<SetStateAction<TIPE_BARANG_BELANJA[]>>;
-    formDataPenerimaan: FormData;
-    setFormDataPenerimaan: Dispatch<SetStateAction<FormData>>;
+    barang: Detail_Barang[];
+    setBarang: Dispatch<SetStateAction<Detail_Barang[]>>;
+    formDataPenerimaan: FormDataPenerimaan;
+    setFormDataPenerimaan: Dispatch<SetStateAction<FormDataPenerimaan>>;
 };
 
 export const PenerimaanContext = createContext<PenerimaanContextType | null>(null);

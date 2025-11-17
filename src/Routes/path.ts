@@ -10,7 +10,8 @@ export const PATHS = {
         BARANG_BELANJA: '/penerimaan/tambah/barang-belanja',
         EDIT: 'edit/:id',
         UNDUH: 'unduhBAST/:id',
-        LIHAT: 'lihat/:id'
+        LIHAT: 'lihat/:id',
+        INSPECT: '/penerimaan/:id/inspect',
     },
     PENGELUARAN: '/pengeluaran',
     PROFIL: {

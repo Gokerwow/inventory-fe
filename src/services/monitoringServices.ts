@@ -1,15 +1,21 @@
-import { logAktivitas } from '../Mock Data/data';
-import { simulateApiCall } from './utils';
+import apiClient from './api';
+import { type LogItem } from '../constant/roles';
 
-type LogItem = typeof logAktivitas[0];
 
 /**
  * Mengambil semua log aktivitas pengguna.
  * Digunakan di: src/pages/monitoring.tsx
  */
-export const getLogAktivitas = (): Promise<LogItem[]> => {
+export const getLogAktivitas = async (): Promise<LogItem[]> => {
     console.log("SERVICE: Mengambil log aktivitas...");
-    return simulateApiCall(logAktivitas);
+    try {
+        const response = await apiClient.get('/api/v1/monitoring');
+        console.log("Data log aktivitas diterima:", response.data.data.data);
+        return response.data.data.data as LogItem[];
+    } catch (error) {
+        console.error("Gagal mengambil data log aktivitas:", error);
+        throw new Error('Gagal mengambil data log aktivitas.');
+    }
 };
 
 // export const getLogAktivitas = async (): Promise<LogItem[]> => {

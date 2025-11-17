@@ -83,9 +83,6 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
 
     // --- UBAHAN: useEffect untuk otorisasi & memuat data edit ---
     useEffect(() => {
-        // Cek otorisasi
-        // Jika Super Admin, boleh.
-        // Jika bukan Super Admin, cek apakah dia mengedit profilnya sendiri
         if (user?.role !== 'Super Admin' && !isOwner) {
             checkAccess(user?.role); // Ini akan redirect jika tidak boleh
         }

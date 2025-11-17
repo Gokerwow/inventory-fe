@@ -3,64 +3,94 @@ import PlusIcon from '../assets/plus.svg?react'
 import PenerimaanTable from '../components/PenerimaanTable';
 import RiwayatPenerimaanTable from '../components/RiwayatPenerimaanTable';
 import { NavLink } from 'react-router-dom';
-import { getPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService'; // <-- Impor service
+import { getPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService';
 import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
-import { PenerimaanData, riwayatUpload } from '../Mock Data/data';
-import { ROLES } from '../constant/roles';
+import { PenerimaanData, RiwayatPenerimaanData } from '../Mock Data/data';
+import { ROLES, type BASTAPI } from '../constant/roles';
+import { getBASTList, getRiwayatBASTList } from '../services/bastService';
+
 type PenerimaanItem = typeof PenerimaanData[0];
-type RiwayatItem = typeof riwayatUpload[0];
+type RiwayatItem = typeof RiwayatPenerimaanData[0];
+
+// Interface untuk response pagination dari backend
 
 const PenerimaanPage = () => {
-    // --- TAMBAHAN: State untuk loading, error, dan data ---
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);
     const [riwayatItems, setRiwayatItems] = useState<RiwayatItem[]>([]);
+
+    const [bastItems, setBastItems] = useState<BASTAPI[]>([])
+    const [riwayatBastItems, setRiwayatBastItems] = useState<BASTAPI[]>([])
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // State untuk pagination dari backend
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 7;
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
 
     const [activeTab, setActiveTab] = useState('penerimaan');
 
-    const requiredRoles = useMemo(() => 
-        [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], 
-        [] // <-- Array dependensi kosong, artinya HANYA dibuat 1x
+    const requiredRoles = useMemo(() =>
+        [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS],
+        []
     );
 
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
-    const { user } = useAuth()
+    const { user } = useAuth();
 
-    // --- UBAHAN: useEffect ini sekarang juga mengambil data ---
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) {
-            return; // Berhenti jika tidak ada akses
+            return;
         }
 
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Logika untuk memuat data berdasarkan tab yang aktif
                 if (activeTab === 'penerimaan') {
-                    const data = await getPenerimaanList();
-                    setPenerimaanItems(data);
-                } else if (activeTab === 'riwayat') {
-                    // NOTE: Komponen RiwayatPenerimaanTable Anda 
-                    // saat ini masih menggunakan format data yang sama dengan PenerimaanTable.
-                    // Untuk sementara, kita panggil service yang benar (getRiwayatPenerimaanList)
-                    // Anda mungkin perlu menyesuaikan RiwayatPenerimaanTable agar bisa menampilkan data riwayat.
+                    if (user?.role === ROLES.ADMIN_GUDANG) {
+                        console.log("🔄 Fetching BAST data...");
+                        const response = await getBASTList(currentPage);
 
-                    // Untuk sekarang, agar tidak error, kita tetap pakai getPenerimaanList()
-                    // seperti logika awal Anda.
-                    // const data = await getRiwayatPenerimaanList(); // <-- Ini yang seharusnya
-                    const data = await getRiwayatPenerimaanList(); // <-- Ini mengikuti logika lama Anda agar UI tidak rusak
-                    setRiwayatItems(data);
+                        // ✅ Debug: Cek data yang diterima
+                        console.log("📦 BAST Response:", response);
+                        console.log("📊 BAST Data:", response.data);
+
+                        // ✅ Set data dengan benar
+                        setBastItems(response.data || []);
+                        setTotalItems(response.total || 0);
+                        setItemsPerPage(response.per_page || 10);
+                        setTotalPages(response.last_page || 1);
+
+                        console.log("✅ State updated - Items count:", response.data?.length);
+                    } else {
+                        const response = await getPenerimaanList(currentPage);
+                        setPenerimaanItems(response.data || []);
+                        setTotalItems(response.total || 0);
+                        setItemsPerPage(response.per_page || 10);
+                        setTotalPages(response.last_page || 1);
+                    }
+                } else if (activeTab === 'riwayat') {
+                    if (user?.role === ROLES.ADMIN_GUDANG) {
+                        const response = await getRiwayatBASTList(currentPage);
+                        setRiwayatBastItems(response.data || []);
+                        setTotalItems(response.total || 0);
+                        setItemsPerPage(response.per_page || 10);
+                        setTotalPages(response.last_page || 1);
+                    } else {
+                        const response = await getRiwayatPenerimaanList(currentPage);
+                        setRiwayatItems(response.data || []);
+                        setTotalItems(response.total || 0);
+                        setItemsPerPage(response.per_page || 10);
+                        setTotalPages(response.last_page || 1);
+                    }
                 }
             } catch (err) {
-                console.error(err);
+                console.error("❌ Error fetching data:", err);
                 setError("Gagal memuat data.");
             } finally {
                 setIsLoading(false);
@@ -68,21 +98,25 @@ const PenerimaanPage = () => {
         };
 
         fetchData();
-    }, [user, checkAccess, hasAccess, activeTab]); // <-- 'activeTab' ditambahkan sebagai dependency
+    }, [user, checkAccess, hasAccess, activeTab, currentPage]);
 
-    const handleClick = (activeTab: string) => {
-        setActiveTab(activeTab);
-        setCurrentPage(1); // Reset ke halaman 1 setiap ganti tab
-    }
-
+    // ✅ Debug: Cek data yang akan ditampilkan
+    
+    const handleClick = (tab: string) => {
+        setActiveTab(tab);
+        setCurrentPage(1); // Reset ke halaman 1 saat ganti tab
+    };
+    
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
-
-    const dataToShow = activeTab === 'penerimaan' ? penerimaanItems : riwayatItems;
-    const totalItems = dataToShow.length;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = dataToShow.slice(startIndex, startIndex + itemsPerPage);
+    
+    // Data yang ditampilkan langsung dari state (sudah dipaginate dari backend)
+    const dataToShow = user?.role === ROLES.ADMIN_GUDANG ? (activeTab === 'penerimaan' ? bastItems : riwayatBastItems) : (activeTab === 'penerimaan' ? penerimaanItems : riwayatItems);
+    useEffect(() => {
+        console.log("🎯 Data to show:", dataToShow);
+        console.log("📊 Data count:", dataToShow?.length);
+    }, [dataToShow]);
 
     return (
         <div className="flex flex-col h-full p-6 bg-white rounded-lg shadow-md gap-4">
@@ -108,19 +142,16 @@ const PenerimaanPage = () => {
                         Riwayat Penerimaan
                     </h1>
                 </div>
-                {user?.role === ROLES.PPK && activeTab === 'penerimaan' ?
+                {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (
                     <div className='cursor-pointer hover:scale-110 transition-all duration-200 active:scale-85'>
                         <NavLink to={PATHS.PENERIMAAN.TAMBAH}>
                             <PlusIcon />
                         </NavLink>
                     </div>
-                    :
-                    <></>
-                }
-
+                )}
             </div>
 
-            {/* --- TAMBAHAN: Tampilkan Loading atau Error --- */}
+            {/* Loading dan Error State */}
             {isLoading ? (
                 <div className="flex-1 flex justify-center items-center">
                     <p>Memuat data...</p>
@@ -129,27 +160,31 @@ const PenerimaanPage = () => {
                 <div className="flex-1 flex justify-center items-center">
                     <p className="text-red-500">{error}</p>
                 </div>
+            ) : dataToShow.length === 0 ? (
+                <div className='text-center w-full h-full flex items-center justify-center'><span className='font-bold text-2xl'>DATA {activeTab === 'penerimaan' ? '' : 'RIWAYAT'}  {user?.role === ROLES.ADMIN_GUDANG ? 'BAST' : 'PENERIMAAN'} KOSONG</span></div>
             ) : (
-                // --- UBAHAN: Gunakan data dinamis ---
                 <>
-                    {activeTab === 'penerimaan' ?
+                    {activeTab === 'penerimaan' ? (
                         <PenerimaanTable
-                            currentItems={currentItems}
-                            startIndex={startIndex}
+                            currentItems={dataToShow}
+                            startIndex={(currentPage - 1) * itemsPerPage}
                             currentPage={currentPage}
-                            totalItems={totalItems} // <-- Gunakan totalItems dinamis
+                            totalItems={totalItems}
                             itemsPerPage={itemsPerPage}
                             onPageChange={handlePageChange}
+                            totalPages={totalPages}
                         />
-                        :
+                    ) : (
                         <RiwayatPenerimaanTable
-                            currentItems={currentItems} // <-- Gunakan currentItems dinamis
-                            startIndex={startIndex}
+                            currentItems={dataToShow}
+                            startIndex={(currentPage - 1) * itemsPerPage}
                             currentPage={currentPage}
-                            totalItems={totalItems} // <-- Gunakan totalItems dinamis
+                            totalItems={totalItems}
                             itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange} />
-                    }
+                            onPageChange={handlePageChange}
+                            totalPages={totalPages}
+                        />
+                    )}
                 </>
             )}
         </div>

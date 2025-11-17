@@ -1,44 +1,16 @@
 import PfpExample from '../assets/Pfp Example.jpeg';
 
-export interface MockUser {
-    user_id: number;
-    sso_user_id: number;
-    nama_pengguna: string;
-    photo: string,
-    email: string;
-    password: string; // Seharusnya hash, tapi kita ikuti data mock
-    role: string;
-    last_login: string; // atau 'Date' jika Anda mengonversinya
-    synced_at: string;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface FormData {
-    id: number,
-    noSurat: string,
-    namaPihakPertama: string,
-    jabatanPihakPertama: string,
-    NIPPihakPertama: string,
-    alamatSatkerPihakPertama: string,
-    namaPihakKedua: string,
-    jabatanPihakKedua: string,
-    NIPPihakKedua: string,
-    alamatSatkerPihakKedua: string,
-    deskripsiBarang: string,
-}
-
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
 export const MOCK_USERS = [
     {
         user_id: 101,
         sso_user_id: 101,
-        nama_pengguna: 'superAdmin',
+        nama_pengguna: 'superadmin',
         photo: PfpExample,
         email: 'admin@rsudbalung.com',
         password: '$2b$10$K.iayq.fC/jCTBGrKxXeL.WAK0nL5MPEPSHn/Fwa.EGay.jS6beHS', // Contoh password hash
-        role: 'Super Admin',
+        role: 'super_admin',
         last_login: '2025-10-28T14:30:15.000Z',
         synced_at: '2025-10-28T14:30:15.000Z',
         created_at: '2024-01-10T09:00:00.000Z',
@@ -47,11 +19,11 @@ export const MOCK_USERS = [
     {
         user_id: 102,
         sso_user_id: 102,
-        nama_pengguna: 'adminGudangUmum',
+        nama_pengguna: 'admingudangumum',
         photo: PfpExample,
         email: 'gudang.umum@rsudbalung.com',
         password: '$2b$10$j8.V2lP9YfV/P.6uKxWeO.eF3sN4qD7cI/rT2gW0kL.hY1iE9uJ/i',
-        role: 'Admin Gudang Umum',
+        role: 'admin gudang umum',
         last_login: '2025-10-27T11:05:00.000Z',
         synced_at: '2025-10-27T11:05:10.000Z',
         created_at: '2024-02-15T10:30:00.000Z',
@@ -60,11 +32,11 @@ export const MOCK_USERS = [
     {
         user_id: 103,
         sso_user_id: 103,
-        nama_pengguna: 'timPPK',
+        nama_pengguna: 'ppk',
         photo: PfpExample,
         email: 'ppk@rsudbalung.com',
         password: '$2b$10$aP.L/oG5rYw.eK8sQwXnL.qR7tG/vB9cI.jA3uD6wO.kY2iF8vM/o',
-        role: 'Tim PPK',
+        role: 'ppk',
         last_login: '2025-10-29T07:30:00.000Z',
         synced_at: '2025-10-29T07:30:05.000Z',
         created_at: '2024-03-01T11:00:00.000Z',
@@ -73,11 +45,11 @@ export const MOCK_USERS = [
     {
         user_id: 104,
         sso_user_id: 104,
-        nama_pengguna: 'timTeknis', // Diperbaiki dari 'Admin Gudang Umum'
+        nama_pengguna: 'teknis', // Diperbaiki dari 'Admin Gudang Umum'
         photo: PfpExample,
         email: 'teknis@rsudbalung.com',
         password: '$2b$10$bQ.M/pG9tZ.wF/rJ7vYxP.oU8uH/wD1dK.lB4eE7xP.mZ3jG9wN/q',
-        role: 'Tim Teknis', // Diperbaiki dari 'adminGudangUmum'
+        role: 'teknis', // Diperbaiki dari 'adminGudangUmum'
         last_login: '2025-10-28T14:20:00.000Z',
         synced_at: '2025-10-28T14:20:05.000Z',
         created_at: '2024-03-05T12:00:00.000Z',
@@ -86,11 +58,11 @@ export const MOCK_USERS = [
     { // Typo? Mungkin 'penanggungJawab'
         user_id: 105,
         sso_user_id: 105,
-        nama_pengguna: 'penanggungJawab', // Diperbaiki
+        nama_pengguna: 'penanggungjawab', // Diperbaiki
         photo: PfpExample,
         email: 'pj@rsudbalung.com',
         password: '$2b$10$cR.N/qH2uX.yG/tK8wZxQ.pT9vI/xG2eL.mC5fF8yQ.nZ4kH0xO/r',
-        role: 'Penanggung Jawab', // Diperbaiki (sesuai key)
+        role: 'penanggungjawab', // Diperbaiki (sesuai key)
         last_login: '2025-10-26T09:00:00.000Z',
         synced_at: '2025-10-26T09:00:05.000Z',
         created_at: '2024-03-10T13:00:00.000Z',
@@ -99,11 +71,11 @@ export const MOCK_USERS = [
     {
         user_id: 106,
         sso_user_id: 106,
-        nama_pengguna: 'instalasiBalung', // Dibuat lebih spesifik
+        nama_pengguna: 'instalasi', // Dibuat lebih spesifik
         photo: PfpExample,
         email: 'instalasi.farmasi@rsudbalung.com',
         password: '$2b$10$dS.O/rI5wZ.zH/uL9xAyR.qU0wJ/yH3fM.nC6gG9zR.oA5lI1yP/s',
-        role: 'Instalasi', // Diperbaiki
+        role: 'instalasi', // Diperbaiki
         last_login: '2025-10-29T06:55:00.000Z',
         synced_at: '2025-10-29T06:55:05.000Z',
         created_at: '2024-03-12T14:00:00.000Z',
@@ -557,17 +529,6 @@ export const FAQ = [
         answer: "Admin Gudang bertugas mengelola data penerimaan barang, membuat dan mengunggah BAST (Berita Acara Serah Terima), serta memantau riwayat penerimaan agar proses distribusi barang berjalan tertib dan terdokumentasi."
     },
 ]
-
-export interface TIPE_BARANG_BELANJA {
-    id: number,
-    nama_barang: string,
-    kategori: string,
-    satuan: string,
-    jumlah: number,
-    harga: number,
-    total_harga: number,
-    statusPemeriksaan?: string
-}
 
 export const BARANG_BELANJA: TIPE_BARANG_BELANJA[] = [
     {

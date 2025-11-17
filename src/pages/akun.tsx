@@ -12,7 +12,7 @@ import Dropdown from '../components/dropdown';
 import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
-import { type MockUser } from '../Mock Data/data';
+import { type User } from '../constant/roles';
 import { ROLES } from '../constant/roles';
 import PfpExample from '../assets/Pfp Example.jpeg';
 
@@ -51,7 +51,7 @@ export default function MonitoringPage() {
     // const startIndex = (currentPage - 1) * itemsPerPage;
     // const currentItems = MOCK_USERS.slice(startIndex, startIndex + itemsPerPage);
 
-    const [dataAkun, setDataAkun] = useState<MockUser[]>([]);
+    const [dataAkun, setDataAkun] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -69,9 +69,9 @@ export default function MonitoringPage() {
             const sortedData = [...prevData]; // Buat salinan
             sortedData.sort((a, b) => {
                 if (option.value === 'asc') {
-                    return a.nama_pengguna.localeCompare(b.nama_pengguna);
+                    return a.name.localeCompare(b.name);
                 } else {
-                    return b.nama_pengguna.localeCompare(a.nama_pengguna);
+                    return b.name.localeCompare(a.name);
                 }
             });
             return sortedData;
@@ -86,12 +86,11 @@ export default function MonitoringPage() {
         navigate(PATHS.AKUN.TAMBAH)
     }
 
-    const handleEditClick = (userData: MockUser) => {
+    const handleEditClick = (userData: User) => {
         navigate(PATHS.PROFIL.EDIT, {
             state: {
                 data: userData,
             }
-
         })
     }
 
@@ -207,7 +206,7 @@ export default function MonitoringPage() {
 
                 {currentItems.map((akun) => (
                     <div
-                        key={akun.user_id}
+                        key={akun.id}
                         className="grid grid-cols-[30px_repeat(12,minmax(0,1fr))] gap-4 items-center bg-white rounded-xl shadow-md"
                     >
                         <div className={`col-span-1 h-full bg-[#EFF8FF] rounded-l-lg py-3`}></div>
@@ -223,12 +222,12 @@ export default function MonitoringPage() {
 
                         {/* Role */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-800 font-medium">{akun.role}</p>
+                            <p className="text-gray-800 font-medium">{akun.roles[0].name}</p>
                         </div>
 
                         {/* Username */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-600">{akun.nama_pengguna}</p>
+                            <p className="text-gray-600">{akun.name}</p>
                         </div>
 
                         {/* Email */}

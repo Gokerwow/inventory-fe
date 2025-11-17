@@ -1,6 +1,6 @@
 import UserIcon from '../assets/user-square.svg?react'
 import ShopCartIcon from '../assets/shopCart.svg?react'
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DropdownInput from '../components/dropdownInput';
 import Input from '../components/input';
 import ButtonConfirm from '../components/buttonConfirm';
@@ -9,24 +9,30 @@ import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import React, { useEffect, useState, useMemo } from 'react';
 import { PATHS } from '../Routes/path';
-import { dataPihak, type TipeDataPihak } from '../Mock Data/data';
 import {
     getPenerimaanDetail,
-    getBarangBelanjaByPenerimaanId,
     createPenerimaan,
+    confirmPenerimaan,
+    editPenerimaan,
 } from '../services/penerimaanService';
+import { updateBarangStatus } from '../services/barangService';
 import { useToast } from '../hooks/useToast';
 import Modal from '../components/modal';
 import { usePenerimaan } from '../hooks/usePenerimaan';
-import { ROLES } from '../constant/roles';
+import { ROLES, type Kategori, type SelectPihak } from '../constant/roles';
+import { getKategoriList } from '../services/kategoriService';
+import { getPegawaiSelect } from '../services/pegawaiService';
 
-export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean }) {
+export default function TambahPenerimaan({ isEdit = false, isInspect = false }: { isEdit?: boolean, isInspect?: boolean }) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS], []);
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
-    const { user } = useAuth() // ✅ Ambil data user
+    const { user } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
     const { id: paramId } = useParams();
     const { showToast } = useToast();
+
+    console.log(isEdit)
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,57 +40,95 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
     const [error, setError] = useState<string | null>(null);
 
     const { barang, setBarang, formDataPenerimaan, setFormDataPenerimaan } = usePenerimaan()
+    const [kategoriOptions, setKategoriOptions] = useState<Kategori[]>([]);
 
-    useEffect(() => {
-        // Fungsi ini akan berjalan SETIAP KALI state 'barang' 
-        // selesai diperbarui oleh React.
+    const [pihak, setPihak] = useState<SelectPihak[]>([])
 
-        console.log("✅ State 'barang' telah diperbarui:", barang);
-
-    }, [barang]);
-
-    // useEffect untuk mode edit
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
 
-        if (isEdit && paramId) {
-            const fetchData = async () => {
-                setIsLoading(true);
-                setError(null);
-                try {
+        if (location.state?.keepLocalData) {
+            console.log('🛑 Skip fetch API karena baru menambah barang lokal');
+            return;
+        }
+        const fetchAllData = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const [kategoriData, pihakData] = await Promise.all([
+                    getKategoriList(),
+                    getPegawaiSelect()
+                ]);
+
+                setKategoriOptions(kategoriData);
+                setPihak(pihakData);
+
+                if ((isEdit || isInspect) && paramId) {
+                    console.log('🔄 Fetching data penerimaan untuk edit...');
                     const id = Number(paramId);
-                    const [detailData, barangData] = await Promise.all([
-                        getPenerimaanDetail(id),
-                        getBarangBelanjaByPenerimaanId(id)
-                    ]);
+                    const detailData = await getPenerimaanDetail(id);
 
                     if (detailData) {
+                        console.log('📦 Detail barang dari API:', detailData.detail_barang);
+
+                        // ✅ Set formDataPenerimaan
                         setFormDataPenerimaan({
-                            id: detailData.id,
-                            noSurat: detailData.noSurat,
-                            namaPihakPertama: detailData.namaPegawai,
-                            jabatanPihakPertama: 'Jabatan Dummy',
-                            NIPPihakPertama: '123456',
-                            alamatSatkerPihakPertama: 'Alamat Dummy',
-                            namaPihakKedua: 'Pihak Kedua Dummy',
-                            jabatanPihakKedua: 'Jabatan Dummy',
-                            NIPPihakKedua: '654321',
-                            alamatSatkerPihakKedua: 'Alamat Dummy',
-                            deskripsiBarang: 'Deskripsi Dummy',
+                            no_surat: detailData.no_surat,
+                            category_id: detailData.category.id,
+                            category_name: detailData.category.name,
+                            deskripsi: detailData.deskripsi,
+                            detail_barangs: [],
+                            pegawais: [{
+                                pegawai_id_pertama: detailData.detail_pegawai[0].id,
+                                pegawai_name_pertama: detailData.detail_pegawai[0].name,
+                                pegawai_NIP_pertama: detailData.detail_pegawai[0].nip,
+                                jabatan_name_pertama: detailData.detail_pegawai[0].jabatan_name,
+                                alamat_staker_pertama: detailData.detail_pegawai[0].alamat_satker
+                            }, {
+                                pegawai_id_kedua: detailData.detail_pegawai[1].id,
+                                pegawai_name_kedua: detailData.detail_pegawai[1].name,
+                                pegawai_NIP_kedua: detailData.detail_pegawai[1].nip,
+                                jabatan_name_kedua: detailData.detail_pegawai[1].jabatan_name,
+                                alamat_staker_kedua: detailData.detail_pegawai[1].alamat_satker
+                            }]
                         });
+
+                        const transformedBarang = detailData.detail_barang?.map(item => ({
+                            stok_id: item.id,
+                            stok_name: item.nama_stok,
+                            satuan_name: item.nama_satuan,
+                            quantity: item.quantity,
+                            price: item.harga,
+                            total_harga: item.total_harga,
+                            is_layak: item.is_layak || null
+                        })) || [];
+
+                        console.log('✅ Transformed barang:', transformedBarang);
+                        setBarang(transformedBarang);
                     }
-                    setBarang(barangData);
-                } catch (err) {
-                    console.error(err);
-                    setError("Gagal memuat data penerimaan.");
-                } finally {
-                    setIsLoading(false);
+
+                    console.log('✅ Data penerimaan berhasil diambil');
                 }
-            };
-            fetchData();
-        }
-    }, [isEdit, paramId, user, checkAccess, hasAccess, setFormDataPenerimaan, setBarang]);
+            } catch (err) {
+                console.error('❌ Error:', err);
+                setError("Gagal memuat data.");
+                showToast("Gagal memuat data.", "error");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchAllData();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEdit, isInspect, paramId, user?.role, checkAccess, hasAccess, showToast]);
+
+    // ✅ Separate useEffect untuk debug barang
+    useEffect(() => {
+        console.log('📊 Barang updated:', barang);
+    }, [barang]);
 
     if (!hasAccess(user?.role)) {
         return null;
@@ -95,21 +139,26 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         console.log('➕ Navigasi ke form barang belanja');
         console.log('📊 Barang yang sudah ada:', barang.length);
 
-        navigate(PATHS.PENERIMAAN.BARANG_BELANJA);
+        navigate(PATHS.PENERIMAAN.BARANG_BELANJA, {
+            state: {
+                isEdit: isEdit, // ✅ GUNAKAN isEdit LANGSUNG
+                returnUrl: window.location.pathname
+            }
+        });
     }
 
     // ✅ TAMBAHAN: Handler untuk hapus barang
     const handleDeleteBarang = (id: number) => {
-        setBarang(prev => prev.filter(item => item.id !== id));
+        setBarang(prev => prev.filter(item => item.stok_id !== id));
         showToast('Barang berhasil dihapus', 'success');
     };
 
     // ✅ PERUBAHAN: Handler untuk status barang (Tim Teknis)
-    const handleStatusChange = (id: number, status: 'Layak' | 'Tidak Layak') => {
+    const handleStatusChange = (id: number, status: boolean) => {
         setBarang(prevBarang =>
             prevBarang.map(item => {
-                console.log(`✅ Barang ID ${item.id} ditandai. Status baru: ${item.statusPemeriksaan}`);
-                return item.id === id ? { ...item, statusPemeriksaan: status } : item;
+                console.log(`✅ Barang ID ${item.stok_id} ditandai. Status baru: ${item.is_layak}`);
+                return item.stok_id === id ? { ...item, is_layak: status } : item;
             })
         );
         showToast(`Barang ditandai ${status}`, 'success');
@@ -123,36 +172,136 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         }));
     };
 
-    const handlePihakPertamaChange = (pihak: TipeDataPihak | null) => {
-        setFormDataPenerimaan(prev => ({
+    const handleKategoriChange = (option: Kategori | null) => {
+        const newCategoryId = option?.id ?? 0;
+        const oldCategoryId = formDataPenerimaan.category_id;
+
+        // 1. Cek apakah kategori benar-benar berubah
+        if (newCategoryId === oldCategoryId) {
+            return; // Tidak ada perubahan, jangan lakukan apa-apa
+        }
+
+        // 2. Cek apakah keranjang (barang) sudah ada isinya
+        if (barang.length > 0) {
+            // 3. Jika ada isi, tampilkan konfirmasi
+            const isConfirmed = window.confirm(
+                "Mengganti kategori akan MENGHAPUS semua barang di keranjang belanja Anda. Lanjutkan?"
+            );
+
+            if (isConfirmed) {
+                // 4. Jika user setuju:
+                // - Hapus semua barang dari context
+                setBarang([]);
+                // - Update kategori di form
+                setFormDataPenerimaan(prevState => ({
+                    ...prevState,
+                    category_id: newCategoryId,
+                    category_name: option?.name ?? ''
+                }));
+                // - Beri notifikasi (menggunakan useToast Anda)
+                showToast('Keranjang belanja telah dikosongkan.', 'success');
+            }
+        } else {
+            // 6. Jika keranjang kosong, langsung update kategori seperti biasa
+            setFormDataPenerimaan(prevState => ({
+                ...prevState,
+                category_id: newCategoryId,
+                category_name: option?.name ?? ''
+            }));
+        }
+    };
+
+    const handleAlamatSatkerPertamaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const value = e.target.value
+        setFormDataPenerimaan((prev) => ({
             ...prev,
-            namaPihakPertama: pihak ? pihak.nama : '',
-            jabatanPihakPertama: pihak ? pihak.jabatan : '',
-            NIPPihakPertama: pihak ? pihak.nip : '',
+            pegawais: [
+                {
+                    ...prev.pegawais[0],
+                    alamat_staker_pertama: value
+                },
+                prev.pegawais?.[1] ?? {
+                    pegawai_id_kedua: 0, // dari dropdown pihak
+                    pegawai_name_kedua: '',
+                    pegawai_NIP_kedua: '',
+                    jabatan_name_kedua: '',
+                    alamat_staker_kedua: ''
+                }
+            ]
+        }))
+    }
+
+    const handleAlamatSatkerKeduaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const value = e.target.value
+        setFormDataPenerimaan((prev) => ({
+            ...prev,
+            pegawais: [
+                prev.pegawais?.[0] ?? {
+                    pegawai_id_pertama: 0, // dari dropdown pihak
+                    pegawai_name_pertama: '',
+                    pegawai_NIP_pertama: '',
+                    jabatan_name_pertama: '',
+                    alamat_staker_pertama: ''
+                },
+                {
+                    ...prev.pegawais[1],
+                    alamat_staker_kedua: value
+                }
+            ]
+        }));
+    }
+
+    // ✅ Handler pihak - update formDataPenerimaan
+    const handlePihakPertamaChange = (pihak: SelectPihak | null) => {
+        setFormDataPenerimaan((prev) => ({
+            ...prev,
+            pegawais: [
+                {
+                    pegawai_id_pertama: pihak?.id ?? 0,
+                    pegawai_name_pertama: pihak?.name ?? '',
+                    pegawai_NIP_pertama: pihak?.nip ?? '',
+                    jabatan_name_pertama: pihak?.jabatan_name ?? '',
+                    alamat_staker_pertama: ''
+                },
+                prev.pegawais?.[1] ?? {
+                    pegawai_id_kedua: 0, // dari dropdown pihak
+                    pegawai_name_kedua: '',
+                    pegawai_NIP_kedua: '',
+                    jabatan_name_kedua: '',
+                    alamat_staker_kedua: ''
+                }
+            ]
         }));
     };
 
-    const handlePihakKeduaChange = (pihak: TipeDataPihak | null) => {
-        setFormDataPenerimaan(prev => ({
+    const handlePihakKeduaChange = (pihak: SelectPihak | null) => {
+        setFormDataPenerimaan((prev) => ({
             ...prev,
-            namaPihakKedua: pihak ? pihak.nama : '',
-            jabatanPihakKedua: pihak ? pihak.jabatan : '',
-            NIPPihakKedua: pihak ? pihak.nip : '',
+            pegawais: [
+                prev.pegawais?.[0] ?? {
+                    pegawai_id_pertama: 0, // dari dropdown pihak
+                    pegawai_name_pertama: '',
+                    pegawai_NIP_pertama: '',
+                    jabatan_name_pertama: '',
+                    alamat_staker_pertama: ''
+                },
+                {
+                    pegawai_id_kedua: pihak?.id ?? 0,
+                    pegawai_name_kedua: pihak?.name ?? '',
+                    pegawai_NIP_kedua: pihak?.nip ?? '',
+                    jabatan_name_kedua: pihak?.jabatan_name ?? '',
+                    alamat_staker_kedua: ''
+                }
+            ]
         }));
     };
+
 
     const handleConfirmSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
-        if (!formDataPenerimaan.noSurat || !formDataPenerimaan.namaPihakPertama) {
-            showToast("Nomor Surat dan Nama Pihak Pertama wajib diisi!", "error");
-            setIsSubmitting(false);
-            setIsModalOpen(false);
-            return;
-        }
-
-        // ✅ VALIDASI: Pastikan ada barang
+        // Validasi: Pastikan ada barang (berlaku untuk semua mode)
         if (barang.length === 0) {
             showToast("Tambahkan minimal 1 barang belanja!", "error");
             setIsSubmitting(false);
@@ -161,22 +310,98 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
         }
 
         try {
-            const dataFinal = {
-                ...formDataPenerimaan,
-                barang: barang // State 'barang' sudah berisi 'status_pemeriksaan' jika diisi
-            };
+            if (isInspect) {
+                // --- ALUR 1: MODE INSPEKSI (TIM TEKNIS) ---
 
-            if (isEdit) {
-                showToast("Berhasil mengupdate data penerimaan!", "success");
+                // 1. Validasi: Pastikan semua barang sudah ditandai
+                const allMarked = barang.every(item => item.is_layak !== null);
+                if (!allMarked) {
+                    showToast("Harap tandai 'Layak' atau 'Tidak Layak' untuk SEMUA barang.", "error");
+                    setIsSubmitting(false);
+                    setIsModalOpen(false);
+                    return;
+                }
+
+                // 2. Dapatkan ID Penerimaan dari URL
+                const penerimaanId = Number(paramId);
+                if (!penerimaanId) {
+                    throw new Error("ID Penerimaan tidak ditemukan di URL.");
+                }
+
+                // 3. Buat array berisi promise untuk setiap update
+                const updatePromises = barang.map(item => {
+                    // 'detail_id' adalah ID unik baris (misal: 115)
+                    const detailId = item.stok_id;
+                    const status = item.is_layak;
+
+                    // Panggil service baru
+                    return updateBarangStatus(penerimaanId, detailId, status ?? null);
+                });
+
+                // 4. Jalankan semua promise update secara paralel
+                await Promise.all(updatePromises);
+                await confirmPenerimaan(penerimaanId)
+
+                showToast("Status kelayakan barang berhasil disimpan!", "success");
+
             } else {
-                await createPenerimaan(dataFinal);
-                showToast("Berhasil membuat data penerimaan!", "success");
+                // --- ALUR 2: MODE CREATE / EDIT (TIM PPK) ---
+
+                // 1. Validasi: Pastikan form utama terisi
+                if (!formDataPenerimaan.no_surat || formDataPenerimaan.pegawais[0].pegawai_id_pertama === 0) {
+                    showToast("Nomor Surat dan Pihak Pertama wajib diisi!", "error");
+                    setIsSubmitting(false);
+                    setIsModalOpen(false);
+                    return;
+                }
+
+                // 2. Siapkan data final untuk create/edit
+                const dataFinal = {
+                    no_surat: formDataPenerimaan.no_surat,
+                    category_id: formDataPenerimaan.category_id,
+                    deskripsi: formDataPenerimaan.deskripsi,
+                    detail_barangs: barang.map(item => ({
+                        stok_id: item.stok_id,
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
+                    pegawais: [
+                        {
+                            pegawai_id: formDataPenerimaan.pegawais[0].pegawai_id_pertama,
+                            alamat_staker: formDataPenerimaan.pegawais[0].alamat_staker_pertama
+                        },
+                        {
+                            pegawai_id: formDataPenerimaan.pegawais[1].pegawai_id_kedua,
+                            alamat_staker: formDataPenerimaan.pegawais[1].alamat_staker_kedua
+                        }
+                    ]
+                };
+
+                // 3. Panggil service create/update
+                // (Kita asumsikan backend menangani 'isEdit' jika ID ada)
+                if (isEdit) {
+                    const penerimaanId = Number(paramId);
+                    if (!penerimaanId) {
+                        throw new Error("ID Penerimaan tidak ditemukan di URL.");
+                    }
+                    const result = await editPenerimaan(penerimaanId, dataFinal);
+                    console.log("✅ Data penerimaan yang diupdate:", result);
+                    showToast("Berhasil mengupdate data penerimaan!", "success");
+
+                } else {
+                    const result = await createPenerimaan(dataFinal);
+                    console.log("✅ Data penerimaan yang dibuat", result);
+                    showToast("Berhasil membuat data penerimaan!", "success");
+                }
             }
 
+            // --- SUKSES (Umum untuk kedua alur) ---
             setIsModalOpen(false);
+            setIsSubmitting(false);
             navigate(PATHS.PENERIMAAN.INDEX);
 
         } catch (err) {
+            // --- GAGAL (Umum untuk kedua alur) ---
             console.error(err);
             showToast("Terjadi kesalahan saat menyimpan data.", "error");
             setIsSubmitting(false);
@@ -186,7 +411,6 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log('Form Data Penerimaan Siap Submit:', { ...formDataPenerimaan, barang });
         setIsModalOpen(true);
     }
 
@@ -224,13 +448,14 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             <h1 className='text-xl font-semibold'>Pihak Pertama</h1>
                         </div>
                         <DropdownInput
-                            options={dataPihak}
+                            options={pihak}
                             placeholder='Masukkan Nama'
                             judul='Nama Lengkap'
-                            value={formDataPenerimaan.namaPihakPertama}
+                            value={formDataPenerimaan.pegawais[0].pegawai_name_pertama}
                             onChange={handlePihakPertamaChange}
                             name='namaPihakPertama'
                             type='button'
+                            disabled={isInspect}
                         />
                         <Input
                             id="jabatanPihakPertama"
@@ -238,7 +463,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             judul="Jabatan"
                             onChange={handleChange}
                             name='jabatanPihakPertama'
-                            value={formDataPenerimaan.jabatanPihakPertama}
+                            value={formDataPenerimaan.pegawais[0].jabatan_name_pertama}
                             readOnly={true}
                         />
                         <Input
@@ -248,16 +473,17 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             type='number'
                             onChange={handleChange}
                             name='NIPPihakPertama'
-                            value={formDataPenerimaan.NIPPihakPertama}
+                            value={formDataPenerimaan.pegawais[0].pegawai_NIP_pertama}
                             readOnly={true}
                         />
                         <Input
                             id="alamatSatkerPihakPertama"
                             placeholder="Masukkan Alamat Satker"
                             judul="Alamat SatKer"
-                            onChange={handleChange}
+                            onChange={handleAlamatSatkerPertamaChange}
                             name='alamatSatkerPihakPertama'
-                            value={formDataPenerimaan.alamatSatkerPihakPertama}
+                            value={formDataPenerimaan.pegawais[0].alamat_staker_pertama}
+                            readOnly={isInspect}
                         />
                     </div>
 
@@ -268,13 +494,14 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             <h1 className='text-xl font-semibold'>Pihak Kedua</h1>
                         </div>
                         <DropdownInput
-                            options={dataPihak}
+                            options={pihak}
                             placeholder='Masukkan Nama'
                             judul='Nama Lengkap'
                             type='button'
-                            value={formDataPenerimaan.namaPihakKedua}
+                            value={formDataPenerimaan?.pegawais[1].pegawai_name_kedua}
                             onChange={handlePihakKeduaChange}
                             name='namaPihakKedua'
+                            disabled={isInspect}
                         />
                         <Input
                             id="jabatanPihakKedua"
@@ -282,7 +509,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             judul="Jabatan"
                             onChange={handleChange}
                             name='jabatanPihakKedua'
-                            value={formDataPenerimaan.jabatanPihakKedua}
+                            value={formDataPenerimaan?.pegawais[1].jabatan_name_kedua}
                             readOnly={true}
                         />
                         <Input
@@ -292,16 +519,17 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                             type='number'
                             onChange={handleChange}
                             name='NIPPihakKedua'
-                            value={formDataPenerimaan.NIPPihakKedua}
+                            value={formDataPenerimaan?.pegawais[1].pegawai_NIP_kedua}
                             readOnly={true}
                         />
                         <Input
                             id="alamatSatkerPihakKedua"
                             placeholder="Masukkan Alamat Satker"
                             judul="Alamat Satker"
-                            onChange={handleChange}
+                            onChange={handleAlamatSatkerKeduaChange}
                             name='alamatSatkerPihakKedua'
-                            value={formDataPenerimaan.alamatSatkerPihakKedua}
+                            value={formDataPenerimaan?.pegawais[1].alamat_staker_kedua}
+                            readOnly={isInspect}
                         />
                     </div>
                 </div>
@@ -313,12 +541,13 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                         <h1 className='text-xl font-semibold'>Nomor Surat</h1>
                     </div>
                     <Input
-                        id="nomorSurat"
+                        id="no_surat"
                         placeholder="Masukkan Nomor Surat"
                         judul="Nomor Surat"
                         onChange={handleChange}
-                        name='noSurat'
-                        value={formDataPenerimaan.noSurat}
+                        name='no_surat'
+                        value={formDataPenerimaan.no_surat}
+                        readOnly={isInspect}
                     />
                 </div>
 
@@ -332,15 +561,33 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                         <label className="mb-2 font-semibold">Deskripsi</label>
                         <div className="relative w-full">
                             <textarea
-                                id="deskripsiBarang"
+                                id="deskripsi"
                                 placeholder='Masukkan Deskripsi Anda'
-                                className="text-[#6E7781] border-2 border-[#CDCDCD] rounded-lg text-sm px-5 py-2.5 w-full h-40 align-top focus:outline-none focus:border-blue-500"
+                                className="text-[#6E7781] border-2 border-[#CDCDCD] rounded-lg text-sm px-5 py-2.5 w-full h-40 align-top focus:outline-none focus:border-blue-500 disabled:bg-gray-100 
+                                            disabled:text-gray-400 
+                                            disabled:cursor-not-allowed 
+                                            disabled:hover:bg-gray-100"
                                 onChange={handleChange}
-                                name='deskripsiBarang'
-                                value={formDataPenerimaan.deskripsiBarang}
+                                name='deskripsi'
+                                value={formDataPenerimaan.deskripsi}
+                                disabled={isInspect}
                             ></textarea>
                         </div>
                     </div>
+                </div>
+
+                {/* KATEGORI BARANG */}
+                <div className='shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 rounded-xl flex flex-col gap-4'>
+                    <DropdownInput<Kategori>
+                        placeholder="Pilih Kategori"
+                        options={kategoriOptions}  // Sekarang sudah Kategori[], bukan string[]
+                        judul="Kategori Barang"
+                        type="button"
+                        onChange={handleKategoriChange}  // ← Hapus parameter 'kategoriBarang'
+                        value={formDataPenerimaan.category_name}
+                        name="category_name"
+                        disabled={isInspect}
+                    />
                 </div>
 
                 {/* BUAT DAFTAR BELANJA */}
@@ -374,9 +621,6 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                                             <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider">
                                                 Nama Barang
                                             </th>
-                                            <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider ">
-                                                Kategori
-                                            </th>
                                             <th className="py-3 px-6 text-sm font-semibold text-[#9C9C9C] tracking-wider text-center">
                                                 Satuan
                                             </th>
@@ -396,58 +640,55 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                                     </thead>
 
                                     <tbody>
-                                        {barang.filter(item => item && item.nama_barang).map((item, index) => (
+                                        {barang.filter(item => item && item.stok_name).map((item, index) => (
                                             <tr
-                                                key={item.id || index}
+                                                key={item.stok_id || index}
                                                 className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                                             >
                                                 <td className="py-4 px-6 text-[#6E7781] font-medium">
-                                                    {item.nama_barang}
-                                                </td>
-                                                <td className="py-4 px-6 text-[#6E7781]">
-                                                    {item.kategori}
+                                                    {item.stok_name}
                                                 </td>
                                                 <td className="py-4 px-6 text-[#6E7781] text-center">
-                                                    {item.satuan}
+                                                    {item.satuan_name}
                                                 </td>
                                                 <td className="py-4 px-6 text-[#6E7781] text-center">
-                                                    {item.jumlah}
+                                                    {item.quantity}
                                                 </td>
                                                 <td className="py-4 px-6 text-[#6E7781] text-center">
-                                                    Rp {new Intl.NumberFormat('id-ID').format(item.harga)}
+                                                    Rp {new Intl.NumberFormat('id-ID').format(item.price ?? 0)}
                                                 </td>
                                                 <td className="py-4 px-6 text-[#6E7781] text-center">
-                                                    Rp {new Intl.NumberFormat('id-ID').format(item.total_harga)}
+                                                    Rp {new Intl.NumberFormat('id-ID').format(item.total_harga ?? 0)}
                                                 </td>
 
-                                                {/* ✅ PERUBAHAN: Tombol Aksi berdasarkan role */}
                                                 <td className="py-4 px-6 text-center">
                                                     {user?.role === ROLES.TEKNIS ? (
                                                         // Jika TIM TEKNIS
                                                         <>
-                                                            {item.statusPemeriksaan === 'Layak' ? (
-                                                                // Status Layak -> Tampilkan Tag Hijau
-                                                                <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                                                    Layak
-                                                                </span>
-                                                            ) : item.statusPemeriksaan === 'Tidak Layak' ? (
-                                                                // Status Tidak Layak -> Tampilkan Tag Merah
-                                                                <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                                                    Tidak Layak
-                                                                </span>
+                                                            {item.is_layak !== null ? (
+                                                                item.is_layak ?
+                                                                    // Status Layak -> Tampilkan Tag Hijau
+                                                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                                                        Layak
+                                                                    </span>
+                                                                    :
+                                                                    // Status Tidak Layak -> Tampilkan Tag Merah
+                                                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                                        Tidak Layak
+                                                                    </span>
                                                             ) : (
                                                                 // Belum ada status -> Tampilkan Tombol
                                                                 <div className="flex justify-center gap-2">
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleStatusChange(item.id, 'Layak')}
+                                                                        onClick={() => handleStatusChange(item.stok_id, true)}
                                                                         className="text-green-500 hover:text-green-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
                                                                     >
                                                                         Layak
                                                                     </button>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleStatusChange(item.id, 'Tidak Layak')}
+                                                                        onClick={() => handleStatusChange(item.stok_id, false)}
                                                                         className="text-red-500 hover:text-red-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
                                                                     >
                                                                         Tidak Layak
@@ -459,7 +700,7 @@ export default function TambahPenerimaan({ isEdit = false }: { isEdit?: boolean 
                                                         // Jika BUKAN Tim Teknis (misal Tim PPK) -> Tampilkan Hapus
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleDeleteBarang(item.id)}
+                                                            onClick={() => handleDeleteBarang(item.stok_id)}
                                                             className="text-red-500 hover:text-red-700 hover:scale-110 active:scale-95 transition-all duration-200 font-medium px-3 py-1 rounded"
                                                         >
                                                             Hapus

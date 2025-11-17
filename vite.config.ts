@@ -19,7 +19,7 @@ export default defineConfig({
       // yang dimulai dengan '/api',
       // teruskan ke backend Laravel.
       '/api': {
-        target: 'http://127.0.0.1:8000', // Alamat backend Laravel Anda
+        target: 'http://127.0.0.1:8001', // Alamat backend Laravel Anda
         changeOrigin: true, // Ini wajib untuk memberi tahu Laravel asalnya 'benar'
         secure: false, // Nonaktifkan verifikasi SSL (berguna untuk http)
       }

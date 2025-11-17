@@ -37,6 +37,7 @@ function App() {
             <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
             <Route path={PATHS.PENERIMAAN.BARANG_BELANJA} element={<FormDataBarangBelanja />} />
             <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true}/>} />
+            <Route path={PATHS.PENERIMAAN.INSPECT} element={<FormPenerimaan isInspect={true}/>} />
             <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
             <Route path={PATHS.PENERIMAAN.LIHAT} element={<LihatPenerimaan />} />
           </Route>

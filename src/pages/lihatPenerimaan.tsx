@@ -1,21 +1,25 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import UploadIcon from '../assets/uploadBAST.svg?react'
 import ButtonConfirm from '../components/buttonConfirm';
-import { useToast } from '../hooks/useToast'; 
+import { useToast } from '../hooks/useToast';
 import Modal from '../components/modal';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
 import PDFIcon from '../assets/PDFICON.svg?react'
 import { riwayatUpload } from '../Mock Data/data';
 import Pagination from '../components/pagination';
+import { uploadBAST } from '../services/bastService';
+import WarnButton from '../components/warnButton';
 
 const LihatPenerimaan = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast()
     const navigate = useNavigate()
+    const location = useLocation()
+    const { data } = location.state || {}
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
-        BASTFile: null as File | null
+        uploaded_signed_file: null as File | null
     })
     const [selectedFileName, setSelectedFileName] = useState<string>('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -23,7 +27,6 @@ const LihatPenerimaan = () => {
 
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentItems = riwayatUpload.slice(startIndex, startIndex + itemsPerPage);
-
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -54,7 +57,7 @@ const LihatPenerimaan = () => {
             // Simpan file dan nama file
             setFormData(prevState => ({
                 ...prevState,
-                BASTFile: file
+                uploaded_signed_file: file
             }));
             setSelectedFileName(file.name);
 
@@ -66,7 +69,7 @@ const LihatPenerimaan = () => {
     const handleRemoveFile = () => {
         setFormData(prevState => ({
             ...prevState,
-            BASTFile: null
+            uploaded_signed_file: null
         }));
         setSelectedFileName('');
         if (fileInputRef.current) {
@@ -74,15 +77,16 @@ const LihatPenerimaan = () => {
         }
     };
 
-    const handleConfirmSubmit = () => {
-        if (!formData.BASTFile) {
+    const handleConfirmSubmit = async () => {
+        if (!formData.uploaded_signed_file) {
             showToast('Silakan pilih file terlebih dahulu!', 'error');
             handleCloseModal();
             return;
         }
 
-        console.log('Data barang:', formData);
-
+        const result = await uploadBAST(data.id, formData)
+        console.log("✅ Data BAST yang diupload:", result);
+        showToast("Berhasil mengupload file BAST!", "success");
         // Navigate dengan data
         navigate(PATHS.PENERIMAAN.INDEX, {
             state: {
@@ -97,7 +101,7 @@ const LihatPenerimaan = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.BASTFile) {
+        if (!formData.uploaded_signed_file) {
             showToast('Silakan pilih file terlebih dahulu!', 'error');
             return;
         }
@@ -162,9 +166,9 @@ const LihatPenerimaan = () => {
                                         <p className="text-gray-700 font-medium truncate">
                                             {selectedFileName}
                                         </p>
-                                        {formData.BASTFile && (
+                                        {formData.uploaded_signed_file && (
                                             <p className="text-gray-500 text-sm">
-                                                {formatFileSize(formData.BASTFile.size)}
+                                                {formatFileSize(formData.uploaded_signed_file.size)}
                                             </p>
                                         )}
                                     </div>
@@ -236,6 +240,17 @@ const LihatPenerimaan = () => {
                 onConfirm={handleConfirmSubmit}
                 text="Apa anda yakin ingin mengunggah file BAST ini?"
             >
+                <div className="flex gap-4 justify-end">
+                    <ButtonConfirm
+                        text="Iya"
+                        type="button"
+                        onClick={handleConfirmSubmit}
+                    />
+                    <WarnButton
+                        onClick={() => setIsModalOpen(false)}
+                        text="Tidak"
+                    />
+                </div>
             </Modal>
         </div >
     );

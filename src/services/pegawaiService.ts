@@ -1,5 +1,7 @@
-import { employees, FAQ, type EmployeeType  } from '../Mock Data/data';
+import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
+import apiClient from './api';
 import { simulateApiCall } from './utils';
+import { SelectPihak } from '../constant/roles';
 
 type Employee = typeof employees[0];
 type FaqItem = typeof FAQ[0];
@@ -8,9 +10,28 @@ type FaqItem = typeof FAQ[0];
  * Mengambil daftar pegawai di bawah admin.
  * Digunakan di: src/pages/profil.tsx
  */
-export const getPegawaiList = (): Promise<Employee[]> => {
+export const getPegawaiList = async (): Promise<Employee[]> => {
     console.log("SERVICE: Mengambil daftar pegawai...");
-    return simulateApiCall(employees);
+    try {
+        const response = await apiClient.get('/api/v1/pegawai/select')
+        const data = response.data.data as Employee[]
+        return data
+    } catch (error) {
+        console.error("Gagal mengambil data log aktivitas:", error);
+        throw new Error('Gagal mengambil data log aktivitas.');
+    }
+};
+
+export const getPegawaiSelect = async (): Promise<SelectPihak[]> => {
+    console.log("SERVICE: Mengambil daftar pegawai...");
+    try {
+        const response = await apiClient.get('/api/v1/pegawai/select')
+        const data = response.data.data as SelectPihak[]
+        return data
+    } catch (error) {
+        console.error("Gagal mengambil data log aktivitas:", error);
+        throw new Error('Gagal mengambil data log aktivitas.');
+    }
 };
 
 /**
