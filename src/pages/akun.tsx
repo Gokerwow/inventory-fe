@@ -6,7 +6,7 @@ import { getAkunUsers } from '../services/akunService'; // <-- TAMBAHKAN INI
 import Pagination from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Transition } from '@headlessui/react';
-import PlusAkun from '../assets/plusAkun.svg?react'
+// import PlusAkun from '../assets/plusAkun.svg?react'
 import { useNavigate } from 'react-router-dom';
 import Dropdown from '../components/dropdown';
 import { PATHS } from '../Routes/path';
@@ -82,9 +82,9 @@ export default function MonitoringPage() {
         setCurrentPage(page);
     };
 
-    const handleAddClick = () => {
-        navigate(PATHS.AKUN.TAMBAH)
-    }
+    // const handleAddClick = () => {
+    //     navigate(PATHS.AKUN.TAMBAH)
+    // }
 
     const handleEditClick = (userData: User) => {
         navigate(PATHS.PROFIL.EDIT, {
@@ -216,13 +216,13 @@ export default function MonitoringPage() {
                             <img
                                 src={akun.photo ?? PfpExample}
                                 alt="Avatar"
-                                className="w-12 h-12 rounded-full"
+                                className="w-14 h-14 rounded-full"
                             />
                         </div>
 
                         {/* Role */}
                         <div className="col-span-2 py-3">
-                            <p className="text-gray-800 font-medium">{akun.roles[0].name}</p>
+                            <p className="text-gray-800 font-medium">{akun.role}</p>
                         </div>
 
                         {/* Username */}
@@ -255,9 +255,9 @@ export default function MonitoringPage() {
                 ))}
             </div>
 
-            <div onClick={handleAddClick} className='place-self-end py-4 '>
+            {/* <div onClick={handleAddClick} className='place-self-end py-4 '>
                 <PlusAkun className='hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer' />
-            </div>
+            </div> */}
 
             <Pagination
                 currentPage={currentPage}

@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import UploadIcon from '../assets/uploadBAST.svg?react'
 import ButtonConfirm from '../components/buttonConfirm';
 import { useToast } from '../hooks/useToast';
@@ -6,27 +6,76 @@ import Modal from '../components/modal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
 import PDFIcon from '../assets/PDFICON.svg?react'
-import { riwayatUpload } from '../Mock Data/data';
 import Pagination from '../components/pagination';
-import { uploadBAST } from '../services/bastService';
+import { getRiwayatBASTFile, uploadBAST } from '../services/bastService'; // Pastikan path import benar
 import WarnButton from '../components/warnButton';
+import { useAuthorization } from '../hooks/useAuthorization';
+import { useAuth } from '../hooks/useAuth';
+import { ROLES, type RIWAYATBASTFILEAPI } from '../constant/roles';
 
 const LihatPenerimaan = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast()
     const navigate = useNavigate()
     const location = useLocation()
+    
+    // State Data & Loading
+    const [isLoading, setIsLoading] = useState(false);
+    const [riwayatBastFile, setRiwayatBastFile] = useState<RIWAYATBASTFILEAPI[]>([])
+    
+    // State Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const itemsPerPage = 7; // Sesuaikan dengan keinginan
+
+    const [error, setError] = useState<string | null>(null);
     const { data } = location.state || {}
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         uploaded_signed_file: null as File | null
     })
     const [selectedFileName, setSelectedFileName] = useState<string>('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 7;
 
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentItems = riwayatUpload.slice(startIndex, startIndex + itemsPerPage);
+    const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
+    const { user } = useAuth();
+
+    // ❌ HAPUS KODE MOCK DATA INI
+    // const startIndex = (currentPage - 1) * itemsPerPage;
+    // const currentItems = riwayatUpload.slice(startIndex, startIndex + itemsPerPage);
+
+    // ✅ UPDATE useEffect
+    useEffect(() => {
+        checkAccess(user?.role);
+        if (!hasAccess(user?.role)) {
+            return;
+        }
+
+        const fetchAllData = async () => {
+            setIsLoading(true);
+            try {
+                console.log(`🔄 Fetching BAST FILE data page ${currentPage}...`);
+                
+                // Panggil service dengan parameter page & perPage
+                const response = await getRiwayatBASTFile(currentPage, itemsPerPage);
+                
+                // Set Data Array
+                setRiwayatBastFile(response.data || []);
+                
+                // Set Total Items (Asumsi response API punya field 'total')
+                // Jika PaginationResponse punya field 'meta', sesuaikan (misal: response.meta.total)
+                // Jika response langsung object Laravel paginate, biasanya response.total
+                setTotalItems(response.total || 0); 
+
+            } catch (err) {
+                console.error("Error fetching history:", err);
+                setError("Gagal mengambil riwayat.");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchAllData()
+    }, [user.role, currentPage]); // Tambahkan currentPage agar re-fetch saat ganti halaman
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -42,27 +91,20 @@ const LihatPenerimaan = () => {
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target?.files?.[0];
         if (file) {
-            // Validasi apakah file adalah PDF
             if (!file.type.startsWith('application/pdf')) {
                 showToast('Harap pilih file PDF saja!', 'error');
                 return;
             }
-
-            // Validasi ukuran file (contoh: max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 showToast('Ukuran file maksimal 5MB', 'error');
                 return;
             }
-
-            // Simpan file dan nama file
             setFormData(prevState => ({
                 ...prevState,
                 uploaded_signed_file: file
             }));
             setSelectedFileName(file.name);
-
             showToast('File berhasil dipilih!', 'success');
-            console.log('File selected:', file);
         }
     };
 
@@ -83,30 +125,39 @@ const LihatPenerimaan = () => {
             handleCloseModal();
             return;
         }
+        
+        // Pastikan ada ID data dari location state
+        if (!data?.id) {
+             showToast('ID Penerimaan tidak ditemukan!', 'error');
+             handleCloseModal();
+             return;
+        }
 
-        const result = await uploadBAST(data.id, formData)
-        console.log("✅ Data BAST yang diupload:", result);
-        showToast("Berhasil mengupload file BAST!", "success");
-        // Navigate dengan data
-        navigate(PATHS.PENERIMAAN.INDEX, {
-            state: {
-                data: formData,
-                toastMessage: 'Anda berhasil mengupload BAST!',
-                toastType: 'success'
-            }
-        });
-        handleCloseModal();
+        try {
+            const result = await uploadBAST(data.id, formData)
+            console.log("✅ Data BAST yang diupload:", result);
+            showToast("Berhasil mengupload file BAST!", "success");
+            navigate(PATHS.PENERIMAAN.INDEX, {
+                state: {
+                    data: formData,
+                    toastMessage: 'Anda berhasil mengupload BAST!',
+                    toastType: 'success'
+                }
+            });
+            handleCloseModal();
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal mengupload file.", "error");
+            handleCloseModal();
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!formData.uploaded_signed_file) {
             showToast('Silakan pilih file terlebih dahulu!', 'error');
             return;
         }
-
-        console.log('Data barang:', formData);
         handleOpenModal()
     };
 
@@ -120,7 +171,7 @@ const LihatPenerimaan = () => {
 
     return (
         <div className="min-h-full mx-auto p-8 bg-white rounded-lg">
-            {/* Header */}
+            {/* Header & Form Upload (Sama seperti sebelumnya) */}
             <h1 className="text-xl font-bold text-gray-800 mb-2">
                 UPLOAD BERITA ACARA SERAH TERIMA
             </h1>
@@ -128,7 +179,6 @@ const LihatPenerimaan = () => {
                 Dokumen yang diunggah di sini akan disimpan di drive cloud Anda
             </p>
 
-            {/* Upload Area */}
             <input
                 className='hidden'
                 tabIndex={-1}
@@ -154,7 +204,6 @@ const LihatPenerimaan = () => {
                         <p className="text-gray-500 text-sm">PDF (max size 5MB)</p>
                     </div>
 
-                    {/* Tampilkan file yang dipilih */}
                     {selectedFileName && (
                         <div className="w-full max-w-md mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <div className="flex items-center justify-between">
@@ -179,17 +228,8 @@ const LihatPenerimaan = () => {
                                     className="ml-4 text-red-500 hover:text-red-700 shrink-0 cursor-pointer"
                                     aria-label="Hapus file"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                     </svg>
                                 </button>
                             </div>
@@ -198,35 +238,44 @@ const LihatPenerimaan = () => {
                 </div>
             </form>
 
-            {/* Riwayat Upload */}
+            {/* Riwayat Upload (DIPERBAIKI) */}
             <div>
                 <h2 className="text-gray-700 font-medium mb-4">Riwayat Upload sebelumnya</h2>
 
-                <div className="space-y-4">
-                    {currentItems.map((item) => {
-                        return (
-                            <div className="flex items-center bg-white shadow-lg p-4 rounded-lg" >
-                                <div className="w-8 h-10 rounded flex items-center justify-center mr-3">
-                                    <PDFIcon />
+                {isLoading ? (
+                    <p className="text-center py-4 text-gray-500">Memuat data...</p>
+                ) : (
+                    <div className="space-y-4">
+                        {/* ✅ Gunakan riwayatBastFile dari API */}
+                        {riwayatBastFile.length > 0 ? (
+                            riwayatBastFile.map((item, index) => (
+                                <div key={index} className="flex items-center bg-white shadow-lg p-4 rounded-lg" >
+                                    <div className="w-8 h-10 rounded flex items-center justify-center mr-3">
+                                        <PDFIcon />
+                                    </div>
+                                    <div className='flex flex-col'>
+                                        {/* Sesuaikan field dengan response API */}
+                                        <span className="text-gray-700">{item.fileName || item.no_surat}</span> 
+                                        <span className="text-gray-500">{item.uploadDate || item.date || '-'}</span>
+                                    </div>
                                 </div>
-                                <div className='flex flex-col'>
-                                    <span className="text-gray-700">{item.fileName}</span>
-                                    <span className="text-gray-500">{item.uploadDate}</span>
-                                </div>
-                            </div>
-                        )
-                    })}
+                            ))
+                        ) : (
+                            <p className="text-gray-500 italic">Belum ada riwayat upload.</p>
+                        )}
 
-                    <Pagination
-                        currentPage={currentPage}
-                        totalItems={riwayatUpload.length}
-                        onPageChange={handlePageChange}
-                        itemsPerPage={itemsPerPage}
-                    />
-                </div>
+                        {/* ✅ Pagination Dinamis */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems} // Gunakan total items dari API
+                            onPageChange={handlePageChange}
+                            itemsPerPage={itemsPerPage}
+                        />
+                    </div>
+                )}
             </div>
 
-            {/* Footer */}
+            {/* Footer & Modal (Sama seperti sebelumnya) */}
             <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
                 <ButtonConfirm
                     text='Unggah BAST'

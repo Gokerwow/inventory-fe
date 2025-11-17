@@ -14,6 +14,7 @@ import {
     createPenerimaan,
     confirmPenerimaan,
     editPenerimaan,
+    deletePenerimaanDetail,
 } from '../services/penerimaanService';
 import { updateBarangStatus } from '../services/barangService';
 import { useToast } from '../hooks/useToast';
@@ -31,6 +32,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     const location = useLocation()
     const { id: paramId } = useParams();
     const { showToast } = useToast();
+    const [isDelete, setIsDelete] = useState(false)
+
+    const [deletedIds, setDeletedIds] = useState<number[]>([]);
 
     console.log(isEdit)
 
@@ -48,15 +52,19 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
 
-        if (location.state?.keepLocalData) {
-            console.log('🛑 Skip fetch API karena baru menambah barang lokal');
-            return;
-        }
+        // ❌ HAPUS ATAU PINDAHKAN LOGIKA INI
+        // if (location.state?.keepLocalData) {
+        //     console.log('🛑 Skip fetch API karena baru menambah barang lokal');
+        //     return;
+        // }
+
         const fetchAllData = async () => {
             setIsLoading(true);
             setError(null);
 
             try {
+                // ✅ 1. SELALU AMBIL MASTER DATA (Kategori & Pihak)
+                // Agar dropdown tetap terisi meskipun kembali dari halaman tambah barang
                 const [kategoriData, pihakData] = await Promise.all([
                     getKategoriList(),
                     getPegawaiSelect()
@@ -65,7 +73,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                 setKategoriOptions(kategoriData);
                 setPihak(pihakData);
 
-                if ((isEdit || isInspect) && paramId) {
+                // ✅ 2. CEK KONDISI UNTUK FETCH DETAIL PENERIMAAN
+                // Hanya fetch detail jika BUKAN dari 'keepLocalData' (bukan kembali dari form barang)
+                if (!location.state?.keepLocalData && (isEdit || isInspect) && paramId) {
                     console.log('🔄 Fetching data penerimaan untuk edit...');
                     const id = Number(paramId);
                     const detailData = await getPenerimaanDetail(id);
@@ -73,7 +83,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                     if (detailData) {
                         console.log('📦 Detail barang dari API:', detailData.detail_barang);
 
-                        // ✅ Set formDataPenerimaan
                         setFormDataPenerimaan({
                             no_surat: detailData.no_surat,
                             category_id: detailData.category.id,
@@ -96,7 +105,8 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                         });
 
                         const transformedBarang = detailData.detail_barang?.map(item => ({
-                            stok_id: item.id,
+                            id: item.id,
+                            stok_id: item.stok_id,
                             stok_name: item.nama_stok,
                             satuan_name: item.nama_satuan,
                             quantity: item.quantity,
@@ -105,12 +115,12 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                             is_layak: item.is_layak || null
                         })) || [];
 
-                        console.log('✅ Transformed barang:', transformedBarang);
                         setBarang(transformedBarang);
                     }
-
-                    console.log('✅ Data penerimaan berhasil diambil');
+                } else if (location.state?.keepLocalData) {
+                    console.log('🛑 Skip fetch DETAIL API karena keepLocalData aktif (mempertahankan data inputan user)');
                 }
+
             } catch (err) {
                 console.error('❌ Error:', err);
                 setError("Gagal memuat data.");
@@ -123,7 +133,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
         fetchAllData();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEdit, isInspect, paramId, user?.role, checkAccess, hasAccess, showToast]);
+    }, [isEdit, isInspect, paramId, user?.role, checkAccess, hasAccess, showToast, location.state?.keepLocalData]);
 
     // ✅ Separate useEffect untuk debug barang
     useEffect(() => {
@@ -148,8 +158,18 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     }
 
     // ✅ TAMBAHAN: Handler untuk hapus barang
-    const handleDeleteBarang = (id: number) => {
-        setBarang(prev => prev.filter(item => item.stok_id !== id));
+    const handleDeleteBarang = (stokId: number) => {
+        // Cari barang yang akan dihapus
+        const itemToDelete = barang.find(item => item.stok_id === stokId);
+
+        // Jika barang punya ID (artinya dari database), simpan ke deletedIds
+        if (itemToDelete && itemToDelete.id) {
+            setDeletedIds(prev => [...prev, itemToDelete.id]);
+            console.log(`🗑️ Menandai barang ID ${itemToDelete.id} untuk dihapus dari DB`);
+        }
+
+        // Hapus dari tampilan (state lokal)
+        setBarang(prev => prev.filter(item => item.stok_id !== stokId));
         showToast('Barang berhasil dihapus', 'success');
     };
 
@@ -331,7 +351,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                 // 3. Buat array berisi promise untuk setiap update
                 const updatePromises = barang.map(item => {
                     // 'detail_id' adalah ID unik baris (misal: 115)
-                    const detailId = item.stok_id;
+                    const detailId = item.id;
                     const status = item.is_layak;
 
                     // Panggil service baru
@@ -355,26 +375,38 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                     return;
                 }
 
-                // 2. Siapkan data final untuk create/edit
+                if (formDataPenerimaan.pegawais[1].pegawai_id_kedua === 0) {
+                    showToast("Pihak Kedua wajib diisi!", "error");
+                    setIsSubmitting(false);
+                    setIsModalOpen(false);
+                    return;
+                }
+
+                // 2. ATAU: Filter data saat menyusun payload (jika Pihak Kedua opsional)
+                const listPegawai = [
+                    {
+                        pegawai_id: formDataPenerimaan.pegawais[0].pegawai_id_pertama,
+                        alamat_staker: formDataPenerimaan.pegawais[0].alamat_staker_pertama
+                    },
+                    {
+                        pegawai_id: formDataPenerimaan.pegawais[1].pegawai_id_kedua,
+                        alamat_staker: formDataPenerimaan.pegawais[1].alamat_staker_kedua
+                    }
+                ].filter(p => p.pegawai_id !== 0); // <--- Hapus pegawai dengan ID 0
+
+
                 const dataFinal = {
                     no_surat: formDataPenerimaan.no_surat,
                     category_id: formDataPenerimaan.category_id,
                     deskripsi: formDataPenerimaan.deskripsi,
+                    deleted_barang_ids: deletedIds,
                     detail_barangs: barang.map(item => ({
+                        ...(item.id && { id: item.id }),
                         stok_id: item.stok_id,
                         quantity: item.quantity,
                         price: item.price
                     })),
-                    pegawais: [
-                        {
-                            pegawai_id: formDataPenerimaan.pegawais[0].pegawai_id_pertama,
-                            alamat_staker: formDataPenerimaan.pegawais[0].alamat_staker_pertama
-                        },
-                        {
-                            pegawai_id: formDataPenerimaan.pegawais[1].pegawai_id_kedua,
-                            alamat_staker: formDataPenerimaan.pegawais[1].alamat_staker_kedua
-                        }
-                    ]
+                    pegawais: listPegawai // <--- Gunakan list yang sudah difilter
                 };
 
                 // 3. Panggil service create/update
@@ -412,6 +444,31 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsModalOpen(true);
+        setIsDelete(false)
+    }
+
+    const handleDeleteClick = () => {
+        setIsDelete(true)
+        setIsModalOpen(true);
+    };
+
+    const handleDeletePenerimaan = async (id: number) => {
+        if (isSubmitting) return; // Prevent double click
+        setIsSubmitting(true);    // Aktifkan loading
+
+        try {
+            console.log(`MENGHAPUS PENERIMAAN DENGAN id ${id}`);
+            const response = await deletePenerimaanDetail(id);
+            console.log(`RESPONSE BACKEND`, response);
+            showToast("Data berhasil dihapus", "success"); // Beri feedback user
+            navigate(PATHS.PENERIMAAN.INDEX);
+        } catch (error) {
+            console.error(error);
+            showToast("Gagal menghapus data", "error");
+        } finally {
+            setIsSubmitting(false); // Matikan loading
+            setIsModalOpen(false);
+        }
     }
 
     if (isLoading) {
@@ -717,7 +774,8 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                 </div>
 
                 <div className='flex justify-end gap-4'>
-                    {isEdit && user?.role === ROLES.PPK && <WarnButton text='Hapus' />}
+                    {isEdit && user?.role === ROLES.PPK && paramId && !isNaN(Number(paramId)) && (
+                        <WarnButton onClick={handleDeleteClick} text='Hapus' type="button" />)}
                     <ButtonConfirm
                         text={isSubmitting ? "Menyimpan..." : "Selesai"}
                         type='submit'
@@ -730,15 +788,23 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin data yang dibuat sudah benar?"
+                // onConfirm di sini mungkin tidak terpakai karena Anda menggunakan children di bawah, 
+                // tapi untuk konsistensi kita sesuaikan juga
+                onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
+                text={isDelete
+                    ? "Apakah Anda yakin ingin MENGHAPUS data ini? Tindakan ini tidak dapat dibatalkan."
+                    : "Apa anda yakin data yang dibuat sudah benar?"}
             >
                 <div className="flex gap-4 justify-end">
                     <ButtonConfirm
-                        text={isSubmitting ? "Menyimpan..." : "Iya"}
+                        // Ubah teks tombol saat loading
+                        text={isSubmitting ? (isDelete ? "Menghapus..." : "Menyimpan...") : "Iya"}
                         type="button"
-                        onClick={handleConfirmSubmit}
+                        // ⚠️ PERBAIKAN UTAMA DI SINI:
+                        onClick={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
                         disabled={isSubmitting}
+                        // Opsional: Beri warna merah saat mode delete
+                        className={isDelete ? "bg-red-600 hover:bg-red-700 text-white" : ""}
                     />
                     <WarnButton
                         onClick={() => setIsModalOpen(false)}

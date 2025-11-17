@@ -63,7 +63,7 @@ export interface User {
     photo: string,
     email: string;
     password: string; // Seharusnya hash, tapi kita ikuti data mock
-    roles: Role[];
+    role: string;
     created_at: string;
     updated_at: string;
 }
@@ -98,6 +98,7 @@ export interface TIPE_BARANG_STOK {
 
 // BUAT PENERIMAAN
 export interface Detail_Barang {
+    id: number,
     stok_id: number;
     quantity: number;
     price: number;
@@ -200,4 +201,11 @@ export interface BASTAPI {
         signed_file_url?: string,
         download_endpoint: string
     }
+}
+export interface RIWAYATBASTFILEAPI {
+    id: number,
+    filename: string,
+    signed_file: string,
+    uploaded_at: string,
+    penerimaan_no_surat: string
 }

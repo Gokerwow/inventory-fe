@@ -68,19 +68,29 @@ export const createAkun = (data: Partial<MockUser>): Promise<MockUser> => {
  * Mengupdate akun yang ada.
  * Digunakan di: src/pages/FormAkun.tsx (mode edit)
  */
-export const updateAkun = (userId: number, data: Partial<MockUser>): Promise<MockUser> => {
-    console.log(`SERVICE: Mengupdate akun ID: ${userId}...`, data);
-    const currentUser = MOCK_USERS.find(u => u.user_id === userId);
+/**
+ * Mengupdate akun yang ada menggunakan API Backend.
+ * Mendukung upload gambar via FormData.
+ */
+export const updateAkun = async (userId: number, data: FormData): Promise<any> => {
+    console.log(`SERVICE: Mengupdate akun ID: ${userId}...`);
+    
+    // Laravel Workaround:
+    // Menggunakan POST dengan _method: 'PUT' agar file upload (multipart/form-data) terbaca
+    data.append('_method', 'PUT');
 
-    if (!currentUser) {
-        return Promise.reject(new Error("Akun tidak ditemukan"));
+    try {
+        // URL: http://127.0.0.1:8001/api/v1/account/{id}
+        const response = await apiClient.post(`/api/v1/account/${userId}`, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        
+        console.log("✅ Update berhasil:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Gagal update akun:", error);
+        throw error; 
     }
-
-    const updatedAkun = {
-        ...currentUser,
-        ...data,
-        updated_at: new Date().toISOString(),
-    };
-
-    return simulateApiCall(updatedAkun);
 };

@@ -93,6 +93,18 @@ export const getPenerimaanDetail = async (id: number): Promise<APIDetailPenerima
     }
 };
 
+export const deletePenerimaanDetail = async (id: number): Promise<APIDetailPenerimaan | undefined> => {
+    console.log(`SERVICE: menghapus detail penerimaan ID: ${id}...`);
+    try {
+        const response = await apiClient.delete(`/api/v1/penerimaan/${id}`)
+        const data = response.data
+        return data
+    } catch (error) {
+        console.error("Gagal menghapus detail penerimaan:", error);
+        throw new Error('Gagal menghapus detail penerimaan');
+    }
+};
+
 export const createPenerimaan = async (formData: APIDataPenerimaan): Promise<APIDataPenerimaan> => {
     console.log("SERVICE: Membuat penerimaan baru...", formData);
     try {

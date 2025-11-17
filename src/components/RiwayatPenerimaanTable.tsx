@@ -86,23 +86,22 @@ export default function RiwayatPenerimaanTable({
         {
             header: 'Kategori',
             cell: (item) => (
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                    item.category_name === 'Komputer'
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${item.category_name === 'Komputer'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-green-100 text-green-800'
-                }`}>
+                    }`}>
                     {item.category_name}
                 </span>
             )
         },
-        {
+        ...(user?.role === ROLES.ADMIN_GUDANG ? [{
             header: 'Aksi',
-            cell: (item) => (
+            cell: (item: RiwayatPenerimaanItem | BASTAPI) => (
                 <div className='w-full flex items-center justify-center'>
                     {renderActionButton(item)}
                 </div>
             )
-        },
+        }] : []),
         {
             header: 'Status',
             cell: (item) => (
