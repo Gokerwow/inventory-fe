@@ -19,6 +19,7 @@ import UnduhBast from './pages/unduhBAST'
 import LihatPenerimaan from './pages/lihatPenerimaan'
 import PemesananPage from './pages/pemesanan'
 import PenerimaanLayout from './components/PenerimaanLayout'
+import { FormPegawaiPage } from './pages/FormPegawai'
 
 function App() {
   return (
@@ -36,22 +37,26 @@ function App() {
           <Route element={<PenerimaanLayout />}>
             <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
             <Route path={PATHS.PENERIMAAN.BARANG_BELANJA} element={<FormDataBarangBelanja />} />
-            <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true}/>} />
-            <Route path={PATHS.PENERIMAAN.INSPECT} element={<FormPenerimaan isInspect={true}/>} />
+            <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true} />} />
+            <Route path={PATHS.PENERIMAAN.INSPECT} element={<FormPenerimaan isInspect={true} />} />
             <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
             <Route path={PATHS.PENERIMAAN.LIHAT} element={<LihatPenerimaan />} />
           </Route>
         </Route>
         <Route path={PATHS.PENGELUARAN} element={<Pengeluaran />} />
         <Route path={PATHS.PROFIL.INDEX}>
-            <Route index element={<Profil />} />
-            <Route path={PATHS.PROFIL.EDIT} element={<FormAkunPage isEdit={true}/>}/>
+          <Route index element={<Profil />} />
+          <Route path={PATHS.PROFIL.EDIT} element={<FormAkunPage isEdit={true} />} />
         </Route>
         <Route path={PATHS.AKUN.INDEX}>
-            <Route index element={<AkunPage />} />
-            <Route path={PATHS.AKUN.TAMBAH} element={<FormAkunPage/>}/>
+          <Route index element={<AkunPage />} />
+          <Route path={PATHS.AKUN.TAMBAH} element={<FormAkunPage />} />
         </Route>
-        <Route path={PATHS.PEGAWAI} element={<PegawaiPage />} />
+        <Route path={PATHS.PEGAWAI.INDEX}>
+          <Route index element={<PegawaiPage />} />
+          <Route path={PATHS.PEGAWAI.TAMBAH} element={<FormPegawaiPage />} />
+          <Route path={PATHS.PEGAWAI.EDIT} element={<FormPegawaiPage isEdit={true} />} />
+        </Route>
         <Route path={PATHS.MONITORING} element={<MonitoringPage />} />
         <Route path={PATHS.PEMESANAN} element={<PemesananPage />} />
       </Route>

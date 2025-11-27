@@ -5,16 +5,19 @@ import App from './App.tsx'
 import ErrorBoundary from './components/errorBoundary.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider.tsx'
-import { ToastProvider } from './context/toastProvider.tsx' 
+import { ToastProvider } from './context/toastProvider.tsx'
+import { TagProvider } from './context/TagProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
         <ToastProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
+          <TagProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </TagProvider>
         </ToastProvider>
       </BrowserRouter>
     </ErrorBoundary>

@@ -14,7 +14,6 @@ import { getBASTList, getRiwayatBASTList } from '../services/bastService';
 type PenerimaanItem = typeof PenerimaanData[0];
 type RiwayatItem = typeof RiwayatPenerimaanData[0];
 
-// Interface untuk response pagination dari backend
 
 const PenerimaanPage = () => {
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);

@@ -22,7 +22,11 @@ export const PATHS = {
         INDEX: '/akun',
         TAMBAH: '/akun/tambah'
     },
-    PEGAWAI: '/pegawai',
+    PEGAWAI: {
+        INDEX: '/pegawai',
+        TAMBAH: '/pegawai/tambah',
+        EDIT: '/pegawai/edit/:id'
+    },
     MONITORING: '/monitoring',
     PEMESANAN: '/pemesanan'
 }

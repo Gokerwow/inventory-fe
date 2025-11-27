@@ -1,7 +1,7 @@
 import { BARANG_BELANJA } from "../Mock Data/data";
 import { simulateApiCall } from "./utils";
 import apiClient from "./api";
-import { type TIPE_BARANG_STOK } from "../constant/roles";
+import { type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {
     console.log("SERVICE: Mengabil barang stok...");
@@ -12,6 +12,28 @@ export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> 
             }
         });
         const barangData = response.data.data as TIPE_BARANG_STOK[];
+        return barangData;
+    } catch (error) {
+        console.error("Gagal mengambil barang stok:", error);
+        throw new Error('Gagal mengambil barang stok.');
+    }
+};
+
+export const getStokBarang = async (
+    page: number = 1,
+    perPage?: number
+): Promise<PaginationResponse<BARANG_STOK[]>> => {
+    console.log("SERVICE: Mengabil barang stok...");
+    try {
+        // Buat params untuk query string
+        const params: Record<string, number> = { page };
+        if (perPage) {
+            params.per_page = perPage;
+        }
+        const response = await apiClient.get('/api/v1/stok', {
+            params
+        });
+        const barangData = response.data.data as PaginationResponse<BARANG_STOK[]>;
         return barangData;
     } catch (error) {
         console.error("Gagal mengambil barang stok:", error);
@@ -34,12 +56,12 @@ export const addBarangBelanja = async (barang: Omit<TIPE_BARANG_STOK, 'id'>): Pr
 };
 
 export const updateBarangStatus = async (
-    penerimaanId: number, 
-    detailId: number, 
+    penerimaanId: number,
+    detailId: number,
     isLayak: boolean | null
 ) => {
     // Seharusnya tidak null, tapi sebagai pengaman
-    if (isLayak === null) return; 
+    if (isLayak === null) return;
 
     try {
         const payload = { is_layak: isLayak };

@@ -1,3 +1,11 @@
+import DashboardIcon from '../assets/DashboardIcon.svg?react';
+import ChartIcon from '../assets/Chart.svg?react';
+import PenerimaanIcon from '../assets/Penerimaan.svg?react';
+import PengeluaranIcon from '../assets/Pengeluaran.svg?react';
+import PegawaiIcon from '../assets/hashtag.svg?react'
+import AkunIcon from '../assets/Akun Icon.svg?react'
+
+
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
 export const ROLES = {
@@ -88,12 +96,23 @@ export interface RiwayatPenerimaanItem {
     // 'linkUnduh' tidak ada di API, jadi kita hapus
 }
 
-// BUAT STOK / BARANG
+// BUAT STOK / BARANG DI PENERIMAAN SELECT BARANG BELANJA
 export interface TIPE_BARANG_STOK {
     id: number,
     name: string,
     satuan_id: string,
     satuan_name: string,
+}
+
+// BUAT DI HALAMAN STOK BARANG
+export interface BARANG_STOK {
+    name: string,
+    category_name: string,
+    stok_lama: number,
+    total_stok: string,
+    minimum_stok: string,
+    satuan: string,
+    price: number
 }
 
 // BUAT PENERIMAAN
@@ -209,3 +228,14 @@ export interface RIWAYATBASTFILEAPI {
     uploaded_at: string,
     penerimaan_no_surat: string
 }
+
+export const menuItems = [
+    { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
+    { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Pegawai' },
+    { path: '/monitoring', icon: PenerimaanIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Monitoring' },
+    { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: [ROLES.ADMIN_GUDANG], tag: 'Dashboard' },
+    { path: '/stok-barang', icon: ChartIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Manajemen Barang' },
+    { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], tag: 'Manajemen Penerimaan' },
+    { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG], tag: 'Manajemen Pengeluaran' },
+    { path: '/pemesanan', icon: PengeluaranIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Manajemen Pemesanan' },
+];
