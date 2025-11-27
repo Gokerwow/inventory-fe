@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { PenerimaanData, RiwayatPenerimaanData } from '../Mock Data/data';
 import { ROLES, type BASTAPI } from '../constant/roles';
 import { getBASTList, getRiwayatBASTList } from '../services/bastService';
+import Pagination from '../components/pagination';
 
 type PenerimaanItem = typeof PenerimaanData[0];
 type RiwayatItem = typeof RiwayatPenerimaanData[0];
@@ -100,16 +101,16 @@ const PenerimaanPage = () => {
     }, [user, checkAccess, hasAccess, activeTab, currentPage]);
 
     // ✅ Debug: Cek data yang akan ditampilkan
-    
+
     const handleClick = (tab: string) => {
         setActiveTab(tab);
         setCurrentPage(1); // Reset ke halaman 1 saat ganti tab
     };
-    
+
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
-    
+
     // Data yang ditampilkan langsung dari state (sudah dipaginate dari backend)
     const dataToShow = user?.role === ROLES.ADMIN_GUDANG ? (activeTab === 'penerimaan' ? bastItems : riwayatBastItems) : (activeTab === 'penerimaan' ? penerimaanItems : riwayatItems);
     useEffect(() => {
@@ -162,29 +163,28 @@ const PenerimaanPage = () => {
             ) : dataToShow.length === 0 ? (
                 <div className='text-center w-full h-full flex items-center justify-center'><span className='font-bold text-2xl'>DATA {activeTab === 'penerimaan' ? '' : 'RIWAYAT'}  {user?.role === ROLES.ADMIN_GUDANG ? 'BAST' : 'PENERIMAAN'} KOSONG</span></div>
             ) : (
-                <>
-                    {activeTab === 'penerimaan' ? (
+                <div className="flex flex-col flex-1 min-h-0">
+
+                    {/* 1. TABEL (Mengisi ruang tersisa) */}
+                    <div className="flex-1 overflow-hidden mb-4">
                         <PenerimaanTable
-                            currentItems={dataToShow}
-                            startIndex={(currentPage - 1) * itemsPerPage}
+                            data={dataToShow}
+                            // Kirim prop variant untuk membedakan logika tombol
+                            variant={activeTab === 'penerimaan' ? 'active' : 'history'}
+                        />
+                    </div>
+
+                    {/* 2. PAGINATION (Di luar tabel, menempel di bawah) */}
+                    <div className="border-t border-gray-200 pt-4">
+                        <Pagination
                             currentPage={currentPage}
                             totalItems={totalItems}
                             itemsPerPage={itemsPerPage}
                             onPageChange={handlePageChange}
                             totalPages={totalPages}
                         />
-                    ) : (
-                        <RiwayatPenerimaanTable
-                            currentItems={dataToShow}
-                            startIndex={(currentPage - 1) * itemsPerPage}
-                            currentPage={currentPage}
-                            totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            totalPages={totalPages}
-                        />
-                    )}
-                </>
+                    </div>
+                </div>
             )}
         </div>
     );

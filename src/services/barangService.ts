@@ -21,15 +21,28 @@ export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> 
 
 export const getStokBarang = async (
     page: number = 1,
-    perPage?: number
+    perPage?: number,
+    categoryId?: number,
+    search?: string,
+    year?: string
 ): Promise<PaginationResponse<BARANG_STOK[]>> => {
     console.log("SERVICE: Mengabil barang stok...");
     try {
         // Buat params untuk query string
-        const params: Record<string, number> = { page };
+        const params: Record<string, number | string> = { page };
         if (perPage) {
             params.per_page = perPage;
         }
+        if (categoryId) {
+            params.category = categoryId;
+        }
+        if (search) {
+            params.search = search;
+        }
+        if (year) {
+            params.year = year;
+        }
+        
         const response = await apiClient.get('/api/v1/stok', {
             params
         });

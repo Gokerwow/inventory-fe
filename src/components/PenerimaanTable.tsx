@@ -1,143 +1,86 @@
-import UploadIcon from '../assets/UnduhICON.svg?react';
 import { generatePath, useNavigate } from 'react-router-dom';
 import ReusableTable, { type ColumnDefinition } from '../components/table';
 import Status from './status';
 import { useAuth } from '../hooks/useAuth';
-import PencilIcon from '../assets/pencilIcon2.svg?react'
+import PencilIcon from '../assets/pencilIcon2.svg?react';
 import { PATHS } from '../Routes/path';
-import EyeIcon from '../assets/eye.svg?react'
-import { ROLES, type BASTAPI } from '../constant/roles';
-import { type PenerimaanItem } from '../constant/roles';
-import DownloadIcon from '../assets/download.svg?react'
+import EyeIcon from '../assets/eye.svg?react';
+import { ROLES, type BASTAPI, type PenerimaanItem, type RiwayatPenerimaanItem } from '../constant/roles';
+import DownloadIcon from '../assets/download.svg?react';
+import UploadIcon from '../assets/UnduhICON.svg?react';
+
+// Gabungkan semua kemungkinan tipe data
+type DataItem = PenerimaanItem | RiwayatPenerimaanItem | BASTAPI;
 
 interface PenerimaanTableProps {
-    currentItems: (PenerimaanItem | BASTAPI)[]; // ✅ Support both types
-    startIndex: number;
-    currentPage: number;
-    totalItems: number;
-    itemsPerPage: number;
-    onPageChange: (page: number) => void;
-    totalPages: number;
+    data: DataItem[];
+    variant: 'active' | 'history'; // Prop penentu mode: 'active' (halaman utama) atau 'history' (riwayat)
 }
 
-export default function PenerimaanTable({
-    currentItems = [],
-    startIndex = 0,
-    currentPage = 1,
-    totalItems = 0,
-    itemsPerPage = 7,
-    onPageChange = () => { },
-    totalPages = 1
-}: PenerimaanTableProps) {
-
+export default function PenerimaanTable({ data, variant }: PenerimaanTableProps) {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // ✅ Fix: Consistent parameter types
-    const handleActionClick = (
-        id: number, 
-        state?: 'upload' | 'download', 
-        item?: BASTAPI
-    ) => {
-        if (user?.role === ROLES.PPK) {
-            navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }));
-        } else if (user?.role === ROLES.TEKNIS) {
-            navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
-        } else if (user?.role === ROLES.ADMIN_GUDANG) {
-            if (state === 'upload') {
-                navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }), {
-                    state: {
-                        data: item || null
-                    }
-                });
-            } else if (state === 'download') {
-                console.log('Download item:', item);
-                navigate(generatePath(PATHS.PENERIMAAN.UNDUH, { id: id.toString() }), {
-                    state: {
-                        data: item || null
-                    }
-                });
-            }
-        }
-    };
-
-    // ✅ Type guard to check if item is BASTAPI
-    const isBAST = (item: PenerimaanItem | BASTAPI): item is BASTAPI => {
+    // Type guard untuk cek apakah item adalah BAST
+    const isBAST = (item: DataItem): item is BASTAPI => {
         return 'bast' in item;
     };
 
-    const renderActionButton = (item: PenerimaanItem | BASTAPI) => {
-        switch (user?.role) {
-            case ROLES.PPK:
-                return (
-                    <div 
-                        onClick={() => handleActionClick(item.id)} 
-                        className='flex justify-center items-center gap-1 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'
-                    >
-                        <PencilIcon className='w-7 h-7' />
-                        <span>Edit</span>
-                    </div>
-                );
-            
-            case ROLES.ADMIN_GUDANG:
-                // ✅ Only show download/upload if item is BASTAPI
-                if (isBAST(item)) {
-                    return (
-                        <>
-                            <div 
-                                onClick={() => handleActionClick(item.id, 'download', item)} 
-                                className='flex justify-center items-center gap-1 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'
-                            >
-                                <DownloadIcon className='w-7 h-7' />
-                                <span>Unduh</span>
-                            </div>
-                            <div 
-                                onClick={() => handleActionClick(item.id, 'upload', item)} 
-                                className='flex justify-center items-center gap-1 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'
-                            >
-                                <UploadIcon className='w-7 h-7' />
-                                <span>Upload</span>
-                            </div>
-                        </>
-                    );
-                }
-                return null;
-            
-            case ROLES.TEKNIS:
-            default:
-                return (
-                    <div 
-                        onClick={() => handleActionClick(item.id)} 
-                        className='flex justify-center items-center gap-1 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'
-                    >
-                        <EyeIcon className='w-7 h-7' />
-                        <span>Lihat</span>
-                    </div>
-                );
+    const handleAction = (id: number, type: 'edit' | 'inspect' | 'upload' | 'download', item?: BASTAPI) => {
+        if (type === 'edit') navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }));
+        if (type === 'inspect') navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
+        
+        if (type === 'upload') {
+            navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }), { state: { data: item } });
+        }
+        if (type === 'download') {
+            navigate(generatePath(PATHS.PENERIMAAN.UNDUH, { id: id.toString() }), { state: { data: item } });
         }
     };
 
-    // ✅ Fix: Proper type definition for columns
-    const penerimaanColumns: ColumnDefinition<PenerimaanItem | BASTAPI>[] = [
-        {
-            header: 'No Surat',
-            cell: (item) => <>{item.no_surat}</>
-        },
-        {
-            header: 'Role',
-            cell: (item) => <>{item.role_user}</>
-        },
-        {
-            header: 'Nama Pegawai',
-            cell: (item) => <>{item.pegawai_name}</>
-        },
+    // Logika render tombol aksi yang dinamis
+    const renderActionButton = (item: DataItem) => {
+        const userRole = user?.role;
+
+        // 1. ADMIN GUDANG (Bisa Upload/Download BAST)
+        if (userRole === ROLES.ADMIN_GUDANG && isBAST(item)) {
+            if (variant === 'active') {
+                // Di tab aktif: Bisa Unduh & Upload
+                return (
+                    <>
+                        <ActionBtn icon={<DownloadIcon />} label="Unduh" onClick={() => handleAction(item.id, 'download', item)} />
+                        <ActionBtn icon={<UploadIcon />} label="Upload" onClick={() => handleAction(item.id, 'upload', item)} />
+                    </>
+                );
+            } else {
+                // Di tab riwayat: Hanya Unduh
+                return <ActionBtn icon={<DownloadIcon />} label="Unduh" onClick={() => handleAction(item.id, 'download', item)} />;
+            }
+        }
+
+        // 2. PPK (Hanya Edit di Active)
+        if (userRole === ROLES.PPK && variant === 'active') {
+            return <ActionBtn icon={<PencilIcon />} label="Edit" onClick={() => handleAction(item.id, 'edit')} />;
+        }
+
+        // 3. TEKNIS (Inspect/Lihat di Active)
+        if (userRole === ROLES.TEKNIS && variant === 'active') {
+            return <ActionBtn icon={<EyeIcon />} label="Lihat" onClick={() => handleAction(item.id, 'inspect')} />;
+        }
+
+        // Default (misal di history tidak ada aksi untuk role lain)
+        return <span className="text-gray-400 text-xs">-</span>;
+    };
+
+    const columns: ColumnDefinition<DataItem>[] = [
+        { header: 'No Surat', cell: (item) => item.no_surat },
+        { header: 'Role', cell: (item) => item.role_user },
+        { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
             header: 'Kategori',
             cell: (item) => (
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                    item.category_name === 'Komputer'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    item.category_name === 'Komputer' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                 }`}>
                     {item.category_name}
                 </span>
@@ -145,8 +88,9 @@ export default function PenerimaanTable({
         },
         {
             header: 'Aksi',
+            align: 'center',
             cell: (item) => (
-                <div className='w-full flex items-center justify-center gap-4'>
+                <div className='flex items-center justify-center gap-4'>
                     {renderActionButton(item)}
                 </div>
             )
@@ -156,22 +100,19 @@ export default function PenerimaanTable({
             cell: (item) => (
                 <Status
                     text={item.status}
-                    color={item.status === 'Telah Dikonfirmasi' ? 'bg-green-600' : 'bg-[#FFB14C]'}
+                    color={item.status.toLowerCase().includes('confirm') || item.status.toLowerCase().includes('selesai') ? 'bg-green-600' : 'bg-[#FFB14C]'}
                 />
             )
         }
     ];
 
-    return (
-        <ReusableTable
-            columns={penerimaanColumns}
-            currentItems={currentItems}
-            totalItems={totalItems}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            startIndex={startIndex}
-            onPageChange={onPageChange}
-            totalPages={totalPages}
-        />
-    );
+    return <ReusableTable columns={columns} currentItems={data} />;
 }
+
+// Komponen kecil internal untuk tombol aksi agar rapi
+const ActionBtn = ({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) => (
+    <div onClick={onClick} className='flex items-center gap-1 cursor-pointer hover:scale-110 active:scale-95 transition-all duration-200 hover:text-blue-600'>
+        <div className="w-5 h-5">{icon}</div>
+        <span>{label}</span>
+    </div>
+);
