@@ -88,6 +88,7 @@ function StokBarang() {
 
     // 3. Set default state year ke string tahun saat ini
     const [year, setYear] = useState(String(currentYear)); 
+    const [activeTab, setActiveTab] = useState('stokBarang')
     
     const [search, setSearch] = useState(''); 
     const [debouncedSearch, setDebouncedSearch] = useState(''); 
@@ -146,6 +147,10 @@ function StokBarang() {
             setSelectedCategoryId(id);
         }
         setCurrentPage(1);
+    }
+
+    const handleTabClick = (tab: string) => {
+        setActiveTab(tab)
     }
 
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
@@ -213,18 +218,18 @@ function StokBarang() {
         <div className="w-full h-full flex flex-col gap-5">
             {/* Navigation Tabs */}
             <nav className="flex gap-2" aria-label="Tabs">
-                <a href="#" className="border-blue-500 text-blue-600 bg-white rounded-t-lg group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm">
-                    <svg className="text-blue-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <button onClick={() => handleTabClick('stokBarang')} className={` ${ activeTab === 'stokBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' } bg-white rounded-t-lg group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
+                    <svg className="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                     </svg>
                     Stok Barang
-                </a>
-                <a href="#" className="border-transparent text-gray-500 hover:text-gray-700 rounded-t-lg bg-white hover:border-gray-300 group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm">
-                    <svg className="text-gray-400 group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                </button>
+                <button onClick={() => handleTabClick('kategoriBarang')} className={`${ activeTab === 'kategoriBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' } rounded-t-lg bg-white group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
+                    <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.968 7.968 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                     </svg>
                     Kategori Barang
-                </a>
+                </button>
             </nav>
 
             {/* Filter Buttons Section */}
@@ -327,11 +332,13 @@ function StokBarang() {
                     <div className="flex-1 overflow-hidden">
                         {isLoading ? <Loader />
                             :
+                            activeTab === 'stokBarang' ? 
                             <ReusableTable
                                 columns={barangColumns}
                                 currentItems={currentItems}
-                                startIndex={(currentPage - 1) * itemsPerPage}
                             />
+                            :
+                            <div>tes</div>
                         }
                     </div>
 

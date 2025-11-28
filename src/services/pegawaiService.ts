@@ -1,10 +1,26 @@
 import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
 import apiClient from './api';
 import { simulateApiCall } from './utils';
-import { SelectPihak } from '../constant/roles';
+import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru } from '../constant/roles';
 
 type Employee = typeof employees[0];
 type FaqItem = typeof FAQ[0];
+
+/**
+ * Mengambil daftar pegawai di bawah admin.
+ * Digunakan di: src/pages/profil.tsx
+ */
+export const getDaftarPegawai = async (): Promise<DaftarPegawai[]> => {
+    console.log("SERVICE: Mengambil daftar pegawai...");
+    try {
+        const response = await apiClient.get('/api/v1/pegawai')
+        const data = response.data.data as DaftarPegawai[]
+        return data
+    } catch (error) {
+        console.error("Gagal mengambil data log aktivitas:", error);
+        throw new Error('Gagal mengambil data log aktivitas.');
+    }
+};
 
 /**
  * Mengambil daftar pegawai di bawah admin.
@@ -43,6 +59,21 @@ export const getFaqList = (): Promise<FaqItem[]> => {
     return simulateApiCall(FAQ);
 };
 
+/**
+ * Mengupdate akun yang ada.
+ * Digunakan di: src/pages/FormAkun.tsx (mode edit)
+ */
+export const createPegawai = async (formData: APIPegawaiBaru): Promise<APIPegawaiBaru> => {
+    console.log("SERVICE: Membuat pegawai baru...", formData);
+    try {
+        const response = await apiClient.post('/api/v1/pegawai', formData);
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error membuat pegawai:", error);
+        throw error;
+    }
+};
 /**
  * Mengupdate akun yang ada.
  * Digunakan di: src/pages/FormAkun.tsx (mode edit)

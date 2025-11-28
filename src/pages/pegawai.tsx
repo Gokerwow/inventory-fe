@@ -1,10 +1,25 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from 'react-router-dom';
 import { PATHS } from "../Routes/path";
+import { useAuthorization } from "../hooks/useAuthorization";
+import { useAuth } from "../hooks/useAuth";
+import { ROLES, type DaftarPegawai } from "../constant/roles";
+import { getDaftarPegawai } from "../services/pegawaiService";
+import type { ColumnDefinition } from "../components/table";
+import Loader from "../components/loader";
+import ReusableTable from "../components/table";
 
 
 export default function PegawaiPage() {
-    const [isAktif, setIsAktif] = useState(false)
+    // Ubah state isAktif menjadi object dengan key berdasarkan ID/NIP pegawai
+    const [statusAktif, setStatusAktif] = useState<Record<string, boolean>>({});
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentItems, setCurrentItems] = useState<DaftarPegawai[]>([]);
+
+    const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
+    const { user } = useAuth();
 
     const navigate = useNavigate();
     const handleTambahClick = () => {
@@ -13,6 +28,104 @@ export default function PegawaiPage() {
     const handleEditClick = () => {
         navigate(PATHS.PEGAWAI.EDIT)
     }
+    // Fungsi untuk toggle status per pegawai
+    const handleToggleStatus = (nip: string) => {
+        setStatusAktif(prev => ({
+            ...prev,
+            [nip]: !prev[nip] // toggle status pegawai berdasarkan NIP
+        }));
+    };
+
+    useEffect(() => {
+        checkAccess(user?.role);
+        if (!hasAccess(user?.role)) return;
+
+        const fetchData = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                console.log('Fetching Data Pegawai....')
+                const response = await getDaftarPegawai()
+                console.log("📦 Pegawai Response:", response);
+                setCurrentItems(response);
+
+                // Inisialisasi statusAktif berdasarkan data dari API
+                const initialStatus: Record<string, boolean> = {};
+                response.forEach((pegawai: DaftarPegawai) => {
+                    // Asumsikan data pegawai memiliki property 'isActive' atau 'status'
+                    // Sesuaikan dengan nama property yang ada di API Anda
+                    initialStatus[pegawai.nip] = pegawai.status === 'active' || false;
+                });
+                setStatusAktif(initialStatus);
+
+            } catch (err) {
+                console.error("❌ Error fetching data:", err);
+                setError("Gagal memuat data.");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchData()
+    }, [checkAccess, hasAccess, user?.role])
+
+    const pegawaiColumns: ColumnDefinition<DaftarPegawai>[] = [
+        {
+            header: 'Nama Pegawai',
+            cell: (item) => (
+                <div className="flex items-center">
+                    <div className="shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'NIP',
+            cell: (item) => <>{item.nip}</>
+        },
+        {
+            header: 'Jabatan',
+            cell: (item) => <>{item.jabatan.name}</>
+        },
+        {
+            header: 'No. Telepon',
+            cell: (item) => <>{item.phone}</>
+        },
+        {
+            header: 'Status',
+            cell: (item) => {
+                const isActive = statusAktif[item.nip] || false; // default false jika belum ada
+                return (
+                    <button
+                        onClick={() => handleToggleStatus(item.nip)}
+                        className={`relative inline-flex items-center h-6 rounded-full w-11 ${isActive ? 'bg-blue-600' : 'bg-gray-500'} transition-all duration-200 focus:outline-none`}
+                    >
+                        <span className="sr-only">Enable notifications</span>
+                        <span className={`${isActive ? 'translate-x-6' : 'translate-x-1'} inline-block w-4 h-4 transform bg-white rounded-full transition ease-in-out duration-200`}></span>
+                    </button>
+                );
+            }
+        },
+        {
+            header: 'Aksi',
+            cell: () => (
+                <button onClick={handleEditClick} className="flex items-center hover:text-blue-600 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                    Edit
+                </button>
+            )
+        }
+    ];
+
     return (
         <div className="min-h-full flex flex-col">
 
@@ -58,52 +171,13 @@ export default function PegawaiPage() {
             <div className="bg-white rounded-lg flex-1 flex flex-col justify-between">
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden overflow-x-auto">
                     <h1 className="text-2xl font-bold text-[#00275C] p-4">Daftar Pegawai</h1>
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-white">
-                            <tr>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pegawai</th>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jabatan</th>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.Telepon</th>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100">
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                        <div className="shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900">Ahmad Rahardan Slebew</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">19828633374384738</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">Tim PPK</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">082784782748</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <button onClick={() => setIsAktif(!isAktif)} className={`relative inline-flex items-center h-6 rounded-full w-11 ${isAktif ? 'bg-blue-600' : 'bg-gray-500'} transition-all duration-200 focus:outline-none`}>
-                                        <span className="sr-only">Enable notifications</span>
-                                        <span className={`${isAktif ? ' translate-x-6' : ' translate-x-1'} inline-block w-4 h-4 transform bg-white rounded-full transition ease-in-out duration-200`}></span>
-                                    </button>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <button onClick={handleEditClick} className="flex items-center hover:text-blue-600 font-medium">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                        </svg>
-                                        Edit
-                                    </button>
-                                </td>
-                            </tr>
-
-                        </tbody>
-                    </table>
+                    {isLoading ? <Loader />
+                        :
+                        <ReusableTable
+                            columns={pegawaiColumns}
+                            currentItems={currentItems}
+                        />
+                    }
                 </div>
                 <div className="bg-gray-50 p-4 flex items-center justify-between mt-2 rounded-lg">
                     <div className="text-sm text-gray-600">

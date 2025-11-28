@@ -239,3 +239,31 @@ export const menuItems = [
     { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG], tag: 'Manajemen Pengeluaran' },
     { path: '/pemesanan', icon: PengeluaranIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Manajemen Pemesanan' },
 ];
+
+export interface DaftarPegawai {
+    id: number,
+    name: string,
+    nip: string,
+    phone: string,
+    status: string,
+    jabatan_id: number,
+    created_at: string,
+    updated_at: string,
+    jabatan: {
+        id: number,
+        name: string
+    }
+}
+
+export interface APIPegawaiBaru {
+    name: string,
+    nip: string,
+    jabatan_id: number,
+    phone: string,
+    status: string | undefined
+}
+
+export interface APIJabatan {
+    id: number,
+    name: string,
+}   

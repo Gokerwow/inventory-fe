@@ -1,17 +1,195 @@
+import { useEffect, useState } from "react";
+import { ROLES, type APIJabatan, type APIPegawaiBaru } from "../constant/roles";
+import { useAuthorization } from "../hooks/useAuthorization";
+import { useAuth } from "../hooks/useAuth";
+import { getJabatanSelect } from "../services/jabatanService";
+import { useToast } from "../hooks/useToast";
+import Input from "../components/input";
+import DropdownInput from "../components/dropdownInput";
+import Modal from "../components/modal";
+import ButtonConfirm from "../components/buttonConfirm";
+import WarnButton from "../components/warnButton";
+import { createPegawai } from "../services/pegawaiService";
+import { PATHS } from "../Routes/path";
+import { useNavigate } from "react-router-dom";
+
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [formData, setFormData] = useState<APIPegawaiBaru>({
+        name: "",
+        nip: "",
+        jabatan: {
+            id: 0,
+            name: ''
+        },
+        phone: "",
+        status: undefined
+    })
+    const [jabatan, setJabatan] = useState<APIJabatan[]>([])
+    const [selectedJabatan, setSelectedJabatan] = useState<APIJabatan | null>(null)
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const { showToast } = useToast();
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const navigate = useNavigate()
+    const { checkAccess, hasAccess } = useAuthorization([ROLES.SUPER_ADMIN]);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        checkAccess(user?.role);
+        if (!hasAccess(user?.role)) {
+            return;
+        }
+
+        const fetchData = async () => {
+            try {
+                const response = await getJabatanSelect()
+                setJabatan(response)
+            } catch (err) {
+                console.error("Gagal mengambil data jabatan:", err);
+                showToast('Gagal mengambil data jabatan.', 'error');
+            }
+        }
+
+        fetchData()
+    }, [user?.role])
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+        // Clear error ketika user mulai mengetik
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const handleJabatanChange = (option: APIJabatan | null) => {
+        setSelectedJabatan(option);
+        if (option) {
+            setFormData(prev => ({
+                ...prev,
+                jabatan: {
+                    id: option.id,
+                    name: option.name
+                },
+            }));
+            // Clear error ketika user memilih jabatan
+            if (errors.jabatan) {
+                setErrors(prev => ({ ...prev, jabatan: '' }));
+            }
+        }
+    };
+
+    const validateForm = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Nama lengkap wajib diisi';
+        }
+
+        if (!formData.nip.trim()) {
+            newErrors.nip = 'NIP wajib diisi';
+        }
+
+        if (!formData.jabatan.id || formData.jabatan.id === 0) {
+            newErrors.jabatan = 'Jabatan wajib dipilih';
+        }
+
+        if (!formData.phone.trim()) {
+            newErrors.phone = 'No. Telepon wajib diisi';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const handleConfirmSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        try {
+            const pegawaiData: APIPegawaiBaru = {
+                name: formData.name,
+                nip: formData.nip,
+                jabatan_id: formData.jabatan.id,
+                phone: formData.phone,
+                status: 'active'
+            };
+
+            console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
+
+            const response = await createPegawai(pegawaiData)
+            console.log(response)
+
+            showToast('Pegawai berhasil ditambahkan!', 'success');
+            navigate(PATHS.PEGAWAI.INDEX);
+            handleCloseModal();
+
+        } catch (err: any) {
+            console.error("Gagal menambah pegawai:", err);
+
+            // ✅ Tampilkan pesan error dari backend
+            if (err.response?.data?.message) {
+                showToast(err.response.data.message, 'error');
+            } else if (err.response?.data?.errors) {
+                // Jika backend mengirim detail errors per field
+                const errorMessages = Object.values(err.response.data.errors).flat().join(', ');
+                showToast(errorMessages, 'error');
+            } else {
+                showToast('Gagal menyimpan data pegawai.', 'error');
+            }
+
+            // ✅ Log lengkap untuk debugging
+            console.log('Response error:', err.response?.data);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            showToast('Mohon lengkapi semua field yang wajib diisi', 'error');
+            return;
+        }
+
+        console.log('Data pegawai siap submit:', {
+            name: formData.name,
+            nip: formData.nip,
+            jabatan: {
+                id: formData.jabatan.id,
+                name: formData.jabatan.name
+            },
+            phone: formData.phone,
+            status: formData.status
+        });
+
+        handleOpenModal();
+    };
+
     return (
         <div className={`w-full h-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
             <div className={`text-center ${isEdit ? 'mt-8' : ''}`}>
                 <h1 className={`font-bold text-2xl`}>{!isEdit ? 'Tambah Pegawai Baru' : 'Form Manajemen Pegawai'}</h1>
                 <p className="mt-2">{!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}</p>
             </div>
-            <div className="w-full rounded-xl shadow-lg overflow-hidden flex-1">
+            <div className={`w-full rounded-xl shadow-lg overflow-hidden flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col`}>
                 {!isEdit &&
                     <div className="bg-blue-600 p-6 md:p-8 flex justify-between items-start text-white">
                         <div className="flex gap-4 items-center">
                             <div className="bg-white p-2 rounded-lg shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                 </svg>
                             </div>
                             <div>
@@ -25,12 +203,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                     </div>
                 }
 
-                <div className="px-6">
+                <div className="p-6 flex flex-col flex-1">
 
                     <div className="bg-indigo-50 border-l-4 border-blue-600 p-4 rounded-r-md flex gap-4 items-start mb-8">
                         <div className="bg-blue-100 p-1 rounded-full text-blue-600 mt-0.5">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
                         </div>
                         <div>
@@ -41,74 +219,101 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                         </div>
                     </div>
 
-                    <div className="mb-8">
+                    <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
                         <h2 className="text-xl font-bold text-gray-900 border-b pb-4 mb-6">Informasi Pribadi</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-                            <div className="flex flex-col justify-end">
-                                <label className="block mb-2 text-sm font-medium text-gray-900">
-                                    <span className="text-red-500 mr-1">*</span>Nama Lengkap
-                                </label>
-                                <input type="text"
-                                    className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
-                                    placeholder="Masukkan Nama Lengkap" />
-                                <p className="mt-2 text-sm text-gray-500">Contoh: Rizky Pratama</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-6">
+                            <div>
+                                <Input
+                                    id='namaPegawai'
+                                    judul="Nama Lengkap"
+                                    name='name'
+                                    placeholder="Masukkan Nama Lengkap"
+                                    onChange={handleChange}
+                                    value={formData.name || ''}
+                                />
+                                {errors.name && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                                )}
                             </div>
 
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">
-                                    <span className="text-red-500 mr-1">*</span>Jabatan
-                                </label>
-                                <div className="relative">
-                                    <select className="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-8">
-                                        <option selected disabled>Pilih Jabatan Pegawai</option>
-                                        <option>Staff IT</option>
-                                        <option>HRD</option>
-                                        <option>Manager</option>
-                                    </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                                <DropdownInput
+                                    judul="Jabatan"
+                                    options={jabatan}
+                                    placeholder='Pilih Jabatan'
+                                    onChange={handleJabatanChange}
+                                    name='jabatan'
+                                    type='button'
+                                    value={formData.jabatan.name || ''}
+                                />
+                                {errors.jabatan && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.jabatan}</p>
+                                )}
                             </div>
 
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">
-                                    <span className="text-red-500 mr-1">*</span>NIP
-                                </label>
-                                <input type="text"
-                                    className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
-                                    placeholder="Masukkan Nomor Induk Pegawai" />
-                                <p className="mt-2 text-sm text-gray-500">Contoh: 197361736176903</p>
+                                <Input
+                                    id='NIP'
+                                    judul="NIP"
+                                    name='nip'
+                                    placeholder="Masukkan NIP"
+                                    onChange={handleChange}
+                                    value={formData.nip || ''}
+                                />
+                                {errors.nip && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.nip}</p>
+                                )}
                             </div>
 
                             <div>
-                                <label className="block mb-2 text-sm font-medium text-gray-900">
-                                    <span className="text-red-500 mr-1">*</span>No. Telepon
-                                </label>
-                                <input type="tel"
-                                    className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
-                                    placeholder="Masukkan no telepon aktif" />
-                                <p className="mt-2 text-sm text-gray-500">Contoh: 08123456789</p>
+                                <Input
+                                    judul="No. Telepon"
+                                    id='phone'
+                                    name='phone'
+                                    placeholder="Masukkan No. Telepon"
+                                    onChange={handleChange}
+                                    value={formData.phone || ''}
+                                />
+                                {errors.phone && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                                )}
                             </div>
 
                         </div>
-                    </div>
 
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-10 border-t pt-6 border-gray-100">
-                        <p className="text-sm text-gray-500">
-                            <span className="text-red-500 font-bold">*</span> Menandakan field wajib diisi
-                        </p>
-                        <button className="bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg text-sm px-8 py-3 transition-colors w-full md:w-auto">
-                            Selesai
-                        </button>
-                    </div>
+                        <div className="flex justify-end mt-auto pt-6">
+                            <ButtonConfirm
+                                text={isSubmitting ? "Menyimpan..." : "Selesai"}
+                                type="submit"
+                                disabled={isSubmitting}
+                            />
+                        </div>
+                    </form>
 
                 </div>
             </div>
+            {/* MODAL / POPUP */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                onConfirm={handleConfirmSubmit}
+                text="Apa anda yakin data yang dibuat sudah benar?"
+            >
+                <div className="flex gap-4 justify-end">
+                    <ButtonConfirm
+                        text={isSubmitting ? "Menyimpan..." : "Iya"}
+                        type="button"
+                        onClick={handleConfirmSubmit}
+                        disabled={isSubmitting}
+                    />
+                    <WarnButton
+                        onClick={handleCloseModal}
+                        text="Tidak"
+                        disabled={isSubmitting}
+                    />
+                </div>
+            </Modal>
         </div>
     )
 }
