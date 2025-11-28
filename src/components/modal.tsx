@@ -8,7 +8,7 @@ export default function Modal({ isOpen, children, onClose, onConfirm, text }: { 
     return (
         <Transition show={isOpen} as={Fragment}>
 
-            <div className="fixed inset-0 z-40 overflow-y-auto" style={{ left: '300px', top: '116px' }}>
+            <div className="fixed inset-0 z-40 overflow-y-auto" style={{ left: '256px', top: '80px' }}>
 
                 <Transition.Child
                     as={Fragment}
