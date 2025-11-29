@@ -1,7 +1,7 @@
 import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
 import apiClient from './api';
 import { simulateApiCall } from './utils';
-import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru } from '../constant/roles';
+import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru, type PaginationResponse } from '../constant/roles';
 
 type Employee = typeof employees[0];
 type FaqItem = typeof FAQ[0];
@@ -10,22 +10,35 @@ type FaqItem = typeof FAQ[0];
  * Mengambil daftar pegawai di bawah admin.
  * Digunakan di: src/pages/profil.tsx
  */
-export const getDaftarPegawai = async (): Promise<DaftarPegawai[]> => {
-    console.log("SERVICE: Mengambil daftar pegawai...");
+
+export const getDaftarPegawai = async (
+    page: number = 1,
+    perPage?: number
+): Promise<PaginationResponse<DaftarPegawai>> => {
+    console.log(`SERVICE: Mengambil daftar pegawai halaman ${page}...`);
+
     try {
-        const response = await apiClient.get('/api/v1/pegawai')
-        const data = response.data.data as DaftarPegawai[]
-        return data
+        // Buat params untuk query string
+        const params: Record<string, number> = { page };
+        if (perPage) {
+            params.per_page = perPage;
+        }
+
+        const response = await apiClient.get('/api/v1/pegawai', { params });
+
+        if (response.data && response.data.data) {
+            console.log("Data pegawai diterima:", response.data.data);
+            return response.data.data as PaginationResponse<DaftarPegawai>;
+        } else {
+            console.error("Struktur data tidak terduga:", response.data);
+            throw new Error('Struktur data tidak sesuai');
+        }
     } catch (error) {
-        console.error("Gagal mengambil data log aktivitas:", error);
-        throw new Error('Gagal mengambil data log aktivitas.');
+        console.error("Gagal mengambil data pegawai:", error);
+        throw new Error('Gagal mengambil data pegawai.');
     }
 };
 
-/**
- * Mengambil daftar pegawai di bawah admin.
- * Digunakan di: src/pages/profil.tsx
- */
 export const getPegawaiList = async (): Promise<Employee[]> => {
     console.log("SERVICE: Mengambil daftar pegawai...");
     try {
@@ -78,19 +91,34 @@ export const createPegawai = async (formData: APIPegawaiBaru): Promise<APIPegawa
  * Mengupdate akun yang ada.
  * Digunakan di: src/pages/FormAkun.tsx (mode edit)
  */
-export const updatePegawai = (pegawaiId: number, data: Partial<EmployeeType>): Promise<EmployeeType> => {
-    console.log(`SERVICE: Mengupdate akun ID: ${pegawaiId}...`, data);
-    const currentPegawai = employees.find(u => u.id === pegawaiId);
-
-    if (!currentPegawai) {
-        return Promise.reject(new Error("Pegawai tidak ditemukan"));
+export const updatePegawai = async (pegawaiId: number, formData: Partial<APIPegawaiBaru>): Promise<APIPegawaiBaru> => {
+    console.log("SERVICE: Mengedit pegawai...", formData);
+    try {
+        const response = await apiClient.put(`/api/v1/pegawai/${pegawaiId}`, formData);
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
+            // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
+        }
+        console.error("❌ Error mengedit penerimaan:", error);
+        throw error;
     }
+};
 
-    const updatedAkun = {
-        ...currentPegawai,
-        ...data,
-        updated_at: new Date().toISOString(),
-    };
-
-    return simulateApiCall(updatedAkun);
+export const updateStatusPegawai = async (pegawaiId: number): Promise<APIPegawaiBaru> => {
+    console.log("SERVICE: Mengedit pegawai...", pegawaiId);
+    try {
+        const response = await apiClient.patch(`/api/v1/pegawai/${pegawaiId}/status`);
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
+            // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
+        }
+        console.error("❌ Error mengedit penerimaan:", error);
+        throw error;
+    }
 };

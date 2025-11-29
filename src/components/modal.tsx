@@ -3,7 +3,7 @@ import React, { Fragment } from 'react'; // Pastikan untuk mengimpor Fragment
 import simbaLogo from '../assets/Light Logo new 1.png'
 
 // Komponen sekarang menerima 'isOpen', 'children', dan 'onClose'
-export default function Modal({ isOpen, children, onClose, onConfirm, text }: { isOpen: boolean, children?: React.ReactNode, onClose: () => void, onConfirm: () => void, text: string }) {
+export default function Modal({ isOpen, children, onClose, text }: { isOpen: boolean, children?: React.ReactNode, onClose: () => void, onConfirm: () => void, text: string }) {
 
     return (
         <Transition show={isOpen} as={Fragment}>

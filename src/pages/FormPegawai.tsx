@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ROLES, type APIJabatan, type APIPegawaiBaru } from "../constant/roles";
+import { ROLES, type APIJabatan, type APIPegawaiBaru, type DaftarPegawai } from "../constant/roles";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
 import { getJabatanSelect } from "../services/jabatanService";
@@ -9,23 +9,28 @@ import DropdownInput from "../components/dropdownInput";
 import Modal from "../components/modal";
 import ButtonConfirm from "../components/buttonConfirm";
 import WarnButton from "../components/warnButton";
-import { createPegawai } from "../services/pegawaiService";
+import { createPegawai, updatePegawai } from "../services/pegawaiService";
 import { PATHS } from "../Routes/path";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState<APIPegawaiBaru>({
-        name: "",
-        nip: "",
+    const [formData, setFormData] = useState<DaftarPegawai>({
+        id: 0,
+        name: '',
+        nip: '',
+        phone: '',
+        status: '',
+        jabatan_id: 0,
+        created_at: '',
+        updated_at: '',
         jabatan: {
             id: 0,
             name: ''
-        },
-        phone: "",
-        status: undefined
+        }
     })
+
     const [jabatan, setJabatan] = useState<APIJabatan[]>([])
     const [selectedJabatan, setSelectedJabatan] = useState<APIJabatan | null>(null)
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -34,9 +39,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const location = useLocation()
     const navigate = useNavigate()
     const { checkAccess, hasAccess } = useAuthorization([ROLES.SUPER_ADMIN]);
     const { user } = useAuth();
+
+    const { data } = location.state || {}
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -46,8 +54,11 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
         const fetchData = async () => {
             try {
-                const response = await getJabatanSelect()
-                setJabatan(response)
+                if (isEdit) {
+                    const response = await getJabatanSelect()
+                    setJabatan(response)
+                    setFormData(data)
+                }
             } catch (err) {
                 console.error("Gagal mengambil data jabatan:", err);
                 showToast('Gagal mengambil data jabatan.', 'error');
@@ -55,7 +66,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         }
 
         fetchData()
-    }, [user?.role])
+    }, [user?.role, isEdit, data])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -122,15 +133,25 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                 nip: formData.nip,
                 jabatan_id: formData.jabatan.id,
                 phone: formData.phone,
-                status: 'active'
+                status: formData.status || 'active'
             };
 
-            console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
+            if (!isEdit) {
+                console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
 
-            const response = await createPegawai(pegawaiData)
-            console.log(response)
+                const response = await createPegawai(pegawaiData)
+                console.log(response)
 
-            showToast('Pegawai berhasil ditambahkan!', 'success');
+                showToast('Pegawai berhasil ditambahkan!', 'success');
+            } else {
+                console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
+
+                const response = await updatePegawai(formData.id ,pegawaiData)
+                console.log(response)
+
+                showToast('Pegawai berhasil diubah!', 'success');
+            }
+
             navigate(PATHS.PEGAWAI.INDEX);
             handleCloseModal();
 
@@ -246,6 +267,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                     name='jabatan'
                                     type='button'
                                     value={formData.jabatan.name || ''}
+                                    disabled={isEdit}
                                 />
                                 {errors.jabatan && (
                                     <p className="text-red-500 text-xs mt-1">{errors.jabatan}</p>

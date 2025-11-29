@@ -147,7 +147,7 @@ const Pagination = ({
 
     return (
             <div className="border-t border-gray-200 ">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
                     <div className="text-sm text-gray-700">
                         {/* PERUBAHAN: Tampilkan informasi yang lebih akurat */}
                         Menampilkan {totalItems > 0 ? startIndex + 1 : 0} sampai {endIndex} dari {totalItems} entri
