@@ -1,9 +1,25 @@
 import { Transition } from '@headlessui/react';
-import React, { Fragment } from 'react'; // Pastikan untuk mengimpor Fragment
+import React, { Fragment } from 'react';
 import simbaLogo from '../assets/Light Logo new 1.png'
 
 // Komponen sekarang menerima 'isOpen', 'children', dan 'onClose'
-export default function Modal({ isOpen, children, onClose, text }: { isOpen: boolean, children?: React.ReactNode, onClose: () => void, onConfirm: () => void, text: string }) {
+export default function Modal({ isOpen, children, onClose, text, isForm }: { isOpen: boolean, children?: React.ReactNode, onClose: () => void, onConfirm: () => void, text: string, isForm?: boolean }) {
+
+    // 1. Buat fungsi handler baru untuk menangani klik pada backdrop
+    const handleBackdropClick = () => {
+        if (isForm) {
+            // 2. Jika isForm true, munculkan konfirmasi browser
+            const confirmLeave = window.confirm("Apakah Anda yakin ingin menutup form? Data yang belum disimpan akan hilang.");
+            
+            // 3. Jika user klik "OK", baru jalankan onClose
+            if (confirmLeave) {
+                onClose();
+            }
+        } else {
+            // 4. Jika bukan form, tutup langsung seperti biasa
+            onClose();
+        }
+    };
 
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -27,7 +43,8 @@ export default function Modal({ isOpen, children, onClose, text }: { isOpen: boo
 
                 <div
                     className="absolute inset-0 flex items-center justify-center p-4"
-                    onClick={onClose}
+                    // 5. Ganti onClose dengan handleBackdropClick disini
+                    onClick={handleBackdropClick}
                 >
 
                     <Transition.Child
@@ -40,11 +57,17 @@ export default function Modal({ isOpen, children, onClose, text }: { isOpen: boo
                         leaveTo="opacity-0 scale-95"
                     >
                         <div
-                            className="max-w-lg w-full space-y-4 bg-white p-18 shadow-xl rounded-lg z-50 flex flex-col items-center justify-center gap-4"
+                            className={`max-w-lg w-full bg-white ${isForm ? 'p-10' : ' p-18'} shadow-xl rounded-lg z-50 flex flex-col items-center justify-center gap-4`}
+                            // stopPropagation tetap diperlukan agar klik di dalam kotak putih tidak memicu backdrop click
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <img src={simbaLogo} alt="" />
-                            <h1 className="text-2xl text-center select-none">{ text }</h1>
+                            {!isForm &&
+                                <>
+                                    <img src={simbaLogo} alt="" />
+                                    <h1 className="text-2xl text-center select-none">{text}</h1>
+                                </>
+                            }
+
                             {children}
                         </div>
                     </Transition.Child>

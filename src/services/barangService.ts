@@ -1,7 +1,7 @@
 import { BARANG_BELANJA } from "../Mock Data/data";
 import { simulateApiCall } from "./utils";
 import apiClient from "./api";
-import { type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
+import { type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {
     console.log("SERVICE: Mengabil barang stok...");
@@ -54,6 +54,18 @@ export const getStokBarang = async (
     }
 };
 
+export const getDetailStokBarang = async (id: number): Promise<APIStokUpdate> => {
+    console.log(`SERVICE: Mengambil detail stok barang dengan ID: ${id}...`);
+    try {
+        const response = await apiClient.get(`/api/v1/stok/${id}`);
+        const detailData = response.data.data as APIStokUpdate;
+        return detailData;
+    } catch (error) {
+        console.error(`Gagal mengambil detail stok barang dengan ID ${id}:`, error);
+        throw new Error('Gagal mengambil detail stok barang.');
+    }
+}
+
 /**
  * Mensimulasikan penambahan barang belanja ke form.
  * Digunakan di: src/pages/FormDataBarangBelanja.tsx
@@ -66,6 +78,21 @@ export const addBarangBelanja = async (barang: Omit<TIPE_BARANG_STOK, 'id'>): Pr
         ...barang
     };
     return simulateApiCall(newBarang);
+};
+
+export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangId: number): Promise<APIStokUpdate> => {
+    console.log("SERVICE: Mengedit stok...", formData);
+    try {
+        const response = await apiClient.patch(`/api/v1/stok/${barangId}`, formData);
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        if (error.response && error.response.data) {
+            console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
+        }
+        console.error("❌ Error mengedit stok:", error);
+        throw error;
+    }
 };
 
 export const updateBarangStatus = async (

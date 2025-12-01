@@ -106,6 +106,7 @@ export interface TIPE_BARANG_STOK {
 
 // BUAT DI HALAMAN STOK BARANG
 export interface BARANG_STOK {
+    id: number,
     name: string,
     category_name: string,
     stok_lama: number,
@@ -266,4 +267,10 @@ export interface APIPegawaiBaru {
 export interface APIJabatan {
     id: number,
     name: string,
-}   
+}
+
+export interface APIStokUpdate {
+    id?: number,
+    name: string,
+    minimum_stok: number
+}

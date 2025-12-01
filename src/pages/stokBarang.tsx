@@ -5,15 +5,19 @@ import KomputerIcon from '../assets/KomputerIcon.svg?react'
 import KertasIcon from '../assets/KertasIcon.svg?react'
 import PaluIcon from '../assets/PaluIcon.svg?react'
 import PembersihIcon from '../assets/PembersihIcon.svg?react'
-import { ROLES, type BARANG_STOK } from '../constant/roles'
+import { ROLES, type APIStokUpdate, type BARANG_STOK } from '../constant/roles'
 import type { ColumnDefinition } from '../components/table'
 import { useEffect, useState, useMemo } from 'react'
 import { useAuthorization } from '../hooks/useAuthorization'
 import { useAuth } from '../hooks/useAuth'
-import { getStokBarang } from '../services/barangService'
+import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService'
 import ReusableTable from '../components/table'
 import Pagination from '../components/pagination'
 import Loader from '../components/loader'
+import { useToast } from '../hooks/useToast'
+import Modal from '../components/modal'
+import Input from '../components/input'
+import ButtonConfirm from '../components/buttonConfirm'
 
 const CATEGORY_DATA = [
     {
@@ -83,15 +87,20 @@ function StokBarang() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isLoading, setIsLoading] = useState(true);
+    const [isFormLoading, setIsFormLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentItems, setCurrentItems] = useState<BARANG_STOK[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
 
     // 3. Set default state year ke string tahun saat ini
-    const [year, setYear] = useState(String(currentYear)); 
+    const [year, setYear] = useState(String(currentYear));
     const [activeTab, setActiveTab] = useState('stokBarang')
-    
-    const [search, setSearch] = useState(''); 
-    const [debouncedSearch, setDebouncedSearch] = useState(''); 
+
+    const { showToast } = useToast();
+
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
     const { user } = useAuth();
@@ -100,7 +109,7 @@ function StokBarang() {
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
-            setCurrentPage(1); 
+            setCurrentPage(1);
         }, 500);
 
         return () => {
@@ -122,7 +131,7 @@ function StokBarang() {
                 // Contoh: getStokBarang(..., debouncedSearch, year)
                 const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
                 console.log("📦 Stok Response:", response);
-                setCurrentItems(response.data);
+                setCurrentItems(response.data.flat());
                 setTotalItems(response.total || 0);
                 setItemsPerPage(response.per_page || 10);
                 setTotalPages(response.last_page || 1);
@@ -153,22 +162,68 @@ function StokBarang() {
         setActiveTab(tab)
     }
 
+    const handleEditClick = async (id: number) => {
+        setIsFormLoading(true)
+        setIsModalOpen(true);
+        try {
+            const detail = await getDetailStokBarang(id);
+
+            // Hapus atau abaikan setItemDetail jika hanya digunakan untuk form
+            // Masukkan data langsung ke formData
+            setFormData({
+                id: id,
+                name: detail.name,
+                minimum_stok: detail.minimum_stok
+            });
+            setIsFormLoading(false)
+        } catch (error) {
+            console.error("Error fetching detail stok barang:", error);
+        }
+    }
+
+    const handleConfirmSubmit = async () => {
+        setIsModalOpen(false);
+        try {
+            const FixData = {
+                name: formData.name,
+                minimum_stok: parseInt(String(formData.minimum_stok))
+            }
+
+            const response = await updateBarangStok(FixData, formData.id || 0);
+            console.log("Update Success:", response);
+            showToast("Berhasil memperbarui data stok barang.", "success");
+        } catch (error) {
+            console.error("Error fetching detail stok barang:", error);
+            showToast("Gagal memperbarui data stok barang.", "error");
+        }
+        // try {
+        //     const updatedItem = await getDetailStokBarang(itemDetail?.id || 0, formData);
+        // }
+    }
+
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
         {
             header: 'Nama Barang',
             cell: (item) => {
                 const config = CATEGORY_DATA.find(c => c.name === item.category_name);
-
                 const IconComponent = config?.Icon || AtkIcon;
                 const colorClass = config?.colorClass || 'bg-gray-100 text-gray-700';
 
                 return (
                     <div className="flex items-center">
+                        {/* Icon */}
                         <div className={`shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${colorClass}`}>
                             <IconComponent className='w-6 h-6' />
                         </div>
-                        <div className="ml-4">
-                            <div className="text-sm font-semibold text-gray-900">{item.name}</div>
+
+                        {/* Wrapper Teks dengan min-w-0 agar flex item bisa mengecil */}
+                        <div className="ml-4 min-w-0 flex-1">
+                            <div
+                                className="text-sm font-semibold text-gray-900 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px]"
+                                title={item.name} // Tooltip bawaan browser saat di-hover
+                            >
+                                {item.name}
+                            </div>
                             <div className="text-xs text-gray-500">Kategori: {item.category_name}</div>
                         </div>
                     </div>
@@ -197,8 +252,8 @@ function StokBarang() {
         },
         {
             header: 'Aksi',
-            cell: () => (
-                <button className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+            cell: (item) => (
+                <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     Edit
                 </button>
@@ -218,13 +273,13 @@ function StokBarang() {
         <div className="w-full h-full flex flex-col gap-5">
             {/* Navigation Tabs */}
             <nav className="flex gap-2" aria-label="Tabs">
-                <button onClick={() => handleTabClick('stokBarang')} className={` ${ activeTab === 'stokBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' } bg-white rounded-t-lg group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
+                <button onClick={() => handleTabClick('stokBarang')} className={` ${activeTab === 'stokBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} bg-white rounded-t-lg group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
                     <svg className="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                     </svg>
                     Stok Barang
                 </button>
-                <button onClick={() => handleTabClick('kategoriBarang')} className={`${ activeTab === 'kategoriBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' } rounded-t-lg bg-white group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
+                <button onClick={() => handleTabClick('kategoriBarang')} className={`${activeTab === 'kategoriBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} rounded-t-lg bg-white group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
                     <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.968 7.968 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                     </svg>
@@ -311,7 +366,7 @@ function StokBarang() {
 
                     <div className="relative">
                         {/* 4. Implementasi Dropdown Dinamis */}
-                        <select 
+                        <select
                             value={year}
                             onChange={(e) => setYear(e.target.value)}
                             className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
@@ -332,13 +387,13 @@ function StokBarang() {
                     <div className="flex-1 overflow-hidden">
                         {isLoading ? <Loader />
                             :
-                            activeTab === 'stokBarang' ? 
-                            <ReusableTable
-                                columns={barangColumns}
-                                currentItems={currentItems}
-                            />
-                            :
-                            <div>tes</div>
+                            activeTab === 'stokBarang' ?
+                                <ReusableTable
+                                    columns={barangColumns}
+                                    currentItems={currentItems}
+                                />
+                                :
+                                <div>tes</div>
                         }
                     </div>
 
@@ -353,6 +408,51 @@ function StokBarang() {
                     </div>
                 </div>
             </div>
+            {/* Modal Konfirmasi */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={handleConfirmSubmit}
+                // Judul modal disesuaikan agar tidak duplikat dengan h1 di bawah, atau bisa dikosongkan jika Modal sudah punya header sendiri
+                text=""
+                isForm={true}
+            >
+                <div className="flex flex-col gap-10 w-full">
+                    {/* Judul sesuai Desain (Warna Biru) */}
+                    <h1 className="text-2xl text-center font-bold text-[#057CFF]">
+                        FORM DETAIL STOK BARANG
+                    </h1>
+                    <div className='flex flex-col gap-4'>
+                        {/* Field 1: Nama Barang */}
+                        <Input
+                            id='name'
+                            judul='Nama Barang'
+                            placeholder='Masukkan Nama Barang'
+                            name='name'
+                            // UBAH DISINI: Langsung baca dari formData
+                            value={isFormLoading ? 'Memuat Data...' : formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+
+                        {/* Field 2: Minimum Stok */}
+                        <Input
+                            id='minimum_stok'
+                            judul='Minimum Stok'
+                            placeholder='Masukkan Minimum Stok'
+                            name='minimum_stok'
+                            type="number"
+                            // UBAH DISINI: Langsung baca dari formData (handle angka 0 agar tidak kosong stringnya)
+                            value={isFormLoading ? 'Memuat Data...' : formData.minimum_stok}
+                            onChange={(e) => setFormData({ ...formData, minimum_stok: parseInt(e.target.value) || '' })}
+                        />
+                    </div>
+                    <ButtonConfirm
+                        text='Selesai'
+                        onClick={handleConfirmSubmit}
+                        className='w-[200px] self-center rounded-3xl'
+                    />
+                </div>
+            </Modal>
         </div>
     );
 }
