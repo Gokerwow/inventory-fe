@@ -274,3 +274,7 @@ export interface APIStokUpdate {
     name: string,
     minimum_stok: number
 }
+
+export interface APIConfirmKelayakan {
+    quantity_layak: number,
+}

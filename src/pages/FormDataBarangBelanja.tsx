@@ -1,282 +1,203 @@
 import React, { useEffect, useState } from "react";
-import Input from "../components/input";
-import ButtonConfirm from "../components/buttonConfirm";
-import Modal from "../components/modal";
-import { useAuthorization } from "../hooks/useAuthorization";
-import { useAuth } from "../hooks/useAuth";
-import { useLocation, useNavigate } from "react-router-dom";
-import { getBarangBelanja } from "../services/barangService";
 import { useToast } from "../hooks/useToast";
-import WarnButton from "../components/warnButton";
 import CurrencyInput from "../components/currencyInput";
-import { usePenerimaan } from "../hooks/usePenerimaan";
-import { ROLES, type TIPE_BARANG_STOK } from "../constant/roles";
+import { type TIPE_BARANG_STOK } from "../constant/roles";
 import DropdownInput from "../components/dropdownInput";
+import { getBarangBelanja } from "../services/barangService";
+import Input from "../components/input";
 
-const FormDataBarangBelanja = () => {
-    const [formData, setFormData] = useState({
-        stok_id: 0,
-        quantity: 0,
-        price: 0,
-    });
+// Icon X sederhana untuk tombol close
+const CloseIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 1L1 13M1 1L13 13" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [stok, setStok] = useState<TIPE_BARANG_STOK[]>([]);
+interface ModalTambahBarangProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (item: any) => void;
+    categoryId: number;
+}
+
+const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, onSave, categoryId }) => {
+    const { showToast } = useToast();
+    
+    // State Form
+    const [stokOptions, setStokOptions] = useState<TIPE_BARANG_STOK[]>([]);
     const [selectedBarang, setSelectedBarang] = useState<TIPE_BARANG_STOK | null>(null);
-
-    // ✅ State terpisah untuk input harga
-    const [jumlah, setJumlah] = useState<number>(0);
-    const [harga, setHarga] = useState<number>(0);
+    const [jumlah, setJumlah] = useState<number | string>(""); // Allow empty string for clean input
+    const [harga, setHarga] = useState<number | string>("");
     const [totalHarga, setTotalHarga] = useState<number>(0);
 
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { isEdit, returnUrl } = location.state || {};
-
-    const { showToast } = useToast();
-    const { checkAccess, hasAccess } = useAuthorization([ROLES.PPK, ROLES.TEKNIS]);
-    const { user } = useAuth();
-    const { setBarang, formDataPenerimaan } = usePenerimaan();
-
-    console.log(isEdit)
-    // ✅ useEffect untuk auto-calculate total harga
+    // Fetch Data Barang saat Modal Dibuka
     useEffect(() => {
-        const calculatedTotal = jumlah * harga;
-        setTotalHarga(calculatedTotal);
-        console.log(`📊 Auto calculate: ${jumlah} × ${harga} = ${calculatedTotal}`);
+        if (isOpen && categoryId > 0) {
+            const fetchBarang = async () => {
+                try {
+                    const data = await getBarangBelanja(categoryId);
+                    setStokOptions(data);
+                } catch (error) {
+                    console.error("Gagal ambil barang:", error);
+                    showToast("Gagal memuat daftar barang", "error");
+                }
+            };
+            fetchBarang();
+        }
+    }, [isOpen, categoryId]);
+
+    // Auto Calculate Total
+    useEffect(() => {
+        const qty = typeof jumlah === 'number' ? jumlah : 0;
+        const prc = typeof harga === 'number' ? harga : 0;
+        setTotalHarga(qty * prc);
     }, [jumlah, harga]);
 
+    // Reset Form saat modal ditutup
     useEffect(() => {
-        checkAccess(user?.role);
-        if (!hasAccess(user?.role)) {
-            return;
+        if (!isOpen) {
+            setSelectedBarang(null);
+            setJumlah("");
+            setHarga("");
+            setTotalHarga(0);
         }
+    }, [isOpen]);
 
-        const fetchBarangBelanja = async () => {
-            try {
-                const stokData = await getBarangBelanja(formDataPenerimaan.category_id);
-                setStok(stokData);
-            } catch (error) {
-                console.error("Gagal mengambil data barang belanja:", error);
-                showToast('Gagal mengambil data barang belanja.', 'error');
-            }
-        };
-
-        fetchBarangBelanja();
-    }, [user?.role, formDataPenerimaan.category_id]);
-
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
-
-    // ✅ Handler untuk dropdown barang
     const handleBarangChange = (option: TIPE_BARANG_STOK | null) => {
         setSelectedBarang(option);
-        if (option) {
-            setFormData(prev => ({
-                ...prev,
-                stok_id: option.id,
-            }));
-        }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
-    };
+    const handleSave = () => {
+        const qty = Number(jumlah);
+        const prc = Number(harga);
 
-    // ✅ Handler untuk jumlah
-    const handleJumlahChange = (value: string) => {
-        const numValue = parseInt(value.replace(/\D/g, '')) || 0;
-        setJumlah(numValue);
-        setFormData(prev => ({
-            ...prev,
-            quantity: numValue
-        }));
-    };
-
-    // ✅ Handler untuk harga
-    const handleHargaChange = (value: string) => {
-        const numValue = parseInt(value.replace(/\D/g, '')) || 0;
-        setHarga(numValue);
-        setFormData(prev => ({
-            ...prev,
-            price: numValue
-        }));
-    };
-
-    const handleConfirmSubmit = async () => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-
-        try {
-            // ✅ Langsung ambil dari state
-            const barangData = {
-                stok_id: selectedBarang?.id ?? 0,
-                quantity: jumlah,
-                price: harga,
-                total_harga: totalHarga,
-                stok_name: selectedBarang?.name ?? '',
-                satuan_name: selectedBarang?.satuan_name ?? '',
-                is_layak: null
-            };
-
-            console.log('✅ Barang yang akan ditambahkan:', barangData);
-
-            setBarang(prev => [...prev, barangData]);
-            showToast('Barang berhasil ditambahkan!', 'success');
-            navigate(returnUrl, { state: { isEdit, keepLocalData: true } });
-            handleCloseModal();
-
-        } catch (err) {
-            console.error("Gagal menambah barang:", err);
-            showToast('Gagal menyimpan data barang.', 'error');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        // ✅ Validasi
+        // Validasi
         if (!selectedBarang) {
             showToast("Pilih barang terlebih dahulu!", "error");
             return;
         }
-
-        if (jumlah <= 0) {
-            showToast("Jumlah harus lebih dari 0!", "error");
+        if (!qty || qty <= 0) {
+            showToast("Jumlah harus diisi!", "error");
+            return;
+        }
+        if (!prc || prc <= 0) {
+            showToast("Harga harus diisi!", "error");
             return;
         }
 
-        if (harga <= 0) {
-            showToast("Harga harus lebih dari 0!", "error");
-            return;
-        }
+        const newItem = {
+            stok_id: selectedBarang.id,
+            stok_name: selectedBarang.name,
+            satuan_name: selectedBarang.satuan_name,
+            quantity: qty,
+            price: prc,
+            total_harga: totalHarga,
+            is_layak: null
+        };
 
-        console.log('Data barang siap submit:', {
-            stok_id: formData.stok_id,
-            quantity: jumlah,
-            price: harga,
-            stok_name: selectedBarang?.name,
-            satuan_name: selectedBarang?.satuan_name
-        });
-
-        handleOpenModal();
+        onSave(newItem);
+        onClose(); 
     };
 
-    if (!hasAccess(user?.role)) {
-        return null;
-    }
+    if (!isOpen) return null;
 
     return (
-        <div className="h-full">
-            <div className="bg-white shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 h-full rounded-xl flex flex-col gap-4">
-                <h1 className="text-3xl font-bold mb-6 text-[#057CFF] text-center">
-                    FORM DATA BARANG BELANJA
-                </h1>
+        <div className="fixed left-64 inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl transform transition-all scale-100">
+                
+                {/* --- HEADER (Biru Sesuai Desain) --- */}
+                <div className="bg-[#005DB9] p-6 flex justify-between items-start">
+                    <div className="text-white">
+                        <h2 className="text-2xl font-bold">Tambah Data Barang Belanja</h2>
+                        <p className="text-blue-100 text-sm mt-1">Isi detail barang yang akan ditambahkan ke daftar belanja</p>
+                    </div>
+                    <button 
+                        onClick={onClose}
+                        className="bg-gray-200 hover:bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer"
+                    >
+                        <CloseIcon />
+                    </button>
+                </div>
 
-                <form onSubmit={handleSubmit} className="border-t-2 border-[#CADCF2] grid grid-cols-2 p-8 gap-8">
-                    {/* KOLOM KIRI */}
-                    <div className="flex flex-col gap-4">
-                        {/* Nama Barang */}
+                {/* --- BODY FORM --- */}
+                <div className="p-6 flex flex-col gap-5">
+                    
+                    {/* Baris 1: Nama Barang (Full Width) */}
+                    <div>
                         <DropdownInput<TIPE_BARANG_STOK>
-                            options={stok}
-                            placeholder='Pilih Barang'
-                            judul='Nama Barang'
+                            options={stokOptions}
+                            placeholder={categoryId > 0 ? "Masukkan nama barang" : "Pilih Kategori Dulu"}
+                            judul="Nama Barang"
                             value={selectedBarang?.name || ''}
                             onChange={handleBarangChange}
-                            name='namaBarang'
-                            type='button'
+                            name="namaBarang"
+                            type="button"
+                            disabled={categoryId <= 0}
                         />
+                    </div>
 
-                        {/* Satuan & Jumlah */}
-                        <div className="grid grid-cols-2 gap-10">
+                    {/* Baris 2: Satuan & Jumlah */}
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="flex flex-col gap-2">
+                            {/* Satuan kita buat ReadOnly tapi stylenya seperti dropdown/input agar rapi */}
                             <Input
                                 id="satuan"
-                                placeholder="Unit, Box, Pack"
+                                placeholder="Pilih Satuan"
                                 judul="Satuan"
                                 name="satuan"
-                                onChange={handleChange}
                                 value={selectedBarang?.satuan_name || ''}
                                 readOnly
+                                onChange={() => {}}
                             />
-
-                            {/* ✅ Jumlah tanpa prefix Rp */}
-                            <CurrencyInput
-                                id="jumlah"
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-semibold text-gray-600">Jumlah</label>
+                            <input 
+                                type="number" 
                                 placeholder="0"
-                                judul="Jumlah"
-                                name="jumlah"
-                                prefix=""
-                                onChange={handleJumlahChange}
-                                value={jumlah.toString()}
+                                className="w-full border border-gray-400 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 text-gray-700"
+                                value={jumlah}
+                                onChange={(e) => setJumlah(e.target.value === '' ? '' : Number(e.target.value))}
                             />
                         </div>
                     </div>
 
-                    {/* KOLOM KANAN */}
-                    <div className="flex flex-col gap-4">
-                        {/* ✅ Harga dengan prefix Rp */}
+                    {/* Baris 3: Harga Satuan & Total Harga */}
+                    <div className="grid grid-cols-2 gap-6">
                         <CurrencyInput
                             id="harga"
-                            placeholder="0"
+                            placeholder="Rp"
                             judul="Harga Satuan"
                             name="harga"
                             prefix="Rp"
-                            onChange={handleHargaChange}
                             value={harga.toString()}
+                            onChange={(val) => setHarga(val ? parseInt(val.replace(/\D/g, '')) : "")}
                         />
-
-                        {/* ✅ Total Harga (Auto-calculated & Disabled) */}
                         <CurrencyInput
                             id="totalHarga"
-                            placeholder="0"
+                            placeholder="Rp"
                             judul="Total Harga"
                             name="totalHarga"
                             prefix="Rp"
                             value={totalHarga.toString()}
                             disabled
                         />
-
-                        {/* Button Selesai */}
-                        <ButtonConfirm
-                            text={isSubmitting ? "Menyimpan..." : "Selesai"}
-                            className="self-end mt-auto"
-                            type="submit"
-                            disabled={isSubmitting}
-                        />
                     </div>
-                </form>
-            </div>
-
-            {/* MODAL / POPUP */}
-            <Modal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin data yang dibuat sudah benar?"
-            >
-                <div className="flex gap-4 justify-end">
-                    <ButtonConfirm
-                        text={isSubmitting ? "Menyimpan..." : "Iya"}
-                        type="button"
-                        onClick={handleConfirmSubmit}
-                        disabled={isSubmitting}
-                    />
-                    <WarnButton
-                        onClick={handleCloseModal}
-                        text="Tidak"
-                        disabled={isSubmitting}
-                    />
                 </div>
-            </Modal>
+
+                {/* --- FOOTER --- */}
+                <div className="p-6 pt-2 flex justify-end">
+                    <button
+                        onClick={handleSave}
+                        className="bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-2.5 px-8 rounded-lg transition-all duration-200 active:scale-95 shadow-md"
+                    >
+                        Selesai
+                    </button>
+                </div>
+
+            </div>
         </div>
     );
 };
 
-export default FormDataBarangBelanja;
+export default ModalTambahBarang;

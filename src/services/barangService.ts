@@ -98,14 +98,12 @@ export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangI
 export const updateBarangStatus = async (
     penerimaanId: number,
     detailId: number,
-    isLayak: boolean | null
+    quantityLayak: number // ✅ Diubah jadi number
 ) => {
-    // Seharusnya tidak null, tapi sebagai pengaman
-    if (isLayak === null) return;
-
     try {
-        const payload = { is_layak: isLayak };
-        // Panggil endpoint spesifik
+        // ✅ Payload disesuaikan permintaan: { "quantity_layak": 10 }
+        const payload = { quantity_layak: quantityLayak };
+
         const response = await apiClient.patch(
             `/api/v1/penerimaan/${penerimaanId}/barang/${detailId}/layak`,
             payload
@@ -113,7 +111,7 @@ export const updateBarangStatus = async (
         return response.data;
     } catch (error) {
         console.error(`❌ Error updating status for item ${detailId}:`, error);
-        throw error; // Lempar error agar Promise.all bisa menangkapnya
+        throw error; 
     }
 };
 

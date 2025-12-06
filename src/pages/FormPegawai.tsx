@@ -54,9 +54,9 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
         const fetchData = async () => {
             try {
+                const response = await getJabatanSelect()
+                setJabatan(response)
                 if (isEdit) {
-                    const response = await getJabatanSelect()
-                    setJabatan(response)
                     setFormData(data)
                 }
             } catch (err) {
@@ -97,6 +97,23 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         }
     };
 
+    const handleNIPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+
+        // ✅ Hanya izinkan angka (0-9)
+        const onlyNumbers = value.replace(/[^0-9]/g, '');
+
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: onlyNumbers
+        }));
+
+        // Clear error ketika user mulai mengetik
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
 
@@ -106,6 +123,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
         if (!formData.nip.trim()) {
             newErrors.nip = 'NIP wajib diisi';
+        } else if (!/^\d+$/.test(formData.nip)) {
+            // ✅ Validasi bahwa NIP hanya berisi angka
+            newErrors.nip = 'NIP hanya boleh berisi angka';
+        } else if (formData.nip.length < 5) {
+            // ✅ Optional: tambahkan validasi panjang minimum
+            newErrors.nip = 'NIP minimal 5 digit';
         }
 
         if (!formData.jabatan.id || formData.jabatan.id === 0) {
@@ -119,7 +142,6 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
-
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
@@ -146,7 +168,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             } else {
                 console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
 
-                const response = await updatePegawai(formData.id ,pegawaiData)
+                const response = await updatePegawai(formData.id, pegawaiData)
                 console.log(response)
 
                 showToast('Pegawai berhasil diubah!', 'success');
@@ -280,8 +302,9 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                     judul="NIP"
                                     name='nip'
                                     placeholder="Masukkan NIP"
-                                    onChange={handleChange}
+                                    onChange={handleNIPChange}
                                     value={formData.nip || ''}
+                                    type="text"
                                 />
                                 {errors.nip && (
                                     <p className="text-red-500 text-xs mt-1">{errors.nip}</p>

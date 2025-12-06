@@ -80,6 +80,7 @@ function StokBarang() {
         return [currentYear, currentYear - 1, currentYear - 2];
     }, [currentYear]);
 
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -89,7 +90,8 @@ function StokBarang() {
     const [isLoading, setIsLoading] = useState(true);
     const [isFormLoading, setIsFormLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentItems, setCurrentItems] = useState<BARANG_STOK[]>([]);
+    const [currentStokItems, setCurrentStokItems] = useState<BARANG_STOK[]>([]);
+    const [currentBASTItems, setCurrentBASTItems] = useState<BARANG_STOK[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
 
@@ -126,15 +128,27 @@ function StokBarang() {
             setIsLoading(true);
             setError(null);
             try {
-                console.log('Fetching Stok Data....')
-                // Pastikan parameter year dikirim jika API mendukung filter tahun
-                // Contoh: getStokBarang(..., debouncedSearch, year)
-                const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
-                console.log("📦 Stok Response:", response);
-                setCurrentItems(response.data.flat());
-                setTotalItems(response.total || 0);
-                setItemsPerPage(response.per_page || 10);
-                setTotalPages(response.last_page || 1);
+                if (activeTab === 'stokBarang') {
+                    console.log('Fetching Stok Data....')
+                    // Pastikan parameter year dikirim jika API mendukung filter tahun
+                    // Contoh: getStokBarang(..., debouncedSearch, year)
+                    const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
+                    console.log("📦 Stok Response:", response);
+                    setCurrentStokItems(response.data.flat());
+                    setTotalItems(response.total || 0);
+                    setItemsPerPage(response.per_page || 10);
+                    setTotalPages(response.last_page || 1);
+                } else {
+                    console.log('Fetching BAST Data....')
+                    // Pastikan parameter year dikirim jika API mendukung filter tahun
+                    // Contoh: getStokBarang(..., debouncedSearch, year)
+                    const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
+                    console.log("📦 BAST Response:", response);
+                    setCurrentBASTItems(response.data.flat());
+                    setTotalItems(response.total || 0);
+                    setItemsPerPage(response.per_page || 10);
+                    setTotalPages(response.last_page || 1);
+                }
             } catch (err) {
                 console.error("❌ Error fetching data:", err);
                 setError("Gagal memuat data.");
@@ -144,7 +158,7 @@ function StokBarang() {
         }
         FetchData();
         // Tambahkan year ke dependency array agar refresh saat tahun diganti
-    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year])
+    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger])
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -192,6 +206,8 @@ function StokBarang() {
             const response = await updateBarangStok(FixData, formData.id || 0);
             console.log("Update Success:", response);
             showToast("Berhasil memperbarui data stok barang.", "success");
+            setIsModalOpen(false);
+            setRefreshTrigger((prev) => prev + 1)
         } catch (error) {
             console.error("Error fetching detail stok barang:", error);
             showToast("Gagal memperbarui data stok barang.", "error");
@@ -202,6 +218,66 @@ function StokBarang() {
     }
 
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
+        {
+            header: 'Nama Barang',
+            cell: (item) => {
+                const config = CATEGORY_DATA.find(c => c.name === item.category_name);
+                const IconComponent = config?.Icon || AtkIcon;
+                const colorClass = config?.colorClass || 'bg-gray-100 text-gray-700';
+
+                return (
+                    <div className="flex items-center">
+                        {/* Icon */}
+                        <div className={`shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${colorClass}`}>
+                            <IconComponent className='w-6 h-6' />
+                        </div>
+
+                        {/* Wrapper Teks dengan min-w-0 agar flex item bisa mengecil */}
+                        <div className="ml-4 min-w-0 flex-1">
+                            <div
+                                className="text-sm font-semibold text-gray-900 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px]"
+                                title={item.name} // Tooltip bawaan browser saat di-hover
+                            >
+                                {item.name}
+                            </div>
+                            <div className="text-xs text-gray-500">Kategori: {item.category_name}</div>
+                        </div>
+                    </div>
+                )
+            }
+        },
+        {
+            header: 'Stok Lama',
+            cell: (item) => <>{item.stok_lama}</>
+        },
+        {
+            header: 'Total Stok',
+            cell: (item) => <>{item.total_stok}</>
+        },
+        {
+            header: 'Minimum Stok',
+            cell: (item) => <>{item.minimum_stok}</>
+        },
+        {
+            header: 'Satuan',
+            cell: (item) => <>{item.satuan}</>
+        },
+        {
+            header: 'Harga',
+            cell: (item) => <>Rp {new Intl.NumberFormat('id-ID').format(item.price)}</>
+        },
+        {
+            header: 'Aksi',
+            cell: (item) => (
+                <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    Edit
+                </button>
+            )
+        }
+    ];
+
+    const BASTColumns: ColumnDefinition<BARANG_STOK>[] = [
         {
             header: 'Nama Barang',
             cell: (item) => {
@@ -390,10 +466,13 @@ function StokBarang() {
                             activeTab === 'stokBarang' ?
                                 <ReusableTable
                                     columns={barangColumns}
-                                    currentItems={currentItems}
+                                    currentItems={currentStokItems}
                                 />
                                 :
-                                <div>tes</div>
+                                <ReusableTable
+                                    columns={BASTColumns}
+                                    currentItems={currentBASTItems}
+                                />
                         }
                     </div>
 

@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import PlusIcon from '../assets/plus.svg?react'
 import PenerimaanTable from '../components/PenerimaanTable';
-import RiwayatPenerimaanTable from '../components/RiwayatPenerimaanTable';
 import { NavLink } from 'react-router-dom';
 import { getPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService';
 import { PATHS } from '../Routes/path';

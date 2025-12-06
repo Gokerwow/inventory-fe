@@ -91,8 +91,6 @@ export const PenerimaanData = [
         namaPegawai: 'Rahardan',
         kategori: 'ATK',
         status: 'Telah Dikonfirmasi',
-        linkUnduh: '/dummyPDF.pdf',
-        tipe: ''
     },
     {
         id: 2,

@@ -132,13 +132,7 @@ const LihatPenerimaan = () => {
             const result = await uploadBAST(data.id, formData)
             console.log("✅ Data BAST yang diupload:", result);
             showToast("Berhasil mengupload file BAST!", "success");
-            navigate(PATHS.PENERIMAAN.INDEX, {
-                state: {
-                    data: formData,
-                    toastMessage: 'Anda berhasil mengupload BAST!',
-                    toastType: 'success'
-                }
-            });
+            navigate(PATHS.PENERIMAAN.INDEX);
             handleCloseModal();
         } catch (err) {
             console.error(err);

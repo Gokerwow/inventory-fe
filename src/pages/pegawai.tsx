@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { PATHS } from "../Routes/path";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
-import { ROLES, type DaftarPegawai } from "../constant/roles";
+import { ROLES, type APIJabatan, type DaftarPegawai } from "../constant/roles";
 import { getDaftarPegawai, updateStatusPegawai } from "../services/pegawaiService";
 import type { ColumnDefinition } from "../components/table";
 import Loader from "../components/loader";
 import ReusableTable from "../components/table";
 import Pagination from "../components/pagination";
+import { getJabatanSelect } from "../services/jabatanService";
+import { useToast } from "../hooks/useToast";
 
 
 export default function PegawaiPage() {
@@ -19,7 +21,19 @@ export default function PegawaiPage() {
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
+    const [selectedJabatan, setSelectedJabatan] = useState<number>(0);
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [jabatanList, setJabatanList] = useState<APIJabatan[]>([]);
     const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    const PegawaiStatus = [
+        { label: 'Aktif', value: 'active' },
+        { label: 'Non-Aktif', value: 'inactive' },
+    ]
+
+    const { showToast } = useToast();
 
     const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
     const { user } = useAuth();
@@ -58,6 +72,7 @@ export default function PegawaiPage() {
             );
 
             console.log(`✅ Status pegawai ${pegawai.name} berhasil diupdate`);
+            showToast(`Status pegawai ${pegawai.name} berhasil diupdate.`, "success");
         } catch (err) {
             console.error("❌ Error updating status:", err);
             setError("Gagal mengubah status pegawai.");
@@ -71,6 +86,29 @@ export default function PegawaiPage() {
         setCurrentPage(page);
     };
 
+    const handleFilterJabatanChange = (jabatanId: number) => {
+        console.log("Filter jabatan berubah:", jabatanId);
+        setSelectedJabatan(jabatanId);
+    }
+
+    const handleFilterStatusChange = (status: string) => {
+        console.log("Filter status berubah:", status);
+        setSelectedStatus(status);
+    }
+
+    // --- EFFECT DEBOUNCE ---
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [search]);
+    // --------------------------------
+
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
@@ -81,12 +119,16 @@ export default function PegawaiPage() {
 
             try {
                 console.log('Fetching Data Pegawai....')
-                const response = await getDaftarPegawai(currentPage, itemsPerPage)
-                console.log("📦 Pegawai Response:", response);
-                setCurrentItems(response.data);
-                setTotalItems(response.total || 0);
-                setItemsPerPage(response.per_page || 10);
-                setTotalPages(response.last_page || 1);
+                const [responsePegawai, responseJabatan] = await Promise.all([
+                    getDaftarPegawai(currentPage, itemsPerPage, selectedJabatan, selectedStatus, debouncedSearch),
+                    getJabatanSelect() // Asumsi fungsi ini tidak butuh parameter pagination
+                ]);
+                console.log("📦 Pegawai Response:", responsePegawai);
+                setCurrentItems(responsePegawai.data);
+                setJabatanList(responseJabatan);
+                setTotalItems(responsePegawai.total || 0);
+                setItemsPerPage(responsePegawai.per_page || 10);
+                setTotalPages(responsePegawai.last_page || 1);
 
             } catch (err) {
                 console.error("❌ Error fetching data:", err);
@@ -97,7 +139,7 @@ export default function PegawaiPage() {
         }
 
         fetchData()
-    }, [user?.role, currentPage])
+    }, [user?.role, currentPage, selectedJabatan, selectedStatus, debouncedSearch])
 
     const pegawaiColumns: ColumnDefinition<DaftarPegawai>[] = [
         {
@@ -109,47 +151,62 @@ export default function PegawaiPage() {
                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                     </div>
-                    <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                    {/* Tambahkan min-w-0 agar flex item bisa mengecil (truncate) */}
+                    <div className="ml-4 min-w-0 flex-1">
+                        <div
+                            className="text-sm font-medium text-gray-900 truncate"
+                            title={item.name} // Tooltip native saat hover
+                        >
+                            {item.name}
+                        </div>
                     </div>
                 </div>
             )
         },
         {
             header: 'NIP',
-            cell: (item) => <>{item.nip}</>
+            cell: (item) => (
+                <div className="truncate" title={item.nip}>
+                    {item.nip}
+                </div>
+            )
         },
         {
             header: 'Jabatan',
-            cell: (item) => <>{item.jabatan.name}</>
+            cell: (item) => (
+                <div className="truncate" title={item.jabatan.name}>
+                    {item.jabatan.name}
+                </div>
+            )
         },
         {
             header: 'No. Telepon',
-            cell: (item) => <>{item.phone}</>
+            cell: (item) => (
+                <div className="truncate" title={item.phone}>
+                    {item.phone}
+                </div>
+            )
         },
         {
             header: 'Status',
             cell: (item) => {
                 const isActive = item.status === 'active';
                 const isUpdating = updatingStatus[item.nip];
-                
+
                 return (
                     <button
                         onClick={() => handleToggleStatus(item)}
                         disabled={isUpdating}
-                        className={`relative inline-flex items-center h-6 rounded-full w-11 ${
-                            isActive ? 'bg-blue-600' : 'bg-gray-500'
-                        } transition-all duration-200 focus:outline-none ${
-                            isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                        }`}
+                        className={`relative inline-flex items-center h-6 rounded-full w-11 ${isActive ? 'bg-blue-600' : 'bg-gray-500'
+                            } transition-all duration-200 focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
                     >
                         <span className="sr-only">
                             {isActive ? 'Nonaktifkan' : 'Aktifkan'} pegawai
                         </span>
-                        <span 
-                            className={`${
-                                isActive ? 'translate-x-6' : 'translate-x-1'
-                            } inline-block w-4 h-4 transform bg-white rounded-full transition ease-in-out duration-200`}
+                        <span
+                            className={`${isActive ? 'translate-x-6' : 'translate-x-1'
+                                } inline-block w-4 h-4 transform bg-white rounded-full transition ease-in-out duration-200`}
                         ></span>
                     </button>
                 );
@@ -158,14 +215,14 @@ export default function PegawaiPage() {
         {
             header: 'Aksi',
             cell: (item) => (
-                <button 
-                    onClick={() => handleEditClick(item)} 
-                    className="flex items-center hover:text-blue-600 font-medium"
+                <button
+                    onClick={() => handleEditClick(item)}
+                    className="flex items-center hover:text-blue-600 font-medium truncate"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
-                    Edit
+                    <span className="truncate">Edit</span>
                 </button>
             )
         }
@@ -177,11 +234,11 @@ export default function PegawaiPage() {
             <div className="w-full mb-6 flex justify-between items-center gap-4 shrink-0">
                 <div className="flex gap-4 w-full">
                     <div className="relative w-full sm:w-auto">
-                        <select className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                            <option>Semua Jabatan</option>
-                            <option>Tim PPK</option>
-                            <option>Tim Teknis</option>
-                            <option>Admin Gudang</option>
+                        <select onChange={(e) => handleFilterJabatanChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
+                            <option value=''>Semua Jabatan</option>
+                            {jabatanList.map((jabatan) => (
+                                <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
+                            ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,10 +248,11 @@ export default function PegawaiPage() {
                     </div>
 
                     <div className="relative w-full sm:w-auto">
-                        <select className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                            <option>Semua Status</option>
-                            <option>Aktif</option>
-                            <option>Non-Aktif</option>
+                        <select onChange={(e) => handleFilterStatusChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
+                            <option value=''>Semua Status</option>
+                            {PegawaiStatus.map((status) => (
+                                <option key={status.value} value={status.value}>{status.label}</option>
+                            ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,8 +273,41 @@ export default function PegawaiPage() {
 
             {/* Table Card */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
+                <div className="p-4 border-b border-gray-200 flex items-center gap-4 shrink-0">
                     <h1 className="text-lg font-semibold text-gray-900">Daftar Pegawai</h1>
+                    {/* Search Input */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            name="search"
+                            className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all duration-200 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
+                            placeholder="Cari pegawai..."
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-5 h-5 text-gray-400"
+                                viewBox="0 0 512 512"
+                            >
+                                <path
+                                    d="M221.09 64a157.09 157.09 0 10157.09 157.09A157.1 157.1 0 00221.09 64z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeMiterlimit="10"
+                                    strokeWidth="32"
+                                />
+                                <path
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeMiterlimit="10"
+                                    strokeWidth="32"
+                                    d="M338.29 338.29L448 448"
+                                />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-auto">

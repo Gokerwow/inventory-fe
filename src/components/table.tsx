@@ -1,21 +1,16 @@
 import React, { useMemo } from 'react';
 
-// Kita hapus Pagination dari import sini
-// import Pagination from "./pagination"; 
-
 export interface ColumnDefinition<T> {
     header: string;
     cell: (item: T) => React.ReactNode;
     key?: string;
-    width?: string; 
+    width?: string;
     align?: 'left' | 'center' | 'right';
 }
 
 interface ReusableTableProps<T> {
     columns: ColumnDefinition<T>[];
     currentItems: T[];
-    // Hapus props yang berhubungan dengan pagination dari sini (currentPage, totalItems, dll)
-    // Cukup terima data yang sudah dipotong (sliced) atau data halaman aktif
 }
 
 export default function ReusableTable<T extends { id?: number | string }>({
@@ -23,8 +18,10 @@ export default function ReusableTable<T extends { id?: number | string }>({
     currentItems = [],
 }: ReusableTableProps<T>) {
 
+    // PERBAIKAN 1: Menggunakan minmax(0, 1fr)
+    // Ini memaksa kolom untuk mengecil (shrink) jika tidak muat, alih-alih memaksa melebar mengikuti konten.
     const gridTemplateColumns = useMemo(() => {
-        return columns.map(col => col.width || '1fr').join(' ');
+        return columns.map(col => col.width || 'minmax(0, 1fr)').join(' ');
     }, [columns]);
 
     const getAlignClass = (align?: string) => {
@@ -34,10 +31,10 @@ export default function ReusableTable<T extends { id?: number | string }>({
     };
 
     return (
-        // Hapus rounded-b-xl agar tidak aneh jika pagination di luar
         <div className="flex flex-col w-full h-full bg-white overflow-hidden shadow-sm border border-gray-200">
             
             {/* HEADER */}
+            {/* PERBAIKAN 2: Kurangi gap jika perlu, misal gap-2 atau gap-4 tetap oke asal minmax diterapkan */}
             <div 
                 className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10"
                 style={{ gridTemplateColumns }}
@@ -61,9 +58,14 @@ export default function ReusableTable<T extends { id?: number | string }>({
                             {columns.map((col) => (
                                 <div 
                                     key={col.key || col.header}
-                                    className={`text-sm text-gray-700 flex items-center ${getAlignClass(col.align)}`}
+                                    // PERBAIKAN 3: Tambahkan `min-w-0` dan `truncate` (opsional)
+                                    // min-w-0 sangat penting di dalam grid/flex child agar text-overflow bekerja
+                                    className={`text-sm text-gray-700 flex items-center min-w-0 ${getAlignClass(col.align)}`}
                                 >
-                                    {col.cell(item)}
+                                    {/* Bungkus konten cell agar bisa di-truncate jika panjang */}
+                                    <div className="truncate w-full">
+                                        {col.cell(item)}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -74,8 +76,6 @@ export default function ReusableTable<T extends { id?: number | string }>({
                     </div>
                 )}
             </div>
-
-            {/* BAGIAN PAGINATION DIHAPUS DARI SINI */}
         </div>
     );
 }

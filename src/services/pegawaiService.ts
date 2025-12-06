@@ -13,15 +13,27 @@ type FaqItem = typeof FAQ[0];
 
 export const getDaftarPegawai = async (
     page: number = 1,
-    perPage?: number
+    perPage?: number,
+    jabatanId?: number,
+    status?: string,
+    search?: string
 ): Promise<PaginationResponse<DaftarPegawai>> => {
     console.log(`SERVICE: Mengambil daftar pegawai halaman ${page}...`);
 
     try {
         // Buat params untuk query string
-        const params: Record<string, number> = { page };
+        const params: Record<string, number | string> = { page };
         if (perPage) {
             params.per_page = perPage;
+        }
+        if (jabatanId) {
+            params.jabatan_id = jabatanId;
+        }
+        if (status) {
+            params.status = status;
+        }
+        if (search) {
+            params.search = search;
         }
 
         const response = await apiClient.get('/api/v1/pegawai', { params });
@@ -102,7 +114,7 @@ export const updatePegawai = async (pegawaiId: number, formData: Partial<APIPega
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
             // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
         }
-        console.error("❌ Error mengedit penerimaan:", error);
+        console.error("❌ Error mengedit pegawai:", error);
         throw error;
     }
 };
