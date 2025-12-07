@@ -380,87 +380,94 @@ export default function PemesananPage() {
 
                 {/* Table */}
                 <div className="overflow-x-auto mb-6">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b-2 border-gray-200">
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
-                                    Barang
-                                </th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
-                                    Jumlah
-                                </th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
-                                    Aksi
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {BarangPesanan.length > 0 ? (
-                                BarangPesanan.map((pesanan) => (
-                                    <tr key={pesanan.stok_id} className="border-b border-gray-100">
-                                        <td className="py-4 px-4 text-gray-800">{pesanan.name}</td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center gap-3">
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b-2 border-gray-200">
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
+                                        Barang
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
+                                        Jumlah
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 uppercase">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {BarangPesanan.length > 0 ? (
+                                    BarangPesanan.map((pesanan) => (
+                                        <tr key={pesanan.stok_id} className="border-b border-gray-100">
+                                            <td className="py-4 px-4 text-gray-800">{pesanan.name}</td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleUpdateQuantity(pesanan.stok_id, false)}
+                                                        className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                                        </svg>
+                                                    </button>
+
+                                                    <span className="text-gray-800 font-medium min-w-[20px] text-center">
+                                                        {pesanan.quantity}
+                                                    </span>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleUpdateQuantity(pesanan.stok_id, true)}
+                                                        className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
                                                 <button
-                                                    type="button"
-                                                    onClick={() => handleUpdateQuantity(pesanan.stok_id, false)}
-                                                    className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded"
+                                                    onClick={() => handleRemoveItem(pesanan.stok_id)}
+                                                    className="text-red-500 hover:text-red-700 flex items-center gap-1"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
+                                                    Hapus
                                                 </button>
-
-                                                <span className="text-gray-800 font-medium min-w-[20px] text-center">
-                                                    {pesanan.quantity}
-                                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleUpdateQuantity(pesanan.stok_id, true)}
-                                                    className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 rounded"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <button
-                                                onClick={() => handleRemoveItem(pesanan.stok_id)}
-                                                className="text-red-500 hover:text-red-700 flex items-center gap-1"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                                Hapus
-                                            </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={3} className="text-center text-gray-400 py-8">
+                                            Belum ada barang di pesanan
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={3} className="text-center text-gray-400 py-8">
-                                        Belum ada barang di pesanan
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                )}
+                            </tbody>
 
-                {/* Total */}
-                <div className="border-t-2 border-gray-200 pt-4 mb-6">
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-800 font-semibold">Total</span>
-                        <span className="text-gray-800 font-semibold">{BarangPesanan.reduce((total, item) => total + item.quantity, 0)}</span>
-                        <span></span>
+                            {/* ✅ Bagian Total dipindah ke sini (tfoot) */}
+                            <tfoot>
+                                <tr className="border-y-2 border-gray-200">
+                                    <td className="py-4 px-4 font-semibold text-gray-800">
+                                        Total
+                                    </td>
+                                    <td className="py-4 px-4 font-semibold text-gray-800 pl-14">
+                                        {/* pl-14 ditambahkan untuk menyesuaikan posisi dengan angka di atas yang tergeser oleh tombol minus */}
+                                        {BarangPesanan.reduce((total, item) => total + item.quantity, 0)}
+                                    </td>
+                                    <td></td> {/* Kolom kosong untuk 'Aksi' agar struktur tabel tetap terjaga */}
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
-
                 {/* Form Inputs */}
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="grid md:grid-cols-2 gap-4 mb-6 ">
                     <Input
                         id="nama_pj_instalasi"
                         name="nama_pj_instalasi"
