@@ -3,15 +3,14 @@ import PencilIcon from '../assets/pencil Icon.svg?react'
 import ButtonConfirm from "../components/buttonConfirm"
 import { useNavigate, useLocation } from "react-router-dom"
 import React, { useEffect, useRef, useState, type ChangeEvent, useMemo } from "react"
-import Modal from "../components/modal"
 import { createAkun, updateAkun } from "../services/akunService" // Pastikan updateAkun diimport
 import { useToast } from "../hooks/useToast"
 import { useAuthorization } from "../hooks/useAuthorization"
 import { useAuth } from "../hooks/useAuth"
-import WarnButton from "../components/warnButton"
 import { updatePegawai } from "../services/pegawaiService"
 import PasswordInput from "../components/passwordInput"
 import { ROLES } from "../constant/roles"
+import ConfirmModal from "../components/confirmModal"
 
 export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean }) {
     const navigate = useNavigate();
@@ -323,26 +322,12 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                     }
                 </form>
 
-                <Modal
+                <ConfirmModal 
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onConfirm={handleConfirmSubmit}
                     text={isEdit ? "Apa anda yakin mengedit akun ini?" : "Apa anda yakin membuat akun baru?"}
-                >
-                    <div className="flex gap-4 justify-end">
-                        <ButtonConfirm
-                            text={isSubmitting ? "Menyimpan..." : "Iya"}
-                            type="button"
-                            onClick={handleConfirmSubmit}
-                            disabled={isSubmitting}
-                        />
-                        <WarnButton
-                            onClick={handleCloseModal}
-                            text="Tidak"
-                            disabled={isSubmitting}
-                        />
-                    </div>
-                </Modal>
+                />
             </div>
         </div>
     )

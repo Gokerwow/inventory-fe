@@ -12,6 +12,7 @@ import WarnButton from "../components/warnButton";
 import { createPegawai, updatePegawai } from "../services/pegawaiService";
 import { PATHS } from "../Routes/path";
 import { useLocation, useNavigate } from "react-router-dom";
+import ConfirmModal from "../components/confirmModal";
 
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -339,26 +340,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                 </div>
             </div>
             {/* MODAL / POPUP */}
-            <Modal
+            <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin data yang dibuat sudah benar?"
-            >
-                <div className="flex gap-4 justify-end">
-                    <ButtonConfirm
-                        text={isSubmitting ? "Menyimpan..." : "Iya"}
-                        type="button"
-                        onClick={handleConfirmSubmit}
-                        disabled={isSubmitting}
-                    />
-                    <WarnButton
-                        onClick={handleCloseModal}
-                        text="Tidak"
-                        disabled={isSubmitting}
-                    />
-                </div>
-            </Modal>
+                text='Apa anda yakin data yang dibuat sudah benar?'
+            />
         </div>
     )
 }

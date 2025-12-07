@@ -67,7 +67,7 @@ const PenerimaanPage = () => {
 
                         console.log("✅ State updated - Items count:", response.data?.length);
                     } else {
-                        const response = await getPenerimaanList(currentPage);
+                        const response = await getPenerimaanList(currentPage,undefined, user?.role);
                         setPenerimaanItems(response.data || []);
                         setTotalItems(response.total || 0);
                         setItemsPerPage(response.per_page || 10);

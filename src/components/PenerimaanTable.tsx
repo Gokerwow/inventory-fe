@@ -31,7 +31,7 @@ export default function PenerimaanTable({ data, variant }: PenerimaanTableProps)
         if (type === 'inspect') navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
         
         if (type === 'upload') {
-            navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }), { state: { data: item } });
+            navigate(generatePath(PATHS.PENERIMAAN.UNGGAH, { id: id.toString() }), { state: { data: item } });
         }
         if (type === 'download') {
             navigate(generatePath(PATHS.PENERIMAAN.UNDUH, { id: id.toString() }), { state: { data: item } });

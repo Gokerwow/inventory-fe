@@ -8,7 +8,6 @@ import Pengeluaran from './pages/pengeluaran'
 import Profil from './pages/profil'
 import RolePick from './pages/rolePick'
 import FormPenerimaan from './pages/FormPenerimaan'
-import FormDataBarangBelanja from './pages/FormDataBarangBelanja'
 import AkunPage from './pages/akun'
 import PegawaiPage from './pages/pegawai'
 import MonitoringPage from './pages/monitoring'
@@ -16,7 +15,7 @@ import FormAkunPage from './pages/FormAkun'
 import { PATHS } from './Routes/path'
 import Unauthorized from './pages/unauthorized'
 import UnduhBast from './pages/unduhBAST'
-import LihatPenerimaan from './pages/lihatPenerimaan'
+import LihatPenerimaan from './pages/unggahPenerimaan'
 import PemesananPage from './pages/pemesanan'
 import PenerimaanLayout from './components/PenerimaanLayout'
 import { FormPegawaiPage } from './pages/FormPegawai'
@@ -36,11 +35,11 @@ function App() {
           <Route index element={<Penerimaan />} />
           <Route element={<PenerimaanLayout />}>
             <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
-            <Route path={PATHS.PENERIMAAN.BARANG_BELANJA} element={<FormDataBarangBelanja />} />
             <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true} />} />
             <Route path={PATHS.PENERIMAAN.INSPECT} element={<FormPenerimaan isInspect={true} />} />
+            <Route path={PATHS.PENERIMAAN.LIHAT} element={<FormPenerimaan isView={true} />} />
             <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
-            <Route path={PATHS.PENERIMAAN.LIHAT} element={<LihatPenerimaan />} />
+            <Route path={PATHS.PENERIMAAN.UNGGAH} element={<LihatPenerimaan />} />
           </Route>
         </Route>
         <Route path={PATHS.PENGELUARAN} element={<Pengeluaran />} />

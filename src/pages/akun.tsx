@@ -16,6 +16,7 @@ import { type User } from '../constant/roles';
 import { ROLES } from '../constant/roles';
 import PfpExample from '../assets/Pfp Example.jpeg';
 import Loader from '../components/loader';
+import { useTag } from '../hooks/useTag';
 
 interface FormatTanggalProps {
     isoString: string;
@@ -46,6 +47,7 @@ export default function MonitoringPage() {
     const { user } = useAuth()
 
     const navigate = useNavigate();
+    const { setTag } = useTag()
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;

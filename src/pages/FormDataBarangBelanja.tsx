@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "../hooks/useToast";
 import CurrencyInput from "../components/currencyInput";
 import { type TIPE_BARANG_STOK } from "../constant/roles";
-import DropdownInput from "../components/dropdownInput";
+import DropdownInput from "../components/dropdownInput"; // Gunakan yang baru
 import { getBarangBelanja } from "../services/barangService";
 import Input from "../components/input";
+import Modal from "../components/modal";
 
-// Icon X sederhana untuk tombol close
 const CloseIcon = () => (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M13 1L1 13M1 1L13 13" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -25,12 +25,20 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
     
     // State Form
     const [stokOptions, setStokOptions] = useState<TIPE_BARANG_STOK[]>([]);
-    const [selectedBarang, setSelectedBarang] = useState<TIPE_BARANG_STOK | null>(null);
-    const [jumlah, setJumlah] = useState<number | string>(""); // Allow empty string for clean input
+    
+    // selectedBarangObj menyimpan object utuh jika barang lama, atau partial object jika barang baru
+    const [selectedBarangObj, setSelectedBarangObj] = useState<Partial<TIPE_BARANG_STOK> | null>(null);
+    const [isNewItem, setIsNewItem] = useState(false);
+    
+    const [jumlah, setJumlah] = useState<number | string>(""); 
     const [harga, setHarga] = useState<number | string>("");
     const [totalHarga, setTotalHarga] = useState<number>(0);
+    const [manualSatuan, setManualSatuan] = useState("");
 
-    // Fetch Data Barang saat Modal Dibuka
+    // Ref untuk auto-focus ke satuan saat buat barang baru
+    const satuanInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch Data
     useEffect(() => {
         if (isOpen && categoryId > 0) {
             const fetchBarang = async () => {
@@ -46,34 +54,60 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
         }
     }, [isOpen, categoryId]);
 
-    // Auto Calculate Total
+    // Calculate Total
     useEffect(() => {
         const qty = typeof jumlah === 'number' ? jumlah : 0;
         const prc = typeof harga === 'number' ? harga : 0;
         setTotalHarga(qty * prc);
     }, [jumlah, harga]);
 
-    // Reset Form saat modal ditutup
+    // Reset Form
     useEffect(() => {
         if (!isOpen) {
-            setSelectedBarang(null);
+            setSelectedBarangObj(null);
+            setIsNewItem(false);
+            setManualSatuan("");
             setJumlah("");
             setHarga("");
             setTotalHarga(0);
         }
     }, [isOpen]);
 
-    const handleBarangChange = (option: TIPE_BARANG_STOK | null) => {
-        setSelectedBarang(option);
+    // --- HANDLER UTAMA DROPDOWN ---
+    const handleDropdownChange = (val: TIPE_BARANG_STOK | string) => {
+        if (typeof val === 'string') {
+            // User membuat barang BARU (Creatable)
+            setIsNewItem(true);
+            setSelectedBarangObj({ name: val, id: 0 }); // ID 0/null menandakan baru
+            setManualSatuan(""); // Reset satuan agar user mengisi
+            
+            // Auto focus ke input satuan untuk UX yang lebih cepat
+            setTimeout(() => {
+                if (satuanInputRef.current) {
+                    satuanInputRef.current.focus();
+                }
+            }, 100);
+
+        } else {
+            // User memilih barang LAMA (Object)
+            setIsNewItem(false);
+            setSelectedBarangObj(val);
+            setManualSatuan(""); // Tidak pakai manual satuan
+        }
     };
 
     const handleSave = () => {
         const qty = Number(jumlah);
         const prc = Number(harga);
+        const currentSatuan = isNewItem ? manualSatuan : selectedBarangObj?.satuan_name;
 
         // Validasi
-        if (!selectedBarang) {
-            showToast("Pilih barang terlebih dahulu!", "error");
+        if (!selectedBarangObj?.name) {
+            showToast("Nama barang harus diisi!", "error");
+            return;
+        }
+        if (!currentSatuan) {
+            showToast("Satuan harus diisi!", "error");
             return;
         }
         if (!qty || qty <= 0) {
@@ -86,9 +120,9 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
         }
 
         const newItem = {
-            stok_id: selectedBarang.id,
-            stok_name: selectedBarang.name,
-            satuan_name: selectedBarang.satuan_name,
+            stok_id: isNewItem ? 0 : selectedBarangObj.id, // 0 jika baru
+            stok_name: selectedBarangObj.name,
+            satuan_name: currentSatuan,
             quantity: qty,
             price: prc,
             total_harga: totalHarga,
@@ -99,55 +133,66 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
         onClose(); 
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed left-64 inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl transform transition-all scale-100">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            maxWidth="max-w-2xl"
+            isForm={true}
+        >
+            <div className="flex flex-col gap-6">
                 
-                {/* --- HEADER (Biru Sesuai Desain) --- */}
+                {/* HEADER */}
                 <div className="bg-[#005DB9] p-6 flex justify-between items-start">
                     <div className="text-white">
                         <h2 className="text-2xl font-bold">Tambah Data Barang Belanja</h2>
-                        <p className="text-blue-100 text-sm mt-1">Isi detail barang yang akan ditambahkan ke daftar belanja</p>
+                        <p className="text-blue-100 text-sm mt-1">Cari barang atau ketik nama baru untuk menambahkan</p>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="bg-gray-200 hover:bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer"
-                    >
+                    <button onClick={onClose} className="bg-gray-200 hover:bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer">
                         <CloseIcon />
                     </button>
                 </div>
 
-                {/* --- BODY FORM --- */}
-                <div className="p-6 flex flex-col gap-5">
+                {/* BODY */}
+                <div className="flex flex-col gap-5 p-6">
                     
-                    {/* Baris 1: Nama Barang (Full Width) */}
+                    {/* Baris 1: Creatable Dropdown */}
                     <div>
                         <DropdownInput<TIPE_BARANG_STOK>
                             options={stokOptions}
-                            placeholder={categoryId > 0 ? "Masukkan nama barang" : "Pilih Kategori Dulu"}
+                            isCreatable={true} // AKTIFKAN MODE CREATABLE
+                            placeholder={categoryId > 0 ? "Cari atau tambah barang baru..." : "Pilih Kategori Dulu"}
                             judul="Nama Barang"
-                            value={selectedBarang?.name || ''}
-                            onChange={handleBarangChange}
+                            // Value diambil dari state object
+                            value={selectedBarangObj?.name || ''} 
+                            onChange={handleDropdownChange}
                             name="namaBarang"
-                            type="button"
                             disabled={categoryId <= 0}
                         />
+                        {isNewItem && (
+                            <p className="text-xs text-green-600 mt-1 ml-1 animate-pulse">
+                                * Membuat barang baru: "{selectedBarangObj?.name}"
+                            </p>
+                        )}
                     </div>
 
                     {/* Baris 2: Satuan & Jumlah */}
                     <div className="grid grid-cols-2 gap-6">
                         <div className="flex flex-col gap-2">
-                            {/* Satuan kita buat ReadOnly tapi stylenya seperti dropdown/input agar rapi */}
+                            {/* Input Satuan (Manual jika baru, Readonly jika lama) */}
                             <Input
+                                // Ref dipasang di sini tapi perlu memastikan komponen Input support ref forwarding
+                                // Jika komponen Input Anda belum support ref, bungkus div luarnya atau tambahkan ref di Input component
+                                // Untuk amannya saya pakai autoFocus prop HTML standard jika Input support props passing
                                 id="satuan"
-                                placeholder="Pilih Satuan"
+                                placeholder={isNewItem ? "Masukkan Satuan" : "Satuan Otomatis"}
                                 judul="Satuan"
                                 name="satuan"
-                                value={selectedBarang?.satuan_name || ''}
-                                readOnly
-                                onChange={() => {}}
+                                value={isNewItem ? manualSatuan : (selectedBarangObj?.satuan_name || '')}
+                                readOnly={!isNewItem}
+                                onChange={(e) => isNewItem ? setManualSatuan(e.target.value) : {}}
+                                // Trik sederhana untuk ref jika Input component anda meneruskan props
+                                {...({ ref: satuanInputRef } as any)} 
                             />
                         </div>
                         <div className="flex flex-col gap-2">
@@ -162,7 +207,7 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                         </div>
                     </div>
 
-                    {/* Baris 3: Harga Satuan & Total Harga */}
+                    {/* Baris 3: Harga */}
                     <div className="grid grid-cols-2 gap-6">
                         <CurrencyInput
                             id="harga"
@@ -183,20 +228,19 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                             disabled
                         />
                     </div>
-                </div>
 
-                {/* --- FOOTER --- */}
-                <div className="p-6 pt-2 flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        className="bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-2.5 px-8 rounded-lg transition-all duration-200 active:scale-95 shadow-md"
-                    >
-                        Selesai
-                    </button>
+                    {/* FOOTER */}
+                    <div className="pt-4 flex justify-end">
+                        <button
+                            onClick={handleSave}
+                            className="bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-2.5 px-8 rounded-lg transition-all duration-200 active:scale-95 shadow-md"
+                        >
+                            Selesai
+                        </button>
+                    </div>
                 </div>
-
             </div>
-        </div>
+        </Modal>
     );
 };
 

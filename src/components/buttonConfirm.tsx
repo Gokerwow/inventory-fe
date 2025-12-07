@@ -4,22 +4,28 @@ import { twMerge } from "tailwind-merge";
 type ButtonConfirmProps = {
     text: string;
     className?: string;
-    to?: string; 
+    to?: string;
     onClick?: (e: React.MouseEvent<HTMLButtonElement | HTMLFormElement>) => void;
     type?: "button" | "submit" | "reset";
     disabled?: boolean;
 };
 
-export default function ButtonConfirm({ 
-    text, 
-    className, 
-    to, 
-    onClick, 
+export default function ButtonConfirm({
+    text,
+    className,
+    to,
+    onClick,
     type = "button",
     disabled = false
 }: ButtonConfirmProps) {
-    
-    const classes = twMerge(`hover:bg-green-600 text-black hover:text-white border-2 border-gray-400 hover:border-none py-2 w-25 rounded-lg hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer text-center ${className}`);
+
+    const classes = twMerge(
+        `text-white text-lg font-medium py-2 px-10 rounded-xl shadow-sm transition-all w-fit text-center`,
+        disabled
+            ? "bg-gray-400 cursor-not-allowed opacity-60"
+            : "bg-[#41C654] hover:bg-[#36a847] cursor-pointer active:scale-95",
+        className
+    );
 
     if (to) {
         return (

@@ -15,24 +15,26 @@ import {
     editPenerimaan,
     deletePenerimaanDetail,
 } from '../services/penerimaanService';
-import { updateBarangStatus } from '../services/barangService';
+import { updateBarangStatus, updateDetailBarangTerbayar } from '../services/barangService';
 import { useToast } from '../hooks/useToast';
 import Modal from '../components/modal';
 import { usePenerimaan } from '../hooks/usePenerimaan';
-import { ROLES, type Kategori, type SelectPihak } from '../constant/roles';
+import { ROLES, type APIBarangBaru, type Detail_Barang, type Kategori, type SelectPihak } from '../constant/roles';
 import { getKategoriList } from '../services/kategoriService';
 import { getPegawaiSelect } from '../services/pegawaiService';
 import axios from 'axios';
 import ModalTambahBarang from './FormDataBarangBelanja';
+import ConfirmModal from '../components/confirmModal';
 
 // Interface tambahan untuk menghandle item yang dipilih di modal
 interface SelectedItemState {
+    id: number;       // Tambahkan ini (ID Detail Barang)
     stok_id: number;
     max_qty: number;
 }
 
-export default function TambahPenerimaan({ isEdit = false, isInspect = false }: { isEdit?: boolean, isInspect?: boolean }) {
-    const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS], []);
+export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
+    const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS, ROLES.ADMIN_GUDANG], []);
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
     const { user } = useAuth()
     const navigate = useNavigate()
@@ -40,6 +42,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     const { id: paramId } = useParams();
     const { showToast } = useToast();
     const [isDelete, setIsDelete] = useState(false)
+    const [payingItemId, setPayingItemId] = useState<number | null>(null);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const [deletedIds, setDeletedIds] = useState<number[]>([]);
@@ -81,7 +84,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                 setKategoriOptions(kategoriData);
                 setPihak(pihakData);
 
-                if (!location.state?.keepLocalData && (isEdit || isInspect) && paramId) {
+                if (!location.state?.keepLocalData && (isEdit || isInspect || isView) && paramId) {
                     console.log('🔄 Fetching data penerimaan untuk edit...');
                     const id = Number(paramId);
                     const detailData = await getPenerimaanDetail(id);
@@ -108,18 +111,37 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                             }]
                         });
 
-                        const transformedBarang = detailData.detail_barang?.map(item => ({
-                            id: item.id,
-                            stok_id: item.stok_id,
-                            stok_name: item.nama_stok,
-                            satuan_name: item.nama_satuan,
-                            quantity: item.quantity,
-                            price: item.harga,
-                            total_harga: item.total_harga,
-                            is_layak: item.is_layak || null,
-                            // Pastikan backend mengirim quantity_layak jika ada, atau default ke 0
-                            quantity_layak: (item as any).quantity_layak || (item.is_layak ? item.quantity : 0)
-                        })) || [];
+                        const transformedBarang = detailData.detail_barang?.map(item => {
+                            // Logika menentukan status Layak/Tidak Layak dari data Backend
+                            // Backend kirim: quantity_layak, quantity_tidak_layak, is_checked
+
+                            let isLayakStatus = null;
+
+                            // Jika sudah diperiksa (is_checked / quantity_layak ada isinya)
+                            if (item.quantity_layak > 0) {
+                                isLayakStatus = true;
+                            } else if (item.quantity_tidak_layak > 0) {
+                                isLayakStatus = false;
+                            } else if (item.is_checked) {
+                                // Fallback jika checked tapi qty 0 (mungkin dianggap tidak layak)
+                                isLayakStatus = false;
+                            }
+
+                            return {
+                                id: item.id,
+                                stok_id: item.stok_id,
+                                stok_name: item.nama_stok,
+                                satuan_name: item.nama_satuan,
+                                quantity: item.quantity,
+                                price: Number(item.harga), // Pastikan jadi number
+                                total_harga: Number(item.total_harga),
+
+                                // State Frontend
+                                is_layak: isLayakStatus,
+                                is_paid: item.is_paid,
+                                quantity_layak: item.quantity_layak // Ambil langsung dari backend
+                            };
+                        }) || [];
 
                         setBarang(transformedBarang);
                     }
@@ -136,7 +158,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
         fetchAllData();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEdit, isInspect, paramId, user?.role, checkAccess, hasAccess, showToast, location.state?.keepLocalData]);
+    }, [isEdit, isInspect, isView, paramId, user?.role, checkAccess, hasAccess, showToast, location.state?.keepLocalData]);
 
     useEffect(() => {
         console.log('📊 Barang updated:', barang);
@@ -172,58 +194,144 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
     };
 
     // ✅ HANDLER UNTUK TOMBOL "TIDAK LAYAK" (Langsung set false)
-    const handleStatusTidakLayak = (id: number) => {
-        setBarang(prevBarang =>
-            prevBarang.map(item => {
-                return item.stok_id === id ? { ...item, is_layak: false, quantity_layak: 0 } : item;
-            })
-        );
-        showToast(`Barang ditandai Tidak Layak`, 'success');
+    // Ubah parameter agar menerima objek item utuh, bukan cuma ID
+    const handleStatusTidakLayak = async (item: any) => {
+        if (!paramId) return;
+
+        // Optional: Loading indicator kecil bisa ditambahkan jika perlu
+        try {
+            // Panggil API: Quantity 0 artinya Tidak Layak
+            await updateBarangStatus(Number(paramId), item.id, 0);
+
+            // Jika API sukses, baru update UI Lokal
+            setBarang(prevBarang =>
+                prevBarang.map(b => {
+                    return b.stok_id === item.stok_id
+                        ? { ...b, is_layak: false, quantity_layak: 0 }
+                        : b;
+                })
+            );
+            showToast(`Barang ditandai Tidak Layak`, 'success');
+        } catch (err) {
+            console.error(err);
+            showToast("Gagal update status barang", "error");
+        }
     };
 
     // ✅ HANDLER MEMBUKA MODAL "LAYAK"
     const handleOpenLayakModal = (item: any) => {
         setSelectedItem({
+            id: item.id, // Simpan ID detail barang
             stok_id: item.stok_id,
             max_qty: item.quantity
         });
-        setQtyInput(item.quantity); // Default isi dengan jumlah total
+        setQtyInput(item.quantity);
         setIsQtyModalOpen(true);
     };
 
-    // ✅ Update fungsi handleSaveLayakQty
-    const handleSaveLayakQty = () => {
-        if (!selectedItem) return;
+    // Ganti fungsi handleSaveLayakQty yang lama dengan ini
+    const handleSaveLayakQty = async () => {
+        if (!selectedItem || !paramId) return;
 
-        // KONVERSI: Jika kosong "", anggap 0. Jika ada isi, jadikan number.
+        // Konversi input ke number
         const finalQty = qtyInput === '' ? 0 : Number(qtyInput);
 
-        if (finalQty <= 0) {
-            showToast("Jumlah barang layak harus lebih dari 0", "error");
-            return;
-        }
-
+        // Validasi Max
         if (finalQty > selectedItem.max_qty) {
             showToast(`Jumlah melebihi total barang (${selectedItem.max_qty})`, "error");
             return;
         }
 
-        setBarang(prevBarang =>
-            prevBarang.map(item => {
-                if (item.stok_id === selectedItem.stok_id) {
-                    return {
-                        ...item,
-                        is_layak: true,
-                        quantity_layak: finalQty // Gunakan finalQty
-                    };
-                }
-                return item;
-            })
-        );
+        // Validasi Min (Boleh 0, karena 0 = Tidak Layak)
+        if (finalQty < 0) {
+            showToast("Jumlah tidak boleh minus", "error");
+            return;
+        }
 
-        setIsQtyModalOpen(false);
-        setSelectedItem(null);
-        showToast(`Barang ditandai Layak (${finalQty} item)`, 'success');
+        setIsSubmitting(true);
+
+        try {
+            // LOGIKA BARU: 
+            // Jika quantity 0, anggap statusnya "Tidak Layak" (false di backend?)
+            // Atau tergantung API Anda. Biasanya API menerima status boolean + qty.
+
+            // Asumsi logic UI:
+            // Jika 0 -> anggap Tidak Layak
+            // Jika > 0 -> anggap Layak
+
+            // Panggil API (Logic quantity 0 = Tidak Layak sudah umum di backend penerimaan)
+            await updateBarangStatus(Number(paramId), selectedItem.id, finalQty);
+
+            // Update UI Lokal
+            setBarang(prevBarang =>
+                prevBarang.map(item => {
+                    if (item.stok_id === selectedItem.stok_id) {
+                        return {
+                            ...item,
+                            // Jika 0, is_layak jadi false (Merah). Jika > 0, true (Hijau)
+                            is_layak: finalQty > 0,
+                            quantity_layak: finalQty
+                        };
+                    }
+                    return item;
+                })
+            );
+
+            setIsQtyModalOpen(false);
+            setSelectedItem(null);
+
+            if (finalQty === 0) {
+                showToast("Status diubah menjadi Tidak Layak", "success");
+            } else {
+                showToast(`Barang ditandai Layak (${finalQty} item)`, 'success');
+            }
+
+        } catch (err) {
+            console.error(err);
+            if (axios.isAxiosError(err) && err.response) {
+                showToast(err.response.data.message || "Gagal menyimpan status", "error");
+            } else {
+                showToast("Gagal menyimpan status kelayakan", "error");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSaveInspection = () => {
+        // Tidak perlu validasi form lengkap, karena hanya menyimpan progres cek barang
+        // Data barang sudah tersimpan atomic via Modal
+        showToast("Progres pemeriksaan tersimpan.", "success");
+        navigate(PATHS.PENERIMAAN.INDEX);
+    };
+
+    // ✅ NEW: Handler Pembayaran Langsung (Tanpa Modal Konfirmasi Global)
+    const handleDirectPay = async (detailId: number) => {
+        // Mencegah double click saat sedang loading
+        if (payingItemId === detailId) return;
+
+        // Konfirmasi browser sederhana (Opsional, tapi disarankan)
+        const isConfirmed = window.confirm("Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR?");
+        if (!isConfirmed) return;
+
+        const penerimaanId = Number(paramId);
+        setPayingItemId(detailId); // Set loading state untuk item ini
+
+        try {
+            await updateDetailBarangTerbayar(penerimaanId, detailId);
+
+            // Update state lokal biar langsung berubah jadi hijau
+            setBarang(prev => prev.map(item =>
+                item.id === detailId ? { ...item, is_paid: true } : item
+            ));
+
+            showToast("Item berhasil ditandai terbayar!", "success");
+        } catch (error) {
+            console.error(error);
+            showToast("Gagal mengubah status pembayaran.", "error");
+        } finally {
+            setPayingItemId(null); // Matikan loading state
+        }
     };
 
 
@@ -363,39 +471,39 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
 
         try {
             if (isInspect) {
-                // --- ALUR 1: MODE INSPEKSI (TIM TEKNIS) ---
-
-                const allMarked = barang.every(item => item.is_layak !== null);
+                // --- MODE INSPEKSI (TIM TEKNIS) ---
+                const allMarked = barang.every(item => 'is_layak' in item && item.is_layak !== null);
                 if (!allMarked) {
-                    showToast("Harap tandai 'Layak' atau 'Tidak Layak' untuk SEMUA barang.", "error");
+                    showToast("Harap tandai semua barang sebelum konfirmasi selesai.", "error");
                     setIsSubmitting(false);
                     setIsModalOpen(false);
                     return;
                 }
 
-                const penerimaanId = Number(paramId);
-                if (!penerimaanId) {
-                    throw new Error("ID Penerimaan tidak ditemukan di URL.");
+                await confirmPenerimaan(Number(paramId));
+                showToast("Penerimaan berhasil dikonfirmasi!", "success");
+
+
+            } else if (isView) {
+                // --- ALUR: MODE VIEW (KEUANGAN) ---
+
+                // Cek apakah SEMUA barang sudah berstatus terbayar
+                // .every() akan return true hanya jika semua item memenuhi kondisi
+                const allPaid = barang.every(item => (item as any).is_paid === true);
+
+                if (allPaid) {
+                    // Skenario: Semua barang LUNAS
+                    // Jika Anda perlu memanggil API untuk mengubah status Dokumen Penerimaan jadi 'Lunas', lakukan disini.
+                    // await updateStatusDokumenLunas(Number(paramId)); 
+
+                    showToast("Semua barang telah terbayar! Status dokumen selesai.", "success");
+                } else {
+                    // Skenario: Masih ada yang belum dibayar
+                    showToast("Data pembayaran berhasil disimpan.", "success");
                 }
+            }
 
-                for (const item of barang) {
-                    const detailId = item.id;
-
-                    // Logika quantity
-                    const qtyToSend = item.is_layak
-                        ? ((item as any).quantity_layak ?? item.quantity)
-                        : 0;
-
-                    // Kita await di sini agar prosesnya nunggu satu selesai baru lanjut yg lain
-                    await updateBarangStatus(penerimaanId, detailId, qtyToSend);
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await confirmPenerimaan(penerimaanId)
-
-                showToast("Status kelayakan barang berhasil disimpan!", "success");
-
-            } else {
+            else {
                 // --- ALUR 2: MODE CREATE / EDIT (TIM PPK) ---
 
                 if (!formDataPenerimaan.no_surat || formDataPenerimaan.pegawais[0].pegawai_id_pertama === 0) {
@@ -429,14 +537,30 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                     category_id: formDataPenerimaan.category_id,
                     deskripsi: formDataPenerimaan.deskripsi,
                     deleted_barang_ids: deletedIds,
-                    detail_barangs: barang.map(item => ({
-                        ...(item.id && { id: item.id }),
-                        stok_id: item.stok_id,
-                        quantity: item.quantity,
-                        price: item.price
-                    })),
+                    detail_barangs: barang.map((item): Detail_Barang | APIBarangBaru => {
+                        // Cek apakah barang BARU (stok_id === 0 atau tidak ada stok_id)
+                        if ('name' in item || ('stok_id' in item && item.stok_id === 0)) {
+                            // Item adalah APIBarangBaru
+                            return {
+                                name: 'name' in item ? item.name : item.stok_name || '',
+                                satuan_name: item.satuan_name || '',
+                                minimum_stok: 'minimum_stok' in item ? item.minimum_stok : (item.minimum_stok || 0),
+                                quantity: item.quantity,
+                                harga: 'harga' in item ? item.harga : item.price,
+                            };
+                        } else {
+                            // Item adalah barang existing (stok_id !== 0)
+                            return {
+                                stok_id: item.stok_id,
+                                quantity: item.quantity,
+                                harga: item.price,
+                            };
+                        }
+                    }),
                     pegawais: listPegawai
                 };
+
+                console.log('📤 Data final untuk submit:', dataFinal);
 
                 if (isEdit) {
                     const penerimaanId = Number(paramId);
@@ -454,7 +578,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
 
             setIsModalOpen(false);
             setIsSubmitting(false);
-            navigate(PATHS.PENERIMAAN.INDEX);
+            navigate(isView ? PATHS.STOK_BARANG : PATHS.PENERIMAAN.INDEX);
 
         } catch (err) {
             console.error("❌ Error submit:", err);
@@ -560,7 +684,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
             {/* HEADER HALAMAN (Biru) */}
             <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md">
                 <h1 className="text-2xl font-bold uppercase tracking-wide">
-                    {isEdit ? "EDIT DATA PENERIMAAN" : "FORM DATA BARANG BELANJA"}
+                    {isEdit ? "EDIT DATA PENERIMAAN" :
+                        isView ? "DETAIL DATA PENERIMAAN" :
+                            "FORM DATA BARANG BELANJA"}
                 </h1>
                 <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSUD Balung</p>
             </div>
@@ -583,7 +709,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                                 onChange={handlePihakPertamaChange}
                                 name='namaPihakPertama'
                                 type='button'
-                                disabled={isInspect}
+                                disabled={isInspect || isView}
                             />
                             <Input
                                 id="jabatanPihakPertama"
@@ -611,7 +737,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                                 onChange={handleAlamatSatkerPertamaChange}
                                 name='alamatSatkerPihakPertama'
                                 value={formDataPenerimaan.pegawais[0].alamat_staker_pertama}
-                                readOnly={isInspect}
+                                readOnly={isInspect || isView}
                             />
                         </div>
 
@@ -626,7 +752,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                                 value={formDataPenerimaan?.pegawais[1].pegawai_name_kedua}
                                 onChange={handlePihakKeduaChange}
                                 name='namaPihakKedua'
-                                disabled={isInspect}
+                                disabled={isInspect || isView}
                             />
                             <Input
                                 id="jabatanPihakKedua"
@@ -654,7 +780,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                                 onChange={handleAlamatSatkerKeduaChange}
                                 name='alamatSatkerPihakKedua'
                                 value={formDataPenerimaan?.pegawais[1].alamat_staker_kedua}
-                                readOnly={isInspect}
+                                readOnly={isInspect || isView}
                             />
                         </div>
                     </div>
@@ -672,7 +798,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                             onChange={handleChange}
                             name='no_surat'
                             value={formDataPenerimaan.no_surat}
-                            readOnly={isInspect}
+                            readOnly={isInspect || isView}
                         />
                         {formErrors.no_surat && (
                             <span className="text-red-500 text-xs mt-1 block">{formErrors.no_surat}</span>
@@ -690,7 +816,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                             onChange={handleKategoriChange}
                             value={formDataPenerimaan.category_name}
                             name="category_name"
-                            disabled={isInspect}
+                            disabled={isInspect || isView}
                         />
                     </div>
                 </div>
@@ -706,7 +832,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                             onChange={handleChange}
                             name='deskripsi'
                             value={formDataPenerimaan.deskripsi}
-                            disabled={isInspect}
+                            disabled={isInspect || isView}
                         ></textarea>
                     </div>
                 </div>
@@ -748,67 +874,121 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {barang.filter(item => item && item.stok_name).map((item, index) => (
-                                            <tr key={item.stok_id || index} className="hover:bg-blue-50 transition-colors">
-                                                <td className="py-3 px-4 text-gray-700 font-medium">{item.stok_name}</td>
-                                                <td className="py-3 px-4 text-gray-600 text-center">{item.satuan_name}</td>
-                                                <td className="py-3 px-4 text-gray-600 text-center">{item.quantity}</td>
-                                                <td className="py-3 px-4 text-gray-600 text-center">
-                                                    Rp {new Intl.NumberFormat('id-ID').format(item.price ?? 0)}
-                                                </td>
-                                                <td className="py-3 px-4 text-gray-600 text-center font-medium">
-                                                    Rp {new Intl.NumberFormat('id-ID').format(item.total_harga ?? 0)}
-                                                </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    {user?.role === ROLES.TEKNIS ? (
-                                                        <div className="flex justify-center gap-2">
-                                                            {item.is_layak !== null ? (
-                                                                item.is_layak ? (
-                                                                    <div onClick={() => handleOpenLayakModal(item)} className="cursor-pointer group flex flex-col items-center">
-                                                                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 font-bold border border-green-200">Layak ✎</span>
-                                                                        <span className="text-[10px] text-green-600 mt-0.5">{(item as any).quantity_layak} unit</span>
-                                                                    </div>
+                                        {barang
+                                            .filter(item => 'stok_name' in item)
+                                            .map((item, index) => {
+                                                const detailItem = item as Detail_Barang;
+                                                // Ambil quantity layak, jika undefined/null anggap 0
+                                                const qtyLayak = (detailItem as any).quantity_layak ?? 0;
+
+                                                return (
+                                                    <tr key={detailItem.stok_id || index} className="hover:bg-blue-50 transition-colors">
+                                                        <td className="py-3 px-4 text-gray-700 font-medium">{detailItem.stok_name}</td>
+                                                        <td className="py-3 px-4 text-gray-600 text-center">{detailItem.satuan_name}</td>
+                                                        <td className="py-3 px-4 text-gray-600 text-center">{detailItem.quantity}</td>
+                                                        <td className="py-3 px-4 text-gray-600 text-center">
+                                                            Rp {new Intl.NumberFormat('id-ID').format(detailItem.price ?? 0)}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-gray-600 text-center font-medium">
+                                                            Rp {new Intl.NumberFormat('id-ID').format(detailItem.total_harga ?? 0)}
+                                                        </td>
+
+                                                        {/* ✅ LOGIKA KOLOM AKSI */}
+                                                        <td className="py-3 px-4 text-center">
+                                                            {isView ? (
+                                                                // MODE VIEW (Pembayaran)
+                                                                (detailItem as any).is_paid ? (
+                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                                                        ✓ Lunas
+                                                                    </span>
                                                                 ) : (
-                                                                    <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 font-bold border border-red-200">Tidak Layak</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDirectPay(detailItem.id as number)}
+                                                                        disabled={payingItemId === detailItem.id}
+                                                                        className={`text-white font-medium rounded-lg text-xs px-3 py-1.5 focus:outline-none transition-all ${payingItemId === detailItem.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'}`}
+                                                                    >
+                                                                        {payingItemId === detailItem.id ? 'Proses...' : 'Bayar'}
+                                                                    </button>
                                                                 )
+                                                            ) : isInspect ? (
+                                                                // MODE INSPECT (Penerimaan)
+                                                                <div className="flex justify-center gap-2">
+                                                                    {detailItem.is_layak !== null ? (
+                                                                        // JIKA SUDAH ADA STATUS (Entah Layak/Tidak)
+                                                                        <div
+                                                                            onClick={() => handleOpenLayakModal(detailItem)}
+                                                                            className="cursor-pointer group flex flex-col items-center hover:opacity-80 transition-opacity"
+                                                                            title="Klik untuk mengubah jumlah"
+                                                                        >
+                                                                            {detailItem.is_layak ? (
+                                                                                // STATUS HIJAU (LAYAK)
+                                                                                <>
+                                                                                    <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 font-bold border border-green-200 whitespace-nowrap flex items-center gap-1">
+                                                                                        Layak: {qtyLayak} <span className="text-[10px]">✎</span>
+                                                                                    </span>
+                                                                                    {qtyLayak < detailItem.quantity && (
+                                                                                        <span className="text-[10px] text-red-500 font-medium">
+                                                                                            (Pending: {detailItem.quantity - qtyLayak})
+                                                                                        </span>
+                                                                                    )}
+                                                                                </>
+                                                                            ) : (
+                                                                                // STATUS MERAH (TIDAK LAYAK) - SEKARANG BISA DIKLIK JUGA
+                                                                                <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 font-bold border border-red-200 flex items-center gap-1">
+                                                                                    Tidak Layak <span className="text-[10px]">✎</span>
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        // JIKA BELUM ADA STATUS (TOMBOL AWAL)
+                                                                        <>
+                                                                            <button type="button" onClick={() => handleOpenLayakModal(detailItem)} className="text-green-600 border border-green-600 px-2 py-1 rounded hover:bg-green-50 text-xs">Layak</button>
+                                                                            <button type="button" onClick={() => handleStatusTidakLayak(detailItem)} className="text-red-600 border border-red-600 px-2 py-1 rounded hover:bg-red-50 text-xs">Tidak</button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             ) : (
-                                                                <>
-                                                                    <button type="button" onClick={() => handleOpenLayakModal(item)} className="text-green-600 hover:text-green-800 text-xs font-bold border border-green-600 px-2 py-1 rounded hover:bg-green-50 transition-colors">Layak</button>
-                                                                    <button type="button" onClick={() => handleStatusTidakLayak(item.stok_id)} className="text-red-600 hover:text-red-800 text-xs font-bold border border-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors">Tidak</button>
-                                                                </>
+                                                                // MODE EDIT/CREATE
+                                                                <button type="button" onClick={() => handleDeleteBarang(detailItem.stok_id)} className="text-red-500 hover:text-red-700 font-medium text-sm px-3 py-1 rounded hover:bg-red-50 transition-all">Hapus</button>
                                                             )}
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDeleteBarang(item.stok_id)}
-                                                            className="text-red-500 hover:text-red-700 font-medium text-sm px-3 py-1 rounded hover:bg-red-50 transition-all"
-                                                        >
-                                                            Hapus
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                     </tbody>
                                 </table>
                             </div>
                         )}
                         {/* FOOTER ACTIONS */}
                         <div className='flex justify-end gap-4 mt-4'>
-                            {isEdit && user?.role === ROLES.PPK && paramId && !isNaN(Number(paramId)) && (
+                            {/* Tombol Hapus (Hanya Edit & PPK) */}
+                            {isEdit && user?.role === ROLES.PPK && paramId && (
                                 <WarnButton onClick={handleDeleteClick} text='Hapus Data' type="button" />
                             )}
 
+                            {/* ✅ TOMBOL "SIMPAN" (Draft) -> HANYA MUNCUL DI MODE INSPECT */}
+                            {isInspect && (
+                                <button
+                                    type="button"
+                                    onClick={handleSaveInspection}
+                                    disabled={isSubmitting}
+                                    className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                >
+                                    Simpan
+                                </button>
+                            )}
+
+                            {/* ✅ TOMBOL UTAMA (Hijau) */}
                             <button
-                                type="submit"
+                                type="submit" // Trigger handleConfirmSubmit via form submit
                                 disabled={isSubmitting}
                                 className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 {isSubmitting ? (
-                                    <>Menyimpan...</>
+                                    <>Memproses...</>
                                 ) : (
-                                    "Selesai"
+                                    isView ? "Kembali" : (isInspect ? "Konfirmasi Selesai" : (isEdit ? "Simpan Perubahan" : "Selesai"))
                                 )}
                             </button>
                         </div>
@@ -818,42 +998,79 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
             </form>
 
             {/* --- MODAL COMPONENTS (Biarkan tetap di bawah) --- */}
-
-            {/* Modal Konfirmasi Submit/Delete */}
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit} text={isDelete ? "Yakin ingin menghapus data ini?" : "Pastikan data sudah benar sebelum menyimpan."}>
-                <div className="flex gap-4 justify-end">
-                    <ButtonConfirm
-                        text={isSubmitting ? "Memproses..." : "Ya, Lanjutkan"}
-                        type="button"
-                        onClick={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
-                        disabled={isSubmitting}
-                        className={isDelete ? "bg-red-600 hover:bg-red-700 text-white" : ""}
-                    />
-                    <WarnButton onClick={() => setIsModalOpen(false)} text="Batal" disabled={isSubmitting} />
-                </div>
-            </Modal>
+            <ConfirmModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
+                isLoading={isSubmitting}
+                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : "Apa anda yakin ingin mengubah data belanja?"}
+            />
 
             {/* Modal Input Kuantitas Layak */}
-            <Modal isOpen={isQtyModalOpen} onClose={() => setIsQtyModalOpen(false)} onConfirm={handleSaveLayakQty} text="Konfirmasi Barang Layak">
-                <div className="flex flex-col gap-4 w-full">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm">
-                        Total stok tersedia: <span className="font-bold">{selectedItem?.max_qty} unit</span>
+            <Modal
+                isOpen={isQtyModalOpen}
+                onClose={() => setIsQtyModalOpen(false)}
+                title="Update Kelayakan Barang"
+                maxWidth="max-w-md"
+            >
+                <div className="flex flex-col gap-4 w-full p-6">
+                    {/* Info Box */}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm flex justify-between items-center">
+                        <span>Total stok tersedia:</span>
+                        <span className="font-bold text-lg">{selectedItem?.max_qty} unit</span>
                     </div>
+
+                    {/* Shortcut Buttons (OPTIMALISASI BARU) */}
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setQtyInput(selectedItem?.max_qty || 0)}
+                            className="flex-1 bg-green-50 text-green-700 border border-green-200 py-1 px-2 rounded text-xs font-semibold hover:bg-green-100 transition-colors"
+                        >
+                            Set Semua Layak ({selectedItem?.max_qty})
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setQtyInput(0)}
+                            className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1 px-2 rounded text-xs font-semibold hover:bg-red-100 transition-colors"
+                        >
+                            Set Tidak Layak (0)
+                        </button>
+                    </div>
+
+                    {/* Input Field */}
                     <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold text-gray-700">Masukkan Jumlah Layak</label>
-                        <input
-                            type="number"
-                            className="w-full border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
-                            value={qtyInput}
-                            onChange={(e) => setQtyInput(e.target.value === '' ? '' : Number(e.target.value))}
-                            min={1}
-                            max={selectedItem?.max_qty}
-                            placeholder="Contoh: 10"
-                        />
+                        <label className="text-sm font-semibold text-gray-700">Jumlah Layak Diterima</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                className="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all font-bold text-lg text-center"
+                                value={qtyInput}
+                                onChange={(e) => setQtyInput(e.target.value === '' ? '' : Number(e.target.value))}
+                                min={0}
+                                max={selectedItem?.max_qty}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveLayakQty();
+                                }}
+                                autoFocus // Agar user bisa langsung ketik saat modal muncul
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Unit</span>
+                        </div>
+                        <p className="text-xs text-gray-500 text-center">
+                            Isi <b>0</b> untuk menandai barang sebagai <b>Tidak Layak</b>.
+                        </p>
                     </div>
-                    <div className="flex gap-4 justify-end mt-4">
-                        <ButtonConfirm text="Simpan Status" type="button" onClick={handleSaveLayakQty} />
-                        <WarnButton onClick={() => setIsQtyModalOpen(false)} text="Batal" />
+
+                    <div className="flex gap-3 items-center justify-end mt-4 border-t pt-4">
+                        <WarnButton
+                            onClick={() => setIsQtyModalOpen(false)}
+                            text="Batal"
+                        />
+                        <ButtonConfirm
+                            text="Simpan Perubahan"
+                            type="button"
+                            onClick={handleSaveLayakQty}
+                        />
                     </div>
                 </div>
             </Modal>
@@ -861,10 +1078,11 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false }: 
             {/* Modal Form Tambah Barang (Popup) */}
             <ModalTambahBarang
                 isOpen={isAddBarangModalOpen}
-                onClose={() => setIsAddBarangModalOpen(false)}
+                onClose={() => setIsAddBarangModalOpen(false)
+                }
                 onSave={handleSaveNewItem}
                 categoryId={formDataPenerimaan.category_id}
             />
-        </div>
+        </div >
     );
 }

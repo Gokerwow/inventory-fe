@@ -66,20 +66,6 @@ export const getDetailStokBarang = async (id: number): Promise<APIStokUpdate> =>
     }
 }
 
-/**
- * Mensimulasikan penambahan barang belanja ke form.
- * Digunakan di: src/pages/FormDataBarangBelanja.tsx
- */
-export const addBarangBelanja = async (barang: Omit<TIPE_BARANG_STOK, 'id'>): Promise<TIPE_BARANG_STOK> => {
-    console.log("SERVICE: Menambah barang belanja...", barang);
-    const response = await apiClient.post('/api/v1/barang-belanja', barang);
-    const newBarang: TIPE_BARANG_STOK = {
-        id: Date.now(),
-        ...barang
-    };
-    return simulateApiCall(newBarang);
-};
-
 export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangId: number): Promise<APIStokUpdate> => {
     console.log("SERVICE: Mengedit stok...", formData);
     try {
@@ -123,4 +109,10 @@ export const getBarangBelanjaByPenerimaanId = (id: number): Promise<TIPE_BARANG_
     console.log(`SERVICE: Mengambil barang belanja untuk penerimaan ID: ${id}...`);
     // Hanya simulasi, ambil 3 barang pertama
     return simulateApiCall(BARANG_BELANJA.slice(0, 3));
+};
+
+export const updateDetailBarangTerbayar = async (penerimaanId: number, detailBarangId: number) => {
+    // Sesuaikan URL dengan route backend Anda
+    const response = await apiClient.patch(`/api/v1/penerimaan/${penerimaanId}/barang/${detailBarangId}/paid`);
+    return response.data;
 };

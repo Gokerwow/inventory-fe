@@ -1,10 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { PenerimaanContext, type PenerimaanContextType } from "./PenerimaanContext";
-import { type FormDataPenerimaan, type Detail_Barang } from "../constant/roles";
+import { type FormDataPenerimaan, type Detail_Barang, type APIBarangBaru } from "../constant/roles";
 
 
 export function PenerimaanProvider({ children }: { children: ReactNode }) {
-    const [barang, setBarang] = useState<Detail_Barang[]>([])
+    const [barang, setBarang] = useState<(Detail_Barang | APIBarangBaru)[]>([])
     const [formDataPenerimaan, setFormDataPenerimaan] = useState<FormDataPenerimaan>({
         no_surat: '',
         category_id: 0,

@@ -12,6 +12,7 @@ import WarnButton from '../components/warnButton';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES, type RIWAYATBASTFILEAPI } from '../constant/roles';
+import ConfirmModal from '../components/confirmModal';
 
 const LihatPenerimaan = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -268,28 +269,16 @@ const LihatPenerimaan = () => {
             <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
                 <ButtonConfirm
                     text='Unggah BAST'
-                    className='w-50'
                     onClick={handleSubmit}
                 />
             </div>
-            <Modal
+
+            <ConfirmModal 
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}
-                text="Apa anda yakin ingin mengunggah file BAST ini?"
-            >
-                <div className="flex gap-4 justify-end">
-                    <ButtonConfirm
-                        text="Iya"
-                        type="button"
-                        onClick={handleConfirmSubmit}
-                    />
-                    <WarnButton
-                        onClick={() => setIsModalOpen(false)}
-                        text="Tidak"
-                    />
-                </div>
-            </Modal>
+                text='Apakah Anda yakin ingin mengunggah file BAST ini?'
+            />
         </div >
     );
 };

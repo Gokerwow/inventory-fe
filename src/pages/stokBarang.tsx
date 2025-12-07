@@ -1,11 +1,5 @@
 import AtkIcon from '../assets/AtkIcon.svg?react'
-import CetakIcon from '../assets/CetakIcon.svg?react'
-import ListrikIcon from '../assets/ListrikIcon.svg?react'
-import KomputerIcon from '../assets/KomputerIcon.svg?react'
-import KertasIcon from '../assets/KertasIcon.svg?react'
-import PaluIcon from '../assets/PaluIcon.svg?react'
-import PembersihIcon from '../assets/PembersihIcon.svg?react'
-import { ROLES, type APIStokUpdate, type BARANG_STOK } from '../constant/roles'
+import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles'
 import type { ColumnDefinition } from '../components/table'
 import { useEffect, useState, useMemo } from 'react'
 import { useAuthorization } from '../hooks/useAuthorization'
@@ -18,56 +12,24 @@ import { useToast } from '../hooks/useToast'
 import Modal from '../components/modal'
 import Input from '../components/input'
 import ButtonConfirm from '../components/buttonConfirm'
+import Status from '../components/status'
+import { getBASTUnpaidList } from '../services/bastService'
+import EyeIcon from '../assets/eye.svg?react';
+import { generatePath, useNavigate } from 'react-router-dom'
+import { PATHS } from '../Routes/path'
+import { CategoryFilter } from '../components/categoryFilter'
+import { NavigationTabs } from '../components/navTabs'
 
-const CATEGORY_DATA = [
+const stokTabs = [
     {
-        id: 1,
-        name: 'ATK',
-        Icon: AtkIcon,
-        colorClass: 'bg-blue-100 text-blue-700',
-        hoverClass: 'hover:bg-blue-200'
+        id: 'stokBarang', label: 'Stok Barang', icon: <svg className="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+        </svg>
     },
     {
-        id: 2,
-        name: 'Cetak',
-        Icon: CetakIcon,
-        colorClass: 'bg-green-100 text-green-700',
-        hoverClass: 'hover:bg-green-200'
-    },
-    {
-        id: 3,
-        name: 'Alat Listrik',
-        Icon: ListrikIcon,
-        colorClass: 'bg-yellow-100 text-yellow-700',
-        hoverClass: 'hover:bg-yellow-200'
-    },
-    {
-        id: 4,
-        name: 'Bahan Komputer',
-        Icon: KomputerIcon,
-        colorClass: 'bg-purple-100 text-purple-700',
-        hoverClass: 'hover:bg-purple-200'
-    },
-    {
-        id: 5,
-        name: 'Kertas dan Cover',
-        Icon: KertasIcon,
-        colorClass: 'bg-red-100 text-red-700',
-        hoverClass: 'hover:bg-red-200'
-    },
-    {
-        id: 6,
-        name: 'Bahan Bangunan',
-        Icon: PaluIcon,
-        colorClass: 'bg-indigo-100 text-indigo-700',
-        hoverClass: 'hover:bg-indigo-200'
-    },
-    {
-        id: 7,
-        name: 'Bahan Pembersih',
-        Icon: PembersihIcon,
-        colorClass: 'bg-teal-100 text-teal-700',
-        hoverClass: 'hover:bg-teal-200'
+        id: 'KategoriBarang', label: 'Kategori Barang', icon: <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.968 7.968 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+        </svg>
     },
 ];
 
@@ -86,14 +48,16 @@ function StokBarang() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
+    const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid' | ''>('');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isLoading, setIsLoading] = useState(true);
     const [isFormLoading, setIsFormLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentStokItems, setCurrentStokItems] = useState<BARANG_STOK[]>([]);
-    const [currentBASTItems, setCurrentBASTItems] = useState<BARANG_STOK[]>([]);
+    const [currentBASTItems, setCurrentBASTItems] = useState<BASTAPI[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
+    const navigate = useNavigate();
 
     // 3. Set default state year ke string tahun saat ini
     const [year, setYear] = useState(String(currentYear));
@@ -142,7 +106,7 @@ function StokBarang() {
                     console.log('Fetching BAST Data....')
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
-                    const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
+                    const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch, year);
                     console.log("📦 BAST Response:", response);
                     setCurrentBASTItems(response.data.flat());
                     setTotalItems(response.total || 0);
@@ -158,7 +122,7 @@ function StokBarang() {
         }
         FetchData();
         // Tambahkan year ke dependency array agar refresh saat tahun diganti
-    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger])
+    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger, paymentStatus])
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -173,7 +137,18 @@ function StokBarang() {
     }
 
     const handleTabClick = (tab: string) => {
-        setActiveTab(tab)
+        if (tab === activeTab) return
+        setActiveTab(tab);
+        // Reset semua filter agar data tab baru bersih
+        setSelectedCategoryId(undefined);
+        setPaymentStatus('');
+        setSearch('');
+        setDebouncedSearch('');
+        setCurrentPage(1);
+    }
+
+    const handleLihatClick = async (id: number) => {
+        navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }))
     }
 
     const handleEditClick = async (id: number) => {
@@ -216,7 +191,6 @@ function StokBarang() {
         //     const updatedItem = await getDetailStokBarang(itemDetail?.id || 0, formData);
         // }
     }
-
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
         {
             header: 'Nama Barang',
@@ -277,65 +251,49 @@ function StokBarang() {
         }
     ];
 
-    const BASTColumns: ColumnDefinition<BARANG_STOK>[] = [
+    const BASTColumns: ColumnDefinition<BASTAPI>[] = [
+        { header: 'No Surat', cell: (item) => item.no_surat },
+        { header: 'Role', cell: (item) => item.role_user },
+        { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
-            header: 'Nama Barang',
+            header: 'Aksi',
+            cell: (item) => (
+                <button onClick={() => handleLihatClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                    <EyeIcon className='w-5 h-5' />
+                    Lihat
+                </button>
+            )
+        },
+        {
+            header: 'Kategori',
             cell: (item) => {
                 const config = CATEGORY_DATA.find(c => c.name === item.category_name);
                 const IconComponent = config?.Icon || AtkIcon;
                 const colorClass = config?.colorClass || 'bg-gray-100 text-gray-700';
 
                 return (
-                    <div className="flex items-center">
-                        {/* Icon */}
-                        <div className={`shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${colorClass}`}>
-                            <IconComponent className='w-6 h-6' />
+                    <div className={`flex items-center gap-3 w-fit px-3 py-2 rounded-2xl ${colorClass}`}>
+                        <div className={`shrink-0 rounded-lg flex items-center justify-center`}>
+                            <IconComponent className='w-4 h-4' />
                         </div>
-
-                        {/* Wrapper Teks dengan min-w-0 agar flex item bisa mengecil */}
-                        <div className="ml-4 min-w-0 flex-1">
-                            <div
-                                className="text-sm font-semibold text-gray-900 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px]"
-                                title={item.name} // Tooltip bawaan browser saat di-hover
-                            >
-                                {item.name}
-                            </div>
-                            <div className="text-xs text-gray-500">Kategori: {item.category_name}</div>
-                        </div>
+                        <span className={`rounded-full text-xs font-medium`}>
+                            {item.category_name}
+                        </span>
                     </div>
                 )
             }
         },
         {
-            header: 'Stok Lama',
-            cell: (item) => <>{item.stok_lama}</>
-        },
-        {
-            header: 'Total Stok',
-            cell: (item) => <>{item.total_stok}</>
-        },
-        {
-            header: 'Minimum Stok',
-            cell: (item) => <>{item.minimum_stok}</>
-        },
-        {
-            header: 'Satuan',
-            cell: (item) => <>{item.satuan}</>
-        },
-        {
-            header: 'Harga',
-            cell: (item) => <>Rp {new Intl.NumberFormat('id-ID').format(item.price)}</>
-        },
-        {
-            header: 'Aksi',
-            cell: (item) => (
-                <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                    Edit
-                </button>
-            )
+            header: 'Status',
+            cell: (item) => {
+                return <Status
+                    text={item.status}
+                    color={item.status.toLowerCase().includes('telah dibayar') ? 'bg-green-600' : 'bg-[#FFB14C]'}
+                />
+            }
         }
     ];
+
 
     if (error) {
         return (
@@ -348,56 +306,18 @@ function StokBarang() {
     return (
         <div className="w-full h-full flex flex-col gap-5">
             {/* Navigation Tabs */}
-            <nav className="flex gap-2" aria-label="Tabs">
-                <button onClick={() => handleTabClick('stokBarang')} className={` ${activeTab === 'stokBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} bg-white rounded-t-lg group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
-                    <svg className="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                    </svg>
-                    Stok Barang
-                </button>
-                <button onClick={() => handleTabClick('kategoriBarang')} className={`${activeTab === 'kategoriBarang' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} rounded-t-lg bg-white group inline-flex items-center py-4 px-2 border-b-2 font-medium text-sm`}>
-                    <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.968 7.968 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                    </svg>
-                    Kategori Barang
-                </button>
-            </nav>
+            <NavigationTabs
+                tabs={stokTabs}
+                activeTab={activeTab}
+                onTabClick={handleTabClick}
+            />
 
             {/* Filter Buttons Section */}
-            <div className="bg-white p-4 rounded-lg">
-                <h3 className="text-base font-medium text-gray-900 mb-3">Urutkan Berdasarkan Kategori</h3>
-                <div className="flex flex-wrap gap-3">
-                    {CATEGORY_DATA.map((cat) => {
-                        const isSelected = selectedCategoryId === cat.id;
-                        return (
-                            <button
-                                key={cat.name}
-                                onClick={() => handleCategoryClick(cat.id)}
-                                className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${isSelected
-                                    ? 'ring-2 ring-offset-2 ring-blue-500 shadow-lg scale-105'
-                                    : ''
-                                    } ${cat.colorClass} ${cat.hoverClass}`}
-                            >
-                                <cat.Icon className="mr-2 h-4 w-4" />
-                                {cat.name}
-                                {isSelected && (
-                                    <svg
-                                        className="ml-2 h-4 w-4"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
+            <CategoryFilter
+                selectedCategoryId={selectedCategoryId}
+                onCategoryClick={handleCategoryClick}
+                categoryData={CATEGORY_DATA}
+            />
 
             {/* Table Card */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
@@ -440,21 +360,45 @@ function StokBarang() {
                         </div>
                     </div>
 
-                    <div className="relative">
-                        {/* 4. Implementasi Dropdown Dinamis */}
-                        <select
-                            value={year}
-                            onChange={(e) => setYear(e.target.value)}
-                            className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
-                        >
-                            {yearOptions.map((optionYear) => (
-                                <option key={optionYear} value={optionYear}>
-                                    {optionYear}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                    <div className="flex items-center gap-3"> {/* Wrapper baru agar dropdown sejajar */}
+
+                        {/* --- TAMBAHAN 4: Dropdown Filter Status Pembayaran --- */}
+                        {activeTab !== 'stokBarang' && (
+                            <div className="relative">
+                                <select
+                                    value={paymentStatus}
+                                    onChange={(e) => {
+                                        setPaymentStatus(e.target.value as 'paid' | 'unpaid' | '');
+                                        setCurrentPage(1); // Reset ke halaman 1 saat filter berubah
+                                    }}
+                                    className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
+                                >
+                                    <option value="">Semua Status</option>
+                                    <option value="paid">Terbayar</option>
+                                    <option value="unpaid">Belum Dibayar</option>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="relative">
+                            {/* 4. Implementasi Dropdown Dinamis (Tahun) - Kode Lama Tetap Ada */}
+                            <select
+                                value={year}
+                                onChange={(e) => setYear(e.target.value)}
+                                className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
+                            >
+                                {yearOptions.map((optionYear) => (
+                                    <option key={optionYear} value={optionYear}>
+                                        {optionYear}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -491,12 +435,9 @@ function StokBarang() {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onConfirm={handleConfirmSubmit}
-                // Judul modal disesuaikan agar tidak duplikat dengan h1 di bawah, atau bisa dikosongkan jika Modal sudah punya header sendiri
-                text=""
                 isForm={true}
             >
-                <div className="flex flex-col gap-10 w-full">
+                <div className="flex flex-col gap-10 w-full p-4">
                     {/* Judul sesuai Desain (Warna Biru) */}
                     <h1 className="text-2xl text-center font-bold text-[#057CFF]">
                         FORM DETAIL STOK BARANG
@@ -521,8 +462,8 @@ function StokBarang() {
                             name='minimum_stok'
                             type="number"
                             // UBAH DISINI: Langsung baca dari formData (handle angka 0 agar tidak kosong stringnya)
-                            value={isFormLoading ? 'Memuat Data...' : formData.minimum_stok}
-                            onChange={(e) => setFormData({ ...formData, minimum_stok: parseInt(e.target.value) || '' })}
+                            value={isFormLoading ? 'Memuat Data...' : String(formData.minimum_stok)}
+                            onChange={(e) => setFormData({ ...formData, minimum_stok: parseInt(e.target.value) || 0 })}
                         />
                     </div>
                     <ButtonConfirm

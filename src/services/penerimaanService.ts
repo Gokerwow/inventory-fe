@@ -4,7 +4,7 @@ import {
 } from '../Mock Data/data';
 import apiClient from './api';
 import axios from 'axios';
-import type { APIDataPenerimaan, APIDetailPenerimaan, PaginationResponse } from '../constant/roles';
+import { ROLES, type APIDataPenerimaan, type APIDetailPenerimaan, type PaginationResponse } from '../constant/roles';
 
 // Tipe data dari item di tabel penerimaan
 type PenerimaanItem = typeof PenerimaanData[0];
@@ -16,12 +16,12 @@ type RiwayatPenerimaanItem = typeof RiwayatPenerimaanData[0];
  * Digunakan di: src/pages/penerimaan.tsx
  */
 
-
 export const getPenerimaanList = async (
     page: number = 1,
-    perPage?: number
+    perPage?: number,
+    role?: string // ✅ 1. Tambahkan parameter role (optional)
 ): Promise<PaginationResponse<PenerimaanItem>> => {
-    console.log(`SERVICE: Mengambil daftar penerimaan halaman ${page}...`);
+    console.log(`SERVICE: Mengambil daftar penerimaan halaman ${page}... Role: ${role}`);
 
     try {
         // Buat params untuk query string
@@ -30,7 +30,14 @@ export const getPenerimaanList = async (
             params.per_page = perPage;
         }
 
-        const response = await apiClient.get('/api/v1/penerimaan', { params });
+        // ✅ 2. Tentukan Endpoint berdasarkan Role
+        let endpoint = '/api/v1/penerimaan';
+        
+        if (role === ROLES.TEKNIS) {
+            endpoint = '/api/v1/penerimaan/check';
+        }
+
+        const response = await apiClient.get(endpoint, { params });
 
         if (response.data && response.data.data) {
             console.log("Data penerimaan diterima:", response.data.data);

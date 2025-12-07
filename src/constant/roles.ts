@@ -4,6 +4,14 @@ import PenerimaanIcon from '../assets/Penerimaan.svg?react';
 import PengeluaranIcon from '../assets/Pengeluaran.svg?react';
 import PegawaiIcon from '../assets/hashtag.svg?react'
 import AkunIcon from '../assets/Akun Icon.svg?react'
+import CetakIcon from '../assets/CetakIcon.svg?react'
+import ListrikIcon from '../assets/ListrikIcon.svg?react'
+import KomputerIcon from '../assets/KomputerIcon.svg?react'
+import KertasIcon from '../assets/KertasIcon.svg?react'
+import PaluIcon from '../assets/PaluIcon.svg?react'
+import PembersihIcon from '../assets/PembersihIcon.svg?react'
+import AtkIcon from '../assets/AtkIcon.svg?react'
+
 
 
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
@@ -24,6 +32,58 @@ export const USERNAMES = {
     INSTALASI: 'instalasi',
     PENANGGUNG_JAWAB: 'penanggungjawab',
 } as const;
+
+export const CATEGORY_DATA = [
+    {
+        id: 1,
+        name: 'ATK',
+        Icon: AtkIcon,
+        colorClass: 'bg-blue-100 text-blue-700',
+        hoverClass: 'hover:bg-blue-200'
+    },
+    {
+        id: 2,
+        name: 'Cetak',
+        Icon: CetakIcon,
+        colorClass: 'bg-green-100 text-green-700',
+        hoverClass: 'hover:bg-green-200'
+    },
+    {
+        id: 3,
+        name: 'Alat Listrik',
+        Icon: ListrikIcon,
+        colorClass: 'bg-yellow-100 text-yellow-700',
+        hoverClass: 'hover:bg-yellow-200'
+    },
+    {
+        id: 4,
+        name: 'Bahan Komputer',
+        Icon: KomputerIcon,
+        colorClass: 'bg-purple-100 text-purple-700',
+        hoverClass: 'hover:bg-purple-200'
+    },
+    {
+        id: 5,
+        name: 'Kertas dan Cover',
+        Icon: KertasIcon,
+        colorClass: 'bg-red-100 text-red-700',
+        hoverClass: 'hover:bg-red-200'
+    },
+    {
+        id: 6,
+        name: 'Bahan Bangunan',
+        Icon: PaluIcon,
+        colorClass: 'bg-indigo-100 text-indigo-700',
+        hoverClass: 'hover:bg-indigo-200'
+    },
+    {
+        id: 7,
+        name: 'Bahan Pembersih',
+        Icon: PembersihIcon,
+        colorClass: 'bg-teal-100 text-teal-700',
+        hoverClass: 'hover:bg-teal-200'
+    },
+];
 
 export interface Kategori {
     id: number;
@@ -121,7 +181,8 @@ export interface Detail_Barang {
     id: number,
     stok_id: number;
     quantity: number;
-    price: number;
+    price?: number;
+    harga?: number;
     satuan_name?: string;
     stok_name?: string;
     total_harga?: number;
@@ -155,44 +216,6 @@ export interface FormDataPenerimaan {
         }]
 }
 
-export interface APIDataPenerimaan {
-    no_surat: string;
-    category_id: number;
-    deskripsi: string;
-    detail_barangs: Detail_Barang[],
-    pegawais: Pegawais[]
-}
-
-export interface APIDetailPenerimaan {
-    id: number;
-    no_surat: string;
-    deskripsi: string;
-    status: string; // Bisa juga 'pending' | 'confirmed'
-    category: {
-        id: number;
-        name: string;
-    };
-    detail_barang: {
-        id: number;
-        nama_stok: string;
-        nama_category: string;
-        nama_satuan: string;
-        harga: number;
-        quantity: number;
-        total_harga: number;
-        is_layak: boolean | null;
-    }[]; // <-- Ini adalah array dari objek barang
-    detail_pegawai: {
-        id: number;
-        name: string;
-        nip: string;
-        jabatan_id: number;
-        jabatan_name: string;
-        alamat_satker: string;
-    }[]; // <-- Ini adalah array dari objek pegawai
-}
-
-
 export interface PaginationResponse<T> {
     current_page: number;
     data: T[];
@@ -206,28 +229,6 @@ export interface PaginationResponse<T> {
     prev_page_url: string | null;
     to: number;
     total: number;
-}
-
-export interface BASTAPI {
-    id: number,
-    no_surat: string,
-    role_user: string,
-    category_name: string,
-    pegawai_name: string,
-    status: string,
-    bast: {
-        id: number,
-        file_url?: string,
-        signed_file_url?: string,
-        download_endpoint: string
-    }
-}
-export interface RIWAYATBASTFILEAPI {
-    id: number,
-    filename: string,
-    signed_file: string,
-    uploaded_at: string,
-    penerimaan_no_surat: string
 }
 
 export const menuItems = [
@@ -277,4 +278,99 @@ export interface APIStokUpdate {
 
 export interface APIConfirmKelayakan {
     quantity_layak: number,
+}
+
+export interface BASTAPI {
+    id: number,
+    no_surat: string,
+    role_user: string,
+    category_name: string,
+    pegawai_name: string,
+    status: string,
+    bast?: {
+        id: number,
+        file_url?: string,
+        signed_file_url?: string,
+        download_endpoint: string
+    }
+}
+export interface RIWAYATBASTFILEAPI {
+    id: number,
+    filename: string,
+    signed_file: string,
+    uploaded_at: string,
+    penerimaan_no_surat: string
+}
+
+export interface APIBarangBaru {
+    name: string,
+    satuan_name: string,
+    minimum_stok: number,
+    quantity: number,
+    harga: number,
+}
+
+export interface APIDataPenerimaan {
+    no_surat: string;
+    category_id: number;
+    deskripsi: string;
+    detail_barangs: (Detail_Barang | APIBarangBaru)[];
+    pegawais: Pegawais[]
+}
+
+export interface APIDetailPenerimaan {
+    id: number;
+    no_surat: string;
+    deskripsi: string;
+    status: string; // Bisa juga 'pending' | 'confirmed'
+    category: {
+        id: number;
+        name: string;
+    };
+    detail_barang: {
+        id: number;
+        nama_stok: string;
+        nama_category: string;
+        nama_satuan: string;
+        harga: number;
+        quantity: number;
+        total_harga: number;
+        is_layak: boolean | null;
+        is_paid: boolean;
+    }[]; // <-- Ini adalah array dari objek barang
+    detail_pegawai: {
+        id: number;
+        name: string;
+        nip: string;
+        jabatan_id: number;
+        jabatan_name: string;
+        alamat_satker: string;
+    }[]; // <-- Ini adalah array dari objek pegawai
+}
+
+export interface APIPemesanan {
+    id: number,
+    user_name: string,
+    ruangan: string,
+    tanggal_pemesanan: string,
+    status: string
+}
+export interface APIStokPemesanan {
+    id: number,
+    name: string,
+    category_name: string,
+    total_stok: number,
+    satuan: string
+}
+
+export interface APIPemesananBaruItem {
+    name?:string,
+    stok_id: number,
+    quantity: number
+}
+
+export interface APIPemesananBaru {
+    ruangan: string,
+    nama_pj_instalasi: string,
+    items: APIPemesananBaruItem[]
 }
