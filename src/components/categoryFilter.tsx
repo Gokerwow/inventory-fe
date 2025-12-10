@@ -30,7 +30,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                         <button
                             key={cat.id}
                             onClick={() => onCategoryClick(cat.id)}
-                            className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                            className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
                                 isSelected
                                     ? 'ring-2 ring-offset-2 ring-blue-500 shadow-lg scale-105'
                                     : ''

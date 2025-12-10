@@ -25,12 +25,13 @@ import { getPegawaiSelect } from '../services/pegawaiService';
 import axios from 'axios';
 import ModalTambahBarang from './FormDataBarangBelanja';
 import ConfirmModal from '../components/confirmModal';
+import Loader from '../components/loader';
 
-// Interface tambahan untuk menghandle item yang dipilih di modal
 interface SelectedItemState {
     id: number;       // Tambahkan ini (ID Detail Barang)
     stok_id: number;
     max_qty: number;
+    current_qty?: number;
 }
 
 export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
@@ -223,7 +224,8 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         setSelectedItem({
             id: item.id, // Simpan ID detail barang
             stok_id: item.stok_id,
-            max_qty: item.quantity
+            max_qty: item.quantity,
+            current_qty: item.quantity_layak || 0
         });
         setQtyInput(item.quantity);
         setIsQtyModalOpen(true);
@@ -245,6 +247,11 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         // Validasi Min (Boleh 0, karena 0 = Tidak Layak)
         if (finalQty < 0) {
             showToast("Jumlah tidak boleh minus", "error");
+            return;
+        }
+
+        if (finalQty < selectedItem.current_qty!) {
+            showToast(`Jumlah tidak boleh lebih rendah dari yang sudah diverifikasi (${selectedItem.current_qty})`, "error");
             return;
         }
 
@@ -650,9 +657,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
 
     if (isLoading) {
         return (
-            <div className="bg-white p-8 rounded-xl flex justify-center items-center h-96">
-                <p>Memuat data form...</p>
-            </div>
+            <Loader />
         );
     }
 
@@ -942,10 +947,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                         </div>
                                                                     ) : (
                                                                         // JIKA BELUM ADA STATUS (TOMBOL AWAL)
-                                                                        <>
-                                                                            <button type="button" onClick={() => handleOpenLayakModal(detailItem)} className="text-green-600 border border-green-600 px-2 py-1 rounded hover:bg-green-50 text-xs">Layak</button>
-                                                                            <button type="button" onClick={() => handleStatusTidakLayak(detailItem)} className="text-red-600 border border-red-600 px-2 py-1 rounded hover:bg-red-50 text-xs">Tidak</button>
-                                                                        </>
+                                                                        <button type="button" onClick={() => handleOpenLayakModal(detailItem)} className="text-green-600 border border-green-600 px-2 py-1 rounded hover:bg-green-50 hover:scale-110 transition-all duration-200 text-sm cursor-pointer">Nilai</button>
                                                                     )}
                                                                 </div>
                                                             ) : (
@@ -988,7 +990,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 {isSubmitting ? (
                                     <>Memproses...</>
                                 ) : (
-                                    isView ? "Kembali" : (isInspect ? "Konfirmasi Selesai" : (isEdit ? "Simpan Perubahan" : "Selesai"))
+                                    isView ? "Simpan" : (isInspect ? "Konfirmasi Selesai" : (isEdit ? "Simpan Perubahan" : "Selesai"))
                                 )}
                             </button>
                         </div>

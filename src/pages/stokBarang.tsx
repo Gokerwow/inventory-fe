@@ -1,7 +1,7 @@
 import AtkIcon from '../assets/AtkIcon.svg?react'
 import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles'
 import type { ColumnDefinition } from '../components/table'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useAuthorization } from '../hooks/useAuthorization'
 import { useAuth } from '../hooks/useAuth'
 import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService'
@@ -19,6 +19,7 @@ import { generatePath, useNavigate } from 'react-router-dom'
 import { PATHS } from '../Routes/path'
 import { CategoryFilter } from '../components/categoryFilter'
 import { NavigationTabs } from '../components/navTabs'
+import WarnButton from '../components/warnButton'
 
 const stokTabs = [
     {
@@ -56,6 +57,7 @@ function StokBarang() {
     const [currentStokItems, setCurrentStokItems] = useState<BARANG_STOK[]>([]);
     const [currentBASTItems, setCurrentBASTItems] = useState<BASTAPI[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [initialFormData, setInitialFormData] = useState<APIStokUpdate | null>(null);
     const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
     const navigate = useNavigate();
 
@@ -127,6 +129,7 @@ function StokBarang() {
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
+
     const handleCategoryClick = (id: number) => {
         if (selectedCategoryId === id) {
             setSelectedCategoryId(undefined);
@@ -147,6 +150,14 @@ function StokBarang() {
         setCurrentPage(1);
     }
 
+    const isUnchanged = useMemo(() => {
+        if (!initialFormData) return true; // Default disable jika data belum siap
+        return (
+            formData.name === initialFormData.name &&
+            formData.minimum_stok === initialFormData.minimum_stok
+        );
+    }, [formData, initialFormData]);
+
     const handleLihatClick = async (id: number) => {
         navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }))
     }
@@ -157,13 +168,16 @@ function StokBarang() {
         try {
             const detail = await getDetailStokBarang(id);
 
-            // Hapus atau abaikan setItemDetail jika hanya digunakan untuk form
-            // Masukkan data langsung ke formData
-            setFormData({
+            const dataToSet = {
                 id: id,
                 name: detail.name,
                 minimum_stok: detail.minimum_stok
-            });
+            };
+
+            // Hapus atau abaikan setItemDetail jika hanya digunakan untuk form
+            // Masukkan data langsung ke formData
+            setFormData(dataToSet);
+            setInitialFormData(dataToSet);
             setIsFormLoading(false)
         } catch (error) {
             console.error("Error fetching detail stok barang:", error);
@@ -304,7 +318,7 @@ function StokBarang() {
     }
 
     return (
-        <div className="w-full h-full flex flex-col gap-5">
+        <div className="w-full flex flex-col gap-5">
             {/* Navigation Tabs */}
             <NavigationTabs
                 tabs={stokTabs}
@@ -403,20 +417,22 @@ function StokBarang() {
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col min-h-0">
-                    <div className="flex-1 overflow-hidden">
+                <div className="flex flex-col">
+                    <div className="w-full h-[700px] overflow-hidden flex justify-center items-center">
                         {isLoading ? <Loader />
                             :
-                            activeTab === 'stokBarang' ?
-                                <ReusableTable
-                                    columns={barangColumns}
-                                    currentItems={currentStokItems}
-                                />
-                                :
-                                <ReusableTable
-                                    columns={BASTColumns}
-                                    currentItems={currentBASTItems}
-                                />
+                            <div className='w-full h-full overflow-auto'>
+                                {activeTab === 'stokBarang' ?
+                                    <ReusableTable
+                                        columns={barangColumns}
+                                        currentItems={currentStokItems}
+                                    />
+                                    :
+                                    <ReusableTable
+                                        columns={BASTColumns}
+                                        currentItems={currentBASTItems}
+                                    />}
+                            </div>
                         }
                     </div>
 
@@ -431,13 +447,13 @@ function StokBarang() {
                     </div>
                 </div>
             </div>
-            {/* Modal Konfirmasi */}
+            {/* Modal Input */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 isForm={true}
             >
-                <div className="flex flex-col gap-10 w-full p-4">
+                <div className="flex flex-col gap-10 w-full p-6">
                     {/* Judul sesuai Desain (Warna Biru) */}
                     <h1 className="text-2xl text-center font-bold text-[#057CFF]">
                         FORM DETAIL STOK BARANG
@@ -466,11 +482,18 @@ function StokBarang() {
                             onChange={(e) => setFormData({ ...formData, minimum_stok: parseInt(e.target.value) || 0 })}
                         />
                     </div>
-                    <ButtonConfirm
-                        text='Selesai'
-                        onClick={handleConfirmSubmit}
-                        className='w-[200px] self-center rounded-3xl'
-                    />
+                    <div className='flex items-center justify-center gap-3'>
+                        <WarnButton
+                            text='Cancel'
+                            onClick={() => setIsModalOpen(false)}
+                        />
+                        <ButtonConfirm
+                            text='Selesai'
+                            onClick={handleConfirmSubmit}
+                            disabled={isFormLoading || isUnchanged}
+                            className='w-[200px] self-center'
+                        />
+                    </div>
                 </div>
             </Modal>
         </div>
