@@ -61,6 +61,8 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
     const [qtyInput, setQtyInput] = useState<number | string>(0);
     const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(null);
 
+    const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+    const [itemToPay, setItemToPay] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const { barang, setBarang, formDataPenerimaan, setFormDataPenerimaan } = usePenerimaan()
@@ -194,30 +196,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         showToast('Barang berhasil dihapus', 'success');
     };
 
-    // ✅ HANDLER UNTUK TOMBOL "TIDAK LAYAK" (Langsung set false)
-    // Ubah parameter agar menerima objek item utuh, bukan cuma ID
-    const handleStatusTidakLayak = async (item: any) => {
-        if (!paramId) return;
-
-        // Optional: Loading indicator kecil bisa ditambahkan jika perlu
-        try {
-            // Panggil API: Quantity 0 artinya Tidak Layak
-            await updateBarangStatus(Number(paramId), item.id, 0);
-
-            // Jika API sukses, baru update UI Lokal
-            setBarang(prevBarang =>
-                prevBarang.map(b => {
-                    return b.stok_id === item.stok_id
-                        ? { ...b, is_layak: false, quantity_layak: 0 }
-                        : b;
-                })
-            );
-            showToast(`Barang ditandai Tidak Layak`, 'success');
-        } catch (err) {
-            console.error(err);
-            showToast("Gagal update status barang", "error");
-        }
-    };
 
     // ✅ HANDLER MEMBUKA MODAL "LAYAK"
     const handleOpenLayakModal = (item: any) => {
@@ -312,24 +290,27 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         navigate(PATHS.PENERIMAAN.INDEX);
     };
 
-    // ✅ NEW: Handler Pembayaran Langsung (Tanpa Modal Konfirmasi Global)
-    const handleDirectPay = async (detailId: number) => {
-        // Mencegah double click saat sedang loading
-        if (payingItemId === detailId) return;
+    // ✅ 1. Handler saat tombol "Bayar" diklik (Buka Modal)
+    const handlePayClick = (detailId: number) => {
+        setItemToPay(detailId);
+        setIsPayModalOpen(true);
+    };
 
-        // Konfirmasi browser sederhana (Opsional, tapi disarankan)
-        const isConfirmed = window.confirm("Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR?");
-        if (!isConfirmed) return;
+    // ✅ 2. Handler Eksekusi Pembayaran (Dipanggil saat Confirm Modal)
+    const handleConfirmPay = async () => {
+        if (!itemToPay || !paramId) return;
 
-        const penerimaanId = Number(paramId);
-        setPayingItemId(detailId); // Set loading state untuk item ini
+        // Gunakan isSubmitting agar tombol di Modal loading
+        setIsSubmitting(true);
+        setPayingItemId(itemToPay); // Opsional: untuk efek loading di baris tabel (jika modal tertutup cepat)
 
         try {
-            await updateDetailBarangTerbayar(penerimaanId, detailId);
+            const penerimaanId = Number(paramId);
+            await updateDetailBarangTerbayar(penerimaanId, itemToPay);
 
             // Update state lokal biar langsung berubah jadi hijau
             setBarang(prev => prev.map(item =>
-                item.id === detailId ? { ...item, is_paid: true } : item
+                item.id === itemToPay ? { ...item, is_paid: true } : item
             ));
 
             showToast("Item berhasil ditandai terbayar!", "success");
@@ -337,7 +318,10 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
             console.error(error);
             showToast("Gagal mengubah status pembayaran.", "error");
         } finally {
-            setPayingItemId(null); // Matikan loading state
+            setPayingItemId(null);
+            setIsSubmitting(false); // Matikan loading modal
+            setIsPayModalOpen(false); // Tutup modal
+            setItemToPay(null); // Reset ID
         }
     };
 
@@ -909,9 +893,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                 ) : (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => handleDirectPay(detailItem.id as number)}
+                                                                        onClick={() => handlePayClick(detailItem.id as number)}
                                                                         disabled={payingItemId === detailItem.id}
-                                                                        className={`text-white font-medium rounded-lg text-xs px-3 py-1.5 focus:outline-none transition-all ${payingItemId === detailItem.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'}`}
+                                                                        className={`text-white font-medium cursor-pointer rounded-lg text-xs px-3 py-1.5 focus:outline-none transition-all ${payingItemId === detailItem.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'}`}
                                                                     >
                                                                         {payingItemId === detailItem.id ? 'Proses...' : 'Bayar'}
                                                                     </button>
@@ -1006,6 +990,17 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                 onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
                 isLoading={isSubmitting}
                 text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : "Apa anda yakin ingin mengubah data belanja?"}
+            />
+
+            <ConfirmModal
+                isOpen={isPayModalOpen}
+                onClose={() => {
+                    setIsPayModalOpen(false);
+                    setItemToPay(null);
+                }}
+                onConfirm={handleConfirmPay}
+                isLoading={isSubmitting} // Loading spinner akan muncul di tombol modal
+                text="Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan."
             />
 
             {/* Modal Input Kuantitas Layak */}
