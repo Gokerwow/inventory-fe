@@ -225,6 +225,7 @@ export default function PemesananPage() {
                 nama_pj_instalasi: '',
                 items: []
             });
+            window.location.reload();
         } catch (err) {
             console.error("❌ Error submitting form:", err);
             showToast('Gagal membuat pemesanan', 'error');
