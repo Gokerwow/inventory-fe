@@ -1,25 +1,25 @@
-import AtkIcon from '../assets/AtkIcon.svg?react'
-import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles'
-import type { ColumnDefinition } from '../components/table'
-import { useEffect, useState, useMemo, useRef } from 'react'
-import { useAuthorization } from '../hooks/useAuthorization'
-import { useAuth } from '../hooks/useAuth'
-import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService'
-import ReusableTable from '../components/table'
-import Pagination from '../components/pagination'
-import Loader from '../components/loader'
-import { useToast } from '../hooks/useToast'
-import Modal from '../components/modal'
-import Input from '../components/input'
-import ButtonConfirm from '../components/buttonConfirm'
-import Status from '../components/status'
-import { getBASTUnpaidList } from '../services/bastService'
+import AtkIcon from '../assets/AtkIcon.svg?react';
+import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles';
+import type { ColumnDefinition } from '../components/table';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { useAuthorization } from '../hooks/useAuthorization';
+import { useAuth } from '../hooks/useAuth';
+import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService';
+import ReusableTable from '../components/table';
+import Pagination from '../components/pagination';
+import Loader from '../components/loader';
+import { useToast } from '../hooks/useToast';
+import Modal from '../components/modal';
+import Input from '../components/input';
+import ButtonConfirm from '../components/buttonConfirm';
+import Status from '../components/status';
+import { getBASTUnpaidList } from '../services/bastService';
 import EyeIcon from '../assets/eye.svg?react';
-import { generatePath, useNavigate } from 'react-router-dom'
-import { PATHS } from '../Routes/path'
-import { CategoryFilter } from '../components/categoryFilter'
-import { NavigationTabs } from '../components/navTabs'
-import WarnButton from '../components/warnButton'
+import { generatePath, useNavigate } from 'react-router-dom';
+import { PATHS } from '../Routes/path';
+import { CategoryFilter } from '../components/categoryFilter';
+import { NavigationTabs } from '../components/navTabs';
+import WarnButton from '../components/warnButton';
 
 const stokTabs = [
     {
@@ -28,7 +28,7 @@ const stokTabs = [
         </svg>
     },
     {
-        id: 'KategoriBarang', label: 'Kategori Barang', icon: <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        id: 'KategoriBarang', label: 'Status Pembayaran BAST', icon: <svg className="group-hover:text-gray-500 -ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.968 7.968 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
         </svg>
     },
@@ -63,7 +63,7 @@ function StokBarang() {
 
     // 3. Set default state year ke string tahun saat ini
     const [year, setYear] = useState(String(currentYear));
-    const [activeTab, setActiveTab] = useState('stokBarang')
+    const [activeTab, setActiveTab] = useState('stokBarang');
 
     const { showToast } = useToast();
 
@@ -95,7 +95,7 @@ function StokBarang() {
             setError(null);
             try {
                 if (activeTab === 'stokBarang') {
-                    console.log('Fetching Stok Data....')
+                    console.log('Fetching Stok Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
@@ -105,7 +105,7 @@ function StokBarang() {
                     setItemsPerPage(response.per_page || 10);
                     setTotalPages(response.last_page || 1);
                 } else {
-                    console.log('Fetching BAST Data....')
+                    console.log('Fetching BAST Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch, year);
@@ -121,10 +121,10 @@ function StokBarang() {
             } finally {
                 setIsLoading(false);
             }
-        }
+        };
         FetchData();
         // Tambahkan year ke dependency array agar refresh saat tahun diganti
-    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger, paymentStatus])
+    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger, paymentStatus]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -137,10 +137,10 @@ function StokBarang() {
             setSelectedCategoryId(id);
         }
         setCurrentPage(1);
-    }
+    };
 
     const handleTabClick = (tab: string) => {
-        if (tab === activeTab) return
+        if (tab === activeTab) return;
         setActiveTab(tab);
         // Reset semua filter agar data tab baru bersih
         setSelectedCategoryId(undefined);
@@ -148,7 +148,7 @@ function StokBarang() {
         setSearch('');
         setDebouncedSearch('');
         setCurrentPage(1);
-    }
+    };
 
     const isUnchanged = useMemo(() => {
         if (!initialFormData) return true; // Default disable jika data belum siap
@@ -159,11 +159,11 @@ function StokBarang() {
     }, [formData, initialFormData]);
 
     const handleLihatClick = async (id: number) => {
-        navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }))
-    }
+        navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }));
+    };
 
     const handleEditClick = async (id: number) => {
-        setIsFormLoading(true)
+        setIsFormLoading(true);
         setIsModalOpen(true);
         try {
             const detail = await getDetailStokBarang(id);
@@ -178,11 +178,11 @@ function StokBarang() {
             // Masukkan data langsung ke formData
             setFormData(dataToSet);
             setInitialFormData(dataToSet);
-            setIsFormLoading(false)
+            setIsFormLoading(false);
         } catch (error) {
             console.error("Error fetching detail stok barang:", error);
         }
-    }
+    };
 
     const handleConfirmSubmit = async () => {
         setIsModalOpen(false);
@@ -190,13 +190,13 @@ function StokBarang() {
             const FixData = {
                 name: formData.name,
                 minimum_stok: parseInt(String(formData.minimum_stok))
-            }
+            };
 
             const response = await updateBarangStok(FixData, formData.id || 0);
             console.log("Update Success:", response);
             showToast("Berhasil memperbarui data stok barang.", "success");
             setIsModalOpen(false);
-            setRefreshTrigger((prev) => prev + 1)
+            setRefreshTrigger((prev) => prev + 1);
         } catch (error) {
             console.error("Error fetching detail stok barang:", error);
             showToast("Gagal memperbarui data stok barang.", "error");
@@ -204,7 +204,7 @@ function StokBarang() {
         // try {
         //     const updatedItem = await getDetailStokBarang(itemDetail?.id || 0, formData);
         // }
-    }
+    };
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
         {
             header: 'Nama Barang',
@@ -231,7 +231,7 @@ function StokBarang() {
                             <div className="text-xs text-gray-500">Kategori: {item.category_name}</div>
                         </div>
                     </div>
-                )
+                );
             }
         },
         {
@@ -270,15 +270,6 @@ function StokBarang() {
         { header: 'Role', cell: (item) => item.role_user },
         { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
-            header: 'Aksi',
-            cell: (item) => (
-                <button onClick={() => handleLihatClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                    <EyeIcon className='w-5 h-5' />
-                    Lihat
-                </button>
-            )
-        },
-        {
             header: 'Kategori',
             cell: (item) => {
                 const config = CATEGORY_DATA.find(c => c.name === item.category_name);
@@ -294,7 +285,7 @@ function StokBarang() {
                             {item.category_name}
                         </span>
                     </div>
-                )
+                );
             }
         },
         {
@@ -303,9 +294,18 @@ function StokBarang() {
                 return <Status
                     text={item.status}
                     color={item.status.toLowerCase().includes('telah dibayar') ? 'bg-green-600' : 'bg-[#FFB14C]'}
-                />
+                />;
             }
-        }
+        },
+        {
+            header: 'Aksi',
+            cell: (item) => (
+                <button onClick={() => handleLihatClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                    <EyeIcon className='w-5 h-5' />
+                    Lihat
+                </button>
+            )
+        },
     ];
 
 
@@ -314,7 +314,7 @@ function StokBarang() {
             <div className="w-full h-full flex justify-center items-center">
                 <p className="text-red-500">{error}</p>
             </div>
-        )
+        );
     }
 
     return (
@@ -337,7 +337,7 @@ function StokBarang() {
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
                     <div className='flex items-center gap-4'>
-                        <h2 className="text-xl font-bold text-blue-900">Daftar Stok Barang</h2>
+                        <h2 className="text-xl font-bold text-blue-900">Daftar {activeTab == "stokBarang" ? "Stok Barang" : "Pembayaran BAST"}</h2>
 
                         {/* Search Input */}
                         <div className="relative">
