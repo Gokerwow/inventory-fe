@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import PlusIcon from '../assets/plus.svg?react'
+import PlusIcon from '../assets/plus.svg?react';
 import PenerimaanTable from '../components/PenerimaanTable';
 import { NavLink } from 'react-router-dom';
-import { deletePenerimaanDetail, getPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService';
+import { deletePenerimaanDetail, getPenerimaanList, getRiwayatCheckedPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService';
 import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
@@ -32,9 +32,9 @@ const PenerimaanPage = () => {
     // ... State data lainnya
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);
     const [riwayatItems, setRiwayatItems] = useState<RiwayatItem[]>([]);
-    const [bastItems, setBastItems] = useState<BASTAPI[]>([])
-    const [riwayatBastItems, setRiwayatBastItems] = useState<BASTAPI[]>([])
-    
+    const [bastItems, setBastItems] = useState<BASTAPI[]>([]);
+    const [riwayatBastItems, setRiwayatBastItems] = useState<BASTAPI[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +74,7 @@ const PenerimaanPage = () => {
         try {
             await deletePenerimaanDetail(selectedDeleteId);
             // Refresh data setelah hapus berhasil
-            setRefreshKey(prev => prev + 1); 
+            setRefreshKey(prev => prev + 1);
             setIsModalOpen(false);
             setSelectedDeleteId(null);
         } catch (err) {
@@ -83,7 +83,7 @@ const PenerimaanPage = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }
+    };
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -109,9 +109,16 @@ const PenerimaanPage = () => {
                         setTotalPages(response.last_page || 1);
                     }
                 } else if (activeTab === 'riwayat') {
-                     if (user?.role === ROLES.ADMIN_GUDANG) {
+                    if (user?.role === ROLES.ADMIN_GUDANG) {
                         const response = await getRiwayatBASTList(currentPage);
                         setRiwayatBastItems(response.data || []);
+                        setTotalItems(response.total || 0);
+                        setItemsPerPage(response.per_page || 10);
+                        setTotalPages(response.last_page || 1);
+                    }
+                    else if (user?.role === ROLES.TEKNIS) {
+                        const response = await getRiwayatCheckedPenerimaanList(currentPage);
+                        setRiwayatItems(response.data || []);
                         setTotalItems(response.total || 0);
                         setItemsPerPage(response.per_page || 10);
                         setTotalPages(response.last_page || 1);
@@ -133,7 +140,7 @@ const PenerimaanPage = () => {
 
         fetchData();
         // Tambahkan refreshKey ke dependency array agar fetchData jalan ulang saat refreshKey berubah
-    }, [user, checkAccess, hasAccess, activeTab, currentPage, refreshKey]); 
+    }, [user, checkAccess, hasAccess, activeTab, currentPage, refreshKey]);
 
     // ... handler pagination & tab click lainnya ...
     const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
@@ -163,7 +170,7 @@ const PenerimaanPage = () => {
                 ) : error ? (
                     <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
                 ) : dataToShow.length === 0 ? (
-                     <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                    <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
                         <span className='font-medium text-gray-500'>DATA KOSONG</span>
                     </div>
                 ) : (
@@ -173,7 +180,7 @@ const PenerimaanPage = () => {
                                 data={dataToShow}
                                 variant={activeTab === 'penerimaan' ? 'active' : 'history'}
                                 // 3. Pass fungsi ke props table
-                                onDelete={handleDeleteRequest} 
+                                onDelete={handleDeleteRequest}
                             />
                         </div>
                         <div className="px-4 bg-white shrink-0">
@@ -195,3 +202,7 @@ const PenerimaanPage = () => {
 };
 
 export default PenerimaanPage;
+
+function elseIf(arg0: boolean) {
+    throw new Error('Function not implemented.');
+}

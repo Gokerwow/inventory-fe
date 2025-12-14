@@ -85,6 +85,38 @@ export const getRiwayatPenerimaanList = async (
 };
 
 /**
+ * Mengambil daftar riwayat pengecekan penerimaan dengan pagination
+ * @param page - Nomor halaman yang ingin diambil (default: 1)
+ * @param perPage - Jumlah item per halaman (optional)
+ */
+export const getRiwayatCheckedPenerimaanList = async (
+    page: number = 1,
+    perPage?: number
+): Promise<PaginationResponse<RiwayatPenerimaanItem>> => {
+    console.log(`SERVICE: Mengambil daftar riwayat penerimaan halaman ${page}...`);
+
+    try {
+        const params: Record<string, number> = { page };
+        if (perPage) {
+            params.per_page = perPage;
+        }
+
+        const response = await apiClient.get('/api/v1/penerimaan/checkHistory', { params });
+
+        if (response.data && response.data.data) {
+            console.log("Data riwayat penerimaan diterima:", response.data.data);
+            return response.data.data as PaginationResponse<RiwayatPenerimaanItem>;
+        } else {
+            console.error("Struktur data tidak terduga:", response.data);
+            throw new Error('Struktur data tidak sesuai');
+        }
+    } catch (error) {
+        console.error("Gagal mengambil data riwayat penerimaan:", error);
+        throw new Error('Gagal mengambil data riwayat penerimaan.');
+    }
+};
+
+/**
  * Mengambil detail satu item penerimaan.
  * Digunakan di: src/pages/FormPenerimaan.tsx (mode edit)
  */
