@@ -19,6 +19,7 @@ import LihatPenerimaan from './pages/unggahPenerimaan'
 import PemesananPage from './pages/pemesanan'
 import PenerimaanLayout from './components/PenerimaanLayout'
 import { FormPegawaiPage } from './pages/FormPegawai'
+import DetailStokBarang from './pages/detailStokBarang'
 
 function App() {
   return (
@@ -30,7 +31,10 @@ function App() {
         {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
         <Route index element={<Navigate to={PATHS.ROLE_PICK} replace />} />
         <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
-        <Route path={PATHS.STOK_BARANG} element={<StokBarang />} />
+        <Route path={PATHS.STOK_BARANG.INDEX}>
+          <Route index element={<StokBarang />} />
+          <Route path={PATHS.STOK_BARANG.LIHAT} element={<DetailStokBarang  />} />
+        </Route>
         <Route path={PATHS.PENERIMAAN.INDEX}>
           <Route index element={<Penerimaan />} />
           <Route element={<PenerimaanLayout />}>

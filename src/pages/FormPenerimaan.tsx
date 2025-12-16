@@ -2,7 +2,6 @@ import ShopCartIcon from '../assets/shopping-cart.svg?react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DropdownInput from '../components/dropdownInput';
 import Input from '../components/input';
-import ButtonConfirm from '../components/buttonConfirm';
 import WarnButton from '../components/warnButton';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
@@ -17,7 +16,6 @@ import {
 } from '../services/penerimaanService';
 import { updateBarangStatus, updateDetailBarangTerbayar } from '../services/barangService';
 import { useToast } from '../hooks/useToast';
-import Modal from '../components/modal';
 import { usePenerimaan } from '../hooks/usePenerimaan';
 import { ROLES, type APIBarangBaru, type Detail_Barang, type Kategori, type SelectPihak } from '../constant/roles';
 import { getKategoriList } from '../services/kategoriService';
@@ -26,13 +24,6 @@ import axios from 'axios';
 import ModalTambahBarang from './FormDataBarangBelanja';
 import ConfirmModal from '../components/confirmModal';
 import Loader from '../components/loader';
-
-interface SelectedItemState {
-    id: number;       // Tambahkan ini (ID Detail Barang)
-    stok_id: number;
-    max_qty: number;
-    current_qty?: number;
-}
 
 export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS, ROLES.ADMIN_GUDANG], []);
@@ -55,11 +46,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [isAddBarangModalOpen, setIsAddBarangModalOpen] = useState(false);
-
-    // ✅ STATE BARU: Modal Kuantitas Layak
-    const [isQtyModalOpen, setIsQtyModalOpen] = useState(false);
-    const [qtyInput, setQtyInput] = useState<number | string>(0);
-    const [selectedItem, setSelectedItem] = useState<SelectedItemState | null>(null);
 
     const [isPayModalOpen, setIsPayModalOpen] = useState(false);
     const [itemToPay, setItemToPay] = useState<number | null>(null);
@@ -183,18 +169,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         showToast('Barang berhasil dihapus', 'success');
     };
 
-
-    // ✅ HANDLER MEMBUKA MODAL "LAYAK"
-    const handleOpenLayakModal = (item: any) => {
-        setSelectedItem({
-            id: item.id, // Simpan ID detail barang
-            stok_id: item.stok_id,
-            max_qty: item.quantity,
-            current_qty: item.quantity_layak || 0
-        });
-        setQtyInput(item.quantity);
-        setIsQtyModalOpen(true);
-    };
 
     const handleSetStatus = async (detailId: number, isLayak: boolean) => {
         if (!paramId) return;

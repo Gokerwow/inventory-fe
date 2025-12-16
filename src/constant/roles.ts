@@ -310,6 +310,25 @@ export interface APIBarangBaru {
     harga: number,
 }
 
+export interface APIDetailBarang {
+    id: number,
+    name: string,
+    category_name: string,
+    satuan: string,
+    minimum_stok: string,
+    riwayat_penerimaan: [
+        {
+            penerimaan_id: number,
+            no_surat: string,
+            quantity: number,
+            harga: string,
+            total_harga: string,
+            status: string,
+            created_at: string
+        }
+    ]
+}
+
 export interface APIDataPenerimaan {
     no_surat: string;
     category_id: number;
@@ -364,7 +383,7 @@ export interface APIStokPemesanan {
 }
 
 export interface APIPemesananBaruItem {
-    name?:string,
+    name?: string,
     stok_id: number,
     quantity: number
 }

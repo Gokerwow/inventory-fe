@@ -1,7 +1,7 @@
 import AtkIcon from '../assets/AtkIcon.svg?react';
 import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles';
 import type { ColumnDefinition } from '../components/table';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService';
@@ -158,8 +158,12 @@ function StokBarang() {
         );
     }, [formData, initialFormData]);
 
-    const handleLihatClick = async (id: number) => {
-        navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }));
+    const handleLihatClick = async (id: number, type: 'penerimaan' | 'barang') => {
+        if (type === 'penerimaan') {
+            navigate(generatePath(PATHS.PENERIMAAN.LIHAT, { id: id.toString() }));
+        } else {
+            navigate(generatePath(PATHS.STOK_BARANG.LIHAT, { id: id.toString() }));
+        }
     };
 
     const handleEditClick = async (id: number) => {
@@ -251,16 +255,18 @@ function StokBarang() {
             cell: (item) => <>{item.satuan}</>
         },
         {
-            header: 'Harga',
-            cell: (item) => <>Rp {new Intl.NumberFormat('id-ID').format(item.price)}</>
-        },
-        {
             header: 'Aksi',
             cell: (item) => (
-                <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                    Edit
-                </button>
+                <div className="flex w-fit gap-5">
+                    <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        Edit
+                    </button>
+                    <button onClick={() => handleLihatClick(item.id, 'barang')} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                        <EyeIcon className='w-5 h-5' />
+                        Lihat
+                    </button>
+                </div>
             )
         }
     ];
@@ -300,7 +306,7 @@ function StokBarang() {
         {
             header: 'Aksi',
             cell: (item) => (
-                <button onClick={() => handleLihatClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
+                <button onClick={() => handleLihatClick(item.id, 'penerimaan')} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
                     <EyeIcon className='w-5 h-5' />
                     Lihat
                 </button>

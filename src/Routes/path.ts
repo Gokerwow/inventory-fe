@@ -3,7 +3,9 @@ export const PATHS = {
     UNAUTHORIZED: '/unauthorized',
     ROLE_PICK: '/role-pick',
     DASHBOARD: '/dashboard',
-    STOK_BARANG: '/stok-barang',
+    STOK_BARANG: {
+        INDEX: '/stok-barang',
+        LIHAT: '/stok-barang/lihat/:id',},
     PENERIMAAN: {
         INDEX: '/penerimaan',
         TAMBAH: '/penerimaan/tambah',

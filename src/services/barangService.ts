@@ -1,7 +1,7 @@
 import { BARANG_BELANJA } from "../Mock Data/data";
 import { simulateApiCall } from "./utils";
 import apiClient from "./api";
-import { type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
+import { type APIDetailBarang, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {
     console.log("SERVICE: Mengabil barang stok...");
@@ -54,11 +54,12 @@ export const getStokBarang = async (
     }
 };
 
-export const getDetailStokBarang = async (id: number): Promise<APIStokUpdate> => {
+// DAPETIN DETAIL STOK BARANG BUAT DIEDIT
+export const getDetailStokBarang = async (id: number): Promise<APIDetailBarang> => {
     console.log(`SERVICE: Mengambil detail stok barang dengan ID: ${id}...`);
     try {
-        const response = await apiClient.get(`/api/v1/stok/${id}`);
-        const detailData = response.data.data as APIStokUpdate;
+        const response = await apiClient.get(`/api/v1/stok/${id}/bast`);
+        const detailData = response.data.data as APIDetailBarang;
         return detailData;
     } catch (error) {
         console.error(`Gagal mengambil detail stok barang dengan ID ${id}:`, error);
@@ -69,7 +70,7 @@ export const getDetailStokBarang = async (id: number): Promise<APIStokUpdate> =>
 export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangId: number): Promise<APIStokUpdate> => {
     console.log("SERVICE: Mengedit stok...", formData);
     try {
-        const response = await apiClient.patch(`/api/v1/stok/${barangId}`, formData);
+        const response = await apiClient.patch(`/api/v1/stok/${barangId}/bast`, formData);
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
