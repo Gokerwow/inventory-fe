@@ -81,24 +81,15 @@ export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangI
     }
 };
 
-export const updateBarangStatus = async (
-    penerimaanId: number,
-    detailId: number,
-    quantityLayak: number // ✅ Diubah jadi number
-) => {
-    try {
-        // ✅ Payload disesuaikan permintaan: { "quantity_layak": 10 }
-        const payload = { quantity_layak: quantityLayak };
-
-        const response = await apiClient.patch(
-            `/api/v1/penerimaan/${penerimaanId}/barang/${detailId}/layak`,
-            payload
-        );
-        return response.data;
-    } catch (error) {
-        console.error(`❌ Error updating status for item ${detailId}:`, error);
-        throw error; 
-    }
+export const updateBarangStatus = async (penerimaanId: number, detailId: number, isLayak: boolean) => {
+    // Perhatikan payload di baris kedua: { is_layak: isLayak }
+    const response = await apiClient.patch(
+        `/api/v1/penerimaan/${penerimaanId}/barang/${detailId}/layak`, 
+        { 
+            is_layak: isLayak 
+        }
+    );
+    return response.data;
 };
 
 /**

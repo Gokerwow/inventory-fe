@@ -114,35 +114,22 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                             }]
                         });
 
-                        const transformedBarang = detailData.detail_barang?.map(item => {
-                            // Logika menentukan status Layak/Tidak Layak dari data Backend
-                            // Backend kirim: quantity_layak, quantity_tidak_layak, is_checked
-
-                            let isLayakStatus = null;
-
-                            // Jika sudah diperiksa (is_checked / quantity_layak ada isinya)
-                            if (item.quantity_layak > 0) {
-                                isLayakStatus = true;
-                            } else if (item.quantity_tidak_layak > 0) {
-                                isLayakStatus = false;
-                            } else if (item.is_checked) {
-                                // Fallback jika checked tapi qty 0 (mungkin dianggap tidak layak)
-                                isLayakStatus = false;
-                            }
-
+                        const transformedBarang = detailData.detail_barang?.map((item: any) => {
                             return {
                                 id: item.id,
                                 stok_id: item.stok_id,
                                 stok_name: item.nama_stok,
                                 satuan_name: item.nama_satuan,
                                 quantity: item.quantity,
-                                price: Number(item.harga), // Pastikan jadi number
+                                price: Number(item.harga),
                                 total_harga: Number(item.total_harga),
 
-                                // State Frontend
-                                is_layak: isLayakStatus,
+                                // ✅ MAP LANGSUNG DARI JSON BACKEND
+                                is_layak: item.is_layak, // null, true, atau false
                                 is_paid: item.is_paid,
-                                quantity_layak: item.quantity_layak // Ambil langsung dari backend
+
+                                // State tambahan untuk UI
+                                is_updating: false
                             };
                         }) || [];
 
@@ -209,77 +196,40 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         setIsQtyModalOpen(true);
     };
 
-    // Ganti fungsi handleSaveLayakQty yang lama dengan ini
-    const handleSaveLayakQty = async () => {
-        if (!selectedItem || !paramId) return;
+    const handleSetStatus = async (detailId: number, isLayak: boolean) => {
+        if (!paramId) return;
 
-        // Konversi input ke number
-        const finalQty = qtyInput === '' ? 0 : Number(qtyInput);
-
-        // Validasi Max
-        if (finalQty > selectedItem.max_qty) {
-            showToast(`Jumlah melebihi total barang (${selectedItem.max_qty})`, "error");
-            return;
-        }
-
-        // Validasi Min (Boleh 0, karena 0 = Tidak Layak)
-        if (finalQty < 0) {
-            showToast("Jumlah tidak boleh minus", "error");
-            return;
-        }
-
-        if (finalQty < selectedItem.current_qty!) {
-            showToast(`Jumlah tidak boleh lebih rendah dari yang sudah diverifikasi (${selectedItem.current_qty})`, "error");
-            return;
-        }
-
-        setIsSubmitting(true);
+        // 1. Set Loading di row tersebut
+        setBarang(prev => prev.map(item =>
+            item.id === detailId ? { ...item, is_updating: true } : item
+        ));
 
         try {
-            // LOGIKA BARU: 
-            // Jika quantity 0, anggap statusnya "Tidak Layak" (false di backend?)
-            // Atau tergantung API Anda. Biasanya API menerima status boolean + qty.
+            // 2. Panggil API
+            await updateBarangStatus(Number(paramId), detailId, isLayak);
 
-            // Asumsi logic UI:
-            // Jika 0 -> anggap Tidak Layak
-            // Jika > 0 -> anggap Layak
+            // 3. Update State Lokal jika sukses
+            setBarang(prev => prev.map(item => {
+                if (item.id === detailId) {
+                    return {
+                        ...item,
+                        is_layak: isLayak, // Update status (true/false)
+                        is_updating: false
+                    };
+                }
+                return item;
+            }));
 
-            // Panggil API (Logic quantity 0 = Tidak Layak sudah umum di backend penerimaan)
-            await updateBarangStatus(Number(paramId), selectedItem.id, finalQty);
-
-            // Update UI Lokal
-            setBarang(prevBarang =>
-                prevBarang.map(item => {
-                    if (item.stok_id === selectedItem.stok_id) {
-                        return {
-                            ...item,
-                            // Jika 0, is_layak jadi false (Merah). Jika > 0, true (Hijau)
-                            is_layak: finalQty > 0,
-                            quantity_layak: finalQty
-                        };
-                    }
-                    return item;
-                })
-            );
-
-            setIsQtyModalOpen(false);
-            setSelectedItem(null);
-
-            if (finalQty === 0) {
-                showToast("Status diubah menjadi Tidak Layak", "success");
-            } else {
-                showToast(`Barang ditandai Layak (${finalQty} item)`, 'success');
-            }
+            if (isLayak) showToast("Barang ditandai LAYAK", "success");
+            else showToast("Barang ditandai TIDAK LAYAK", "error");
 
         } catch (err) {
             console.error(err);
-            if (axios.isAxiosError(err) && err.response) {
-                showToast(err.response.data.message || "Gagal menyimpan status", "error");
-            } else {
-                showToast("Gagal menyimpan status kelayakan", "error");
-            }
-        } finally {
-            setIsSubmitting(false);
+            // Revert loading jika gagal
+            setBarang(prev => prev.map(item =>
+                item.id === detailId ? { ...item, is_updating: false } : item
+            ));
+            showToast("Gagal menyimpan status", "error");
         }
     };
 
@@ -882,11 +832,11 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                             Rp {new Intl.NumberFormat('id-ID').format(detailItem.total_harga ?? 0)}
                                                         </td>
 
-                                                        {/* ✅ LOGIKA KOLOM AKSI */}
+                                                        {/* ✅ PERBAIKAN DI SINI: HAPUS LOGIKA PENGECEKAN NULL */}
                                                         <td className="py-3 px-4 text-center">
                                                             {isView ? (
                                                                 // MODE VIEW (Pembayaran)
-                                                                (detailItem as any).is_paid ? (
+                                                                (detailItem).is_paid ? (
                                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
                                                                         ✓ Lunas
                                                                     </span>
@@ -902,37 +852,45 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                 )
                                                             ) : isInspect ? (
                                                                 // MODE INSPECT (Penerimaan)
-                                                                <div className="flex justify-center gap-2">
-                                                                    {detailItem.is_layak !== null ? (
-                                                                        // JIKA SUDAH ADA STATUS (Entah Layak/Tidak)
-                                                                        <div
-                                                                            onClick={() => handleOpenLayakModal(detailItem)}
-                                                                            className="cursor-pointer group flex flex-col items-center hover:opacity-80 transition-opacity"
-                                                                            title="Klik untuk mengubah jumlah"
-                                                                        >
-                                                                            {detailItem.is_layak ? (
-                                                                                // STATUS HIJAU (LAYAK)
-                                                                                <>
-                                                                                    <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 font-bold border border-green-200 whitespace-nowrap flex items-center gap-1">
-                                                                                        Layak: {qtyLayak} <span className="text-[10px]">✎</span>
-                                                                                    </span>
-                                                                                    {qtyLayak < detailItem.quantity && (
-                                                                                        <span className="text-[10px] text-red-500 font-medium">
-                                                                                            (Pending: {detailItem.quantity - qtyLayak})
-                                                                                        </span>
-                                                                                    )}
-                                                                                </>
-                                                                            ) : (
-                                                                                // STATUS MERAH (TIDAK LAYAK) - SEKARANG BISA DIKLIK JUGA
-                                                                                <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 font-bold border border-red-200 flex items-center gap-1">
-                                                                                    Tidak Layak <span className="text-[10px]">✎</span>
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        // JIKA BELUM ADA STATUS (TOMBOL AWAL)
-                                                                        <button type="button" onClick={() => handleOpenLayakModal(detailItem)} className="text-green-600 border border-green-600 px-2 py-1 rounded hover:bg-green-50 hover:scale-110 transition-all duration-200 text-sm cursor-pointer">Nilai</button>
-                                                                    )}
+                                                                // Langsung render tombol tanpa cek is_layak !== null
+                                                                <div className="flex items-center justify-center gap-2">
+
+                                                                    {/* TOMBOL LAYAK (HIJAU SOLID) */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleSetStatus(detailItem.id, true)}
+                                                                        disabled={detailItem.is_updating || detailItem.is_layak === true}
+                                                                        className={`
+                    flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-all duration-200
+                    ${detailItem.is_layak === true
+                                                                                ? 'bg-green-700 cursor-default ring-2 ring-green-300 scale-100' // State: SUDAH DIPILIH
+                                                                                : 'bg-green-500 hover:bg-green-600 hover:scale-105' // State: NORMAL (Bisa diklik)
+                                                                            }
+                    ${detailItem.is_updating ? 'opacity-50 cursor-wait' : ''}
+                `}
+                                                                    >
+                                                                        {detailItem.is_layak === true ? "✓ LAYAK" : "✓ Layak"}
+                                                                    </button>
+
+                                                                    {/* TOMBOL TIDAK LAYAK (MERAH SOLID) */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleSetStatus(detailItem.id, false)}
+                                                                        // Disable jika: Loading ATAU sudah dipilih Tidak Layak ATAU sudah dipilih Layak (Permanen)
+                                                                        disabled={detailItem.is_updating || detailItem.is_layak === false || detailItem.is_layak === true}
+                                                                        className={`
+                    flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all duration-200
+                    ${detailItem.is_layak === true
+                                                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100' // State: TERKUNCI (Karena Layak dipilih)
+                                                                                : detailItem.is_layak === false
+                                                                                    ? 'bg-red-700 text-white cursor-default ring-2 ring-red-300 scale-100' // State: SUDAH DIPILIH
+                                                                                    : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105' // State: NORMAL
+                                                                            }
+                    ${detailItem.is_updating ? 'opacity-50 cursor-wait' : ''}
+                `}
+                                                                    >
+                                                                        {detailItem.is_layak === false ? "✕ TIDAK" : "✕ Tidak"}
+                                                                    </button>
                                                                 </div>
                                                             ) : (
                                                                 // MODE EDIT/CREATE
@@ -1002,75 +960,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                 isLoading={isSubmitting} // Loading spinner akan muncul di tombol modal
                 text="Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan."
             />
-
-            {/* Modal Input Kuantitas Layak */}
-            <Modal
-                isOpen={isQtyModalOpen}
-                onClose={() => setIsQtyModalOpen(false)}
-                title="Update Kelayakan Barang"
-                maxWidth="max-w-md"
-            >
-                <div className="flex flex-col gap-4 w-full p-6">
-                    {/* Info Box */}
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm flex justify-between items-center">
-                        <span>Total stok tersedia:</span>
-                        <span className="font-bold text-lg">{selectedItem?.max_qty} unit</span>
-                    </div>
-
-                    {/* Shortcut Buttons (OPTIMALISASI BARU) */}
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setQtyInput(selectedItem?.max_qty || 0)}
-                            className="flex-1 bg-green-50 text-green-700 border border-green-200 py-1 px-2 rounded text-xs font-semibold hover:bg-green-100 transition-colors"
-                        >
-                            Set Semua Layak ({selectedItem?.max_qty})
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setQtyInput(0)}
-                            className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1 px-2 rounded text-xs font-semibold hover:bg-red-100 transition-colors"
-                        >
-                            Set Tidak Layak (0)
-                        </button>
-                    </div>
-
-                    {/* Input Field */}
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-semibold text-gray-700">Jumlah Layak Diterima</label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                className="w-full border border-gray-300 rounded-lg p-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all font-bold text-lg text-center"
-                                value={qtyInput}
-                                onChange={(e) => setQtyInput(e.target.value === '' ? '' : Number(e.target.value))}
-                                min={0}
-                                max={selectedItem?.max_qty}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveLayakQty();
-                                }}
-                                autoFocus // Agar user bisa langsung ketik saat modal muncul
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Unit</span>
-                        </div>
-                        <p className="text-xs text-gray-500 text-center">
-                            Isi <b>0</b> untuk menandai barang sebagai <b>Tidak Layak</b>.
-                        </p>
-                    </div>
-
-                    <div className="flex gap-3 items-center justify-end mt-4 border-t pt-4">
-                        <WarnButton
-                            onClick={() => setIsQtyModalOpen(false)}
-                            text="Batal"
-                        />
-                        <ButtonConfirm
-                            text="Simpan Perubahan"
-                            type="button"
-                            onClick={handleSaveLayakQty}
-                        />
-                    </div>
-                </div>
-            </Modal>
 
             {/* Modal Form Tambah Barang (Popup) */}
             <ModalTambahBarang
