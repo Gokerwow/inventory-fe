@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'; // <-- TAMBAHAN: useEffect
-import PfpExample from '../assets/Pfp Example.jpeg';
-import PencilIcon from '../assets/pencil Icon.svg?react'
+import PfpExample from '../assets/svgs/Pfp Example.jpeg';
+import PencilIcon from '../assets/svgs/pencil Icon.svg?react'
 // --- HAPUS ---
 // import { employees, FAQ } from '../Mock Data/data';
 // --- TAMBAHAN ---
@@ -8,10 +8,10 @@ import { employees, FAQ } from '../Mock Data/data'; // Impor tipe datanya
 import { getPegawaiList, getFaqList } from '../services/pegawaiService'; // <-- Impor service
 // -----------------
 import { useAuth } from '../hooks/useAuth';
-import ButtonConfirm from '../components/buttonConfirm';
 import { PATHS } from '../Routes/path';
 import { useNavigate } from 'react-router-dom';
 import { ROLES } from '../constant/roles';
+import Button from '../components/button';
 
 // --- TAMBAHAN: Tipe data ---
 type Employee = typeof employees[0];
@@ -96,11 +96,14 @@ function Profil() {
             <div className='flex justify-between items-center  p-8 px-15 shadow-lg'>
                 <h1 className="text-3xl font-bold">Profil</h1>
                 {user.role === ROLES.SUPER_ADMIN && (
-                    <ButtonConfirm
-                        text='Edit'
-                        className='bg-[#F4AF0C] hover:bg-[#ce9206] text-white w-48 border-none'
-                        onClick={() => handleEditProfilClick(user)} // <-- Data 'user' dari useAuth
-                    />
+
+                    <Button
+                        variant="warning"
+                        className="w-48" // Keep the width if you need it specific
+                        onClick={() => handleEditProfilClick(user)}
+                    >
+                        Edit
+                    </Button>
                 )}
             </div>
 

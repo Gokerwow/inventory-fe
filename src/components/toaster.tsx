@@ -1,4 +1,4 @@
-import CheckIcon from '../assets/checkIcon.svg?react'
+import CheckIcon from '../assets/svgs/checkIcon.svg?react'
 // GANTI MENJADI INI:
 // (Gunakan ikon dari lucide-react agar lebih aman, seperti yang kita bahas)
 // import { Check } from 'lucide-react';

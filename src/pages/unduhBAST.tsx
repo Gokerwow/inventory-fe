@@ -1,6 +1,5 @@
 import PDFPreview from "../components/PDFPreview"
 import { useLocation } from "react-router-dom"
-import ButtonConfirm from "../components/buttonConfirm"
 import { PATHS } from "../Routes/path"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/useToast"
@@ -9,6 +8,7 @@ import { useAuth } from "../hooks/useAuth"
 import { useAuthorization } from "../hooks/useAuthorization"
 import { ROLES, type BASTAPI } from "../constant/roles"
 import apiClient from "../services/api"
+import Button from "../components/button"
 
 export default function UnduhPage() {
     const location = useLocation()
@@ -91,7 +91,7 @@ export default function UnduhPage() {
     return (
         // Container Utama: Background Putih, Rounded, Shadow
         <div className="min-h-full bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
-            
+
             {/* Header Biru Full Width */}
             <div className="bg-[#057CFF] w-full py-5 px-4 text-center text-white">
                 <h1 className="text-xl font-bold">DOKUMEN BERITA ACARA SERAH TERIMA (BAST)</h1>
@@ -100,11 +100,11 @@ export default function UnduhPage() {
 
             {/* Content Body dengan Padding */}
             <div className="p-8 flex flex-col gap-6">
-                
+
                 {/* Section Panduan */}
                 <div>
                     <h2 className="text-lg font-bold text-[#002B6A] mb-3">Panduan Penandatanganan BAST</h2>
-                    
+
                     {/* Kotak Informasi Biru Muda */}
                     <div className="bg-[#EBF5FF] p-6 rounded-lg text-gray-700 text-[15px] leading-relaxed flex flex-col gap-4 border border-blue-100">
                         <p>
@@ -123,7 +123,7 @@ export default function UnduhPage() {
                 <div className="flex justify-center w-full">
                     {fileUrl ? (
                         <div className="border border-gray-300 w-full shadow-sm">
-                             <PDFPreview url={fileUrl} />
+                            <PDFPreview url={fileUrl} />
                         </div>
                     ) : (
                         <div className="w-full p-10 text-center border-2 border-dashed border-gray-300 rounded bg-gray-50">
@@ -134,12 +134,12 @@ export default function UnduhPage() {
 
                 {/* Tombol Action (Pindah ke Kanan Bawah & Warna Hijau) */}
                 <div className="flex justify-end mt-2">
-                    <ButtonConfirm
-                        text='Unduh File'
-                        // Menggunakan warna hijau (#4CAF50 / emerald-500) sesuai gambar
-                        className="bg-[#4CAF50] hover:bg-[#43A047] text-white px-8 py-2.5 rounded-md font-medium min-w-[150px]"
+                    <Button
+                        variant="success"
                         onClick={handleUnduhClick}
-                    />
+                    >
+                        Unduh File
+                    </Button>
                 </div>
             </div>
         </div>

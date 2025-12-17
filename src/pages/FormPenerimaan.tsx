@@ -1,8 +1,9 @@
-import ShopCartIcon from '../assets/shopping-cart.svg?react';
+import ShopCartIcon from '../assets/svgs/shopping-cart.svg?react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import Status from '../components/status';
 import DropdownInput from '../components/dropdownInput';
 import Input from '../components/input';
-import WarnButton from '../components/warnButton';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import React, { useEffect, useState, useMemo } from 'react';
@@ -24,6 +25,7 @@ import axios from 'axios';
 import ModalTambahBarang from './FormDataBarangBelanja';
 import ConfirmModal from '../components/confirmModal';
 import Loader from '../components/loader';
+import Button from '../components/button';
 
 export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS, ROLES.ADMIN_GUDANG], []);
@@ -590,6 +592,10 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         </div>
     );
 
+    const totalSemua = barang
+        .filter(item => 'stok_name' in item)
+        .reduce((acc, item) => acc + ((item as Detail_Barang).total_harga ?? 0), 0);
+
     // --- RENDER UTAMA ---
     return (
         <div className="flex flex-col gap-6">
@@ -755,13 +761,14 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                     <SectionHeader number="5" title="Data Barang Belanja">
                         {/* Tombol Tambah Barang ada di Header Kanan */}
                         {user?.role === ROLES.PPK && !isInspect && (
-                            <button
+                            <Button
+                                variant="primary"
                                 onClick={handleAddClick}
-                                type="button"
-                                className="bg-[#007bff] hover:bg-[#0069d9] cursor-pointer text-white text-sm font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+                                className="flex items-center gap-2"
                             >
-                                <span className="text-lg leading-none">+</span> Tambah Barang
-                            </button>
+                                <Plus className="w-4 h-4" /> {/* Standard icon size for buttons */}
+                                Tambah Barang
+                            </Button>
                         )}
                     </SectionHeader>
 
@@ -791,7 +798,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                             .filter(item => 'stok_name' in item)
                                             .map((item, index) => {
                                                 const detailItem = item as Detail_Barang;
-
                                                 return (
                                                     <tr key={detailItem.stok_id || index} className="hover:bg-blue-50 transition-colors">
                                                         <td className="py-3 px-4 text-gray-700 font-medium">{detailItem.stok_name}</td>
@@ -807,72 +813,89 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                         {/* ✅ PERBAIKAN DI SINI: HAPUS LOGIKA PENGECEKAN NULL */}
                                                         <td className="py-3 px-4 text-center">
                                                             {isView ? (
-                                                                // MODE VIEW (Pembayaran)
-                                                                (detailItem).is_paid ? (
-                                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                                        ✓ Lunas
-                                                                    </span>
+                                                                // --- MODE 1: VIEW (Pembayaran) ---
+                                                                detailItem.is_paid ? (
+                                                                    // Use the standard Status component (Auto-colors based on text)
+                                                                    <Status text="Lunas" />
                                                                 ) : (
-                                                                    <button
-                                                                        type="button"
+                                                                    // Use standard Primary Button
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="primary"
                                                                         onClick={() => handlePayClick(detailItem.id as number)}
-                                                                        disabled={payingItemId === detailItem.id}
-                                                                        className={`text-white font-medium cursor-pointer rounded-lg text-xs px-3 py-1.5 focus:outline-none transition-all ${payingItemId === detailItem.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'}`}
+                                                                        isLoading={payingItemId === detailItem.id}
                                                                     >
-                                                                        {payingItemId === detailItem.id ? 'Proses...' : 'Bayar'}
-                                                                    </button>
+                                                                        Bayar
+                                                                    </Button>
                                                                 )
                                                             ) : isInspect ? (
-                                                                // MODE INSPECT (Penerimaan)
-                                                                // Langsung render tombol tanpa cek is_layak !== null
+                                                                // --- MODE 2: INSPECT (Penerimaan) ---
                                                                 <div className="flex items-center justify-center gap-2">
-
-                                                                    {/* TOMBOL LAYAK (HIJAU SOLID) */}
-                                                                    <button
+                                                                    {/* Tombol LAYAK (Green) */}
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="success"
                                                                         type="button"
                                                                         onClick={() => handleSetStatus(detailItem.id, true)}
-                                                                        disabled={detailItem.is_updating || detailItem.is_layak === true}
-                                                                        className={`
-                    flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-all duration-200
-                    ${detailItem.is_layak === true
-                                                                                ? 'bg-green-700 cursor-default ring-2 ring-green-300 scale-100' // State: SUDAH DIPILIH
-                                                                                : 'bg-green-500 hover:bg-green-600 hover:scale-105' // State: NORMAL (Bisa diklik)
-                                                                            }
-                    ${detailItem.is_updating ? 'opacity-50 cursor-wait' : ''}
-                `}
+                                                                        isLoading={detailItem.is_updating}
+                                                                        disabled={detailItem.is_layak === true}
+                                                                        className={`font-bold transition-all ${detailItem.is_layak === true
+                                                                            ? "!bg-green-700 ring-4 ring-green-300 shadow-lg scale-110 !opacity-100"
+                                                                            : ""
+                                                                            }`}
                                                                     >
                                                                         {detailItem.is_layak === true ? "✓ LAYAK" : "✓ Layak"}
-                                                                    </button>
+                                                                    </Button>
 
-                                                                    {/* TOMBOL TIDAK LAYAK (MERAH SOLID) */}
-                                                                    <button
+                                                                    {/* Tombol TIDAK LAYAK (Red) */}
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="danger"
                                                                         type="button"
                                                                         onClick={() => handleSetStatus(detailItem.id, false)}
-                                                                        // Disable jika: Loading ATAU sudah dipilih Tidak Layak ATAU sudah dipilih Layak (Permanen)
-                                                                        disabled={detailItem.is_updating || detailItem.is_layak === false || detailItem.is_layak === true}
-                                                                        className={`
-                    flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all duration-200
-                    ${detailItem.is_layak === true
-                                                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100' // State: TERKUNCI (Karena Layak dipilih)
-                                                                                : detailItem.is_layak === false
-                                                                                    ? 'bg-red-700 text-white cursor-default ring-2 ring-red-300 scale-100' // State: SUDAH DIPILIH
-                                                                                    : 'bg-red-500 text-white hover:bg-red-600 hover:scale-105' // State: NORMAL
-                                                                            }
-                    ${detailItem.is_updating ? 'opacity-50 cursor-wait' : ''}
-                `}
+                                                                        isLoading={detailItem.is_updating}
+                                                                        disabled={detailItem.is_layak === true}
+                                                                        className={`font-bold transition-all ${detailItem.is_layak === false
+                                                                            ? "!bg-red-700 ring-4 ring-red-300 shadow-lg scale-110 !opacity-100"
+                                                                            : ""
+                                                                            }`}
                                                                     >
                                                                         {detailItem.is_layak === false ? "✕ TIDAK" : "✕ Tidak"}
-                                                                    </button>
+                                                                    </Button>
                                                                 </div>
                                                             ) : (
-                                                                // MODE EDIT/CREATE
-                                                                <button type="button" onClick={() => handleDeleteBarang(detailItem.stok_id)} className="text-red-500 hover:text-red-700 font-medium text-sm px-3 py-1 rounded hover:bg-red-50 transition-all">Hapus</button>
+                                                                // --- MODE 3: EDIT (Default) ---
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    onClick={() => handleDeleteBarang(detailItem.stok_id)}
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                >
+                                                                    Hapus
+                                                                </Button>
                                                             )}
                                                         </td>
                                                     </tr>
                                                 );
                                             })}
                                     </tbody>
+                                    {/* --- BAGIAN TOTAL (TFOOT) --- */}
+                                    <tfoot className="bg-blue-50 border-t-2 border-blue-100 font-bold text-gray-700">
+                                        <tr>
+                                            {/* Colspan 4: Menggabungkan kolom Nama, Satuan, Jumlah, Harga */}
+                                            <td colSpan={4} className="py-4 px-4">
+                                                Total Semua
+                                            </td>
+
+                                            {/* Kolom Total Harga */}
+                                            <td className="py-4 px-4 text-center text-blue-600">
+                                                Rp {new Intl.NumberFormat('id-ID').format(totalSemua)}
+                                            </td>
+
+                                            {/* Kolom Aksi (Kosong) */}
+                                            <td className="py-4 px-4"></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         )}
@@ -880,23 +903,30 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                         <div className='flex justify-end gap-4 mt-4'>
                             {/* Tombol Hapus (Hanya Edit & PPK) */}
                             {isEdit && user?.role === ROLES.PPK && paramId && (
-                                <WarnButton onClick={handleDeleteClick} text='Hapus Data' type="button" />
+                                <Button
+                                    variant='danger'
+                                    onClick={handleDeleteClick}
+                                    type='button'
+                                >
+                                    Hapus Data
+                                </Button>
                             )}
 
                             {/* ✅ TOMBOL "SIMPAN" (Draft) -> HANYA MUNCUL DI MODE INSPECT */}
                             {isInspect && (
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="primary"
+                                    size="lg"                  // Standardizes the "py-3" and large look
                                     onClick={handleSaveInspection}
-                                    disabled={isSubmitting}
-                                    className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    isLoading={isSubmitting}   // Handles the opacity, cursor, and disabled state automatically
+                                    className="shadow-lg font-bold min-w-[120px]" // Optional: Keep specific "heavy" styles if you want this button to pop
                                 >
                                     Simpan
-                                </button>
+                                </Button>
                             )}
 
                             {/* ✅ TOMBOL UTAMA (Hijau) */}
-                            <button
+                            <Button
                                 type="submit" // Trigger handleConfirmSubmit via form submit
                                 disabled={isSubmitting}
                                 className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -906,7 +936,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 ) : (
                                     isView ? "Simpan" : (isInspect ? "Konfirmasi Selesai" : (isEdit ? "Simpan Perubahan" : "Selesai"))
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

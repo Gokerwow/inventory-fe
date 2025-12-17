@@ -1,5 +1,5 @@
-import NotifIcon from '../assets/Notification.png';
-import PfpExample from '../assets/Pfp Example.jpeg';
+import NotifIcon from '../assets/images/Notification.png';
+import PfpExample from '../assets/images/Pfp Example.jpeg';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTag } from '../hooks/useTag';

@@ -1,8 +1,7 @@
 // src/components/confirmModal.tsx
 import Modal from './modal';
-import SimbaLogo from '../assets/Light Logo new 1.png';
-import WarnButton from './warnButton';
-import ButtonConfirm from './buttonConfirm';
+import SimbaLogo from '../assets/images/Light Logo new 1.png';
+import Button from './button';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -14,11 +13,11 @@ interface ConfirmModalProps {
     cancelLabel?: string;  // Opsional, default "Tidak"
 }
 
-export default function ConfirmModal({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    text, 
+export default function ConfirmModal({
+    isOpen,
+    onClose,
+    onConfirm,
+    text,
     isLoading = false,
     confirmLabel = "Iya",
     cancelLabel = "Tidak"
@@ -29,7 +28,7 @@ export default function ConfirmModal({
             onClose={onClose}
             // Tidak pakai title agar header hilang
             maxWidth="max-w-md"
-            // Kita pasang style rounded khusus popup ini disini agar otomatis setiap dipakai
+        // Kita pasang style rounded khusus popup ini disini agar otomatis setiap dipakai
         >
             <div className="rounded-[40px] p-8 md:p-10 flex flex-col items-center justify-center gap-6">
                 {/* 1. Logo Simba */}
@@ -46,23 +45,26 @@ export default function ConfirmModal({
 
                 {/* 3. Tombol Aksi */}
                 <div className="flex gap-4 w-full justify-center mt-2">
-                    {/* Tombol Confirm (Hijau) */}
-                    <ButtonConfirm
-                        type="button"
+                    {/* Tombol Confirm */}
+                    <Button
+                        variant="success"    // Uses your consistent Brand Blue (or 'success' if you added that)
                         onClick={onConfirm}
-                        disabled={isLoading}
-                        className="bg-[#41C654] hover:bg-[#36a847] text-white text-lg font-medium py-2 px-10 rounded-xl shadow-sm transition-all active:scale-95 w-32 disabled:opacity-70 disabled:cursor-not-allowed"
-                        text={isLoading ? "..." : confirmLabel}
+                        isLoading={isLoading} // The new Button handles the "..." text automatically
+                        className="flex-1" 
                     >
-                    </ButtonConfirm>
+                        {confirmLabel}
+                    </Button>
 
-                    {/* Tombol Cancel (Merah) */}
-                    <WarnButton
-                        type="button"
+                    {/* Tombol Cancel */}
+                    <Button
+                        variant="danger"      // Keeps it Red (consistent with your system's red)
                         onClick={onClose}
                         disabled={isLoading}
-                        text={cancelLabel}
-                    />
+                        className="flex-1" 
+                    // No need for extra classes, the component handles the styling
+                    >
+                        {cancelLabel}
+                    </Button>
                 </div>
             </div>
         </Modal>

@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import UploadIcon from '../assets/uploadBAST.svg?react'
-import ButtonConfirm from '../components/buttonConfirm';
+import UploadIcon from '../assets/svgs/uploadBAST.svg?react'
 import { useToast } from '../hooks/useToast';
-import Modal from '../components/modal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
-import PDFIcon from '../assets/PDFICON.svg?react'
+import PDFIcon from '../assets/svgs/PDFICON.svg?react'
 import Pagination from '../components/pagination';
 import { getRiwayatBASTFile, uploadBAST } from '../services/bastService'; // Pastikan path import benar
-import WarnButton from '../components/warnButton';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES, type RIWAYATBASTFILEAPI } from '../constant/roles';
 import ConfirmModal from '../components/confirmModal';
+import Button from '../components/button';
 
 const LihatPenerimaan = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -267,13 +265,16 @@ const LihatPenerimaan = () => {
 
             {/* Footer & Modal (Sama seperti sebelumnya) */}
             <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
-                <ButtonConfirm
-                    text='Unggah BAST'
+                <Button
+                    variant='success'
                     onClick={handleSubmit}
-                />
+                >
+                    Unggah BAST
+
+                </Button>
             </div>
 
-            <ConfirmModal 
+            <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}

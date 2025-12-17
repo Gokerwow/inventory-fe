@@ -1,16 +1,16 @@
-import DashboardIcon from '../assets/DashboardIcon.svg?react';
-import ChartIcon from '../assets/Chart.svg?react';
-import PenerimaanIcon from '../assets/Penerimaan.svg?react';
-import PengeluaranIcon from '../assets/Pengeluaran.svg?react';
-import PegawaiIcon from '../assets/hashtag.svg?react'
-import AkunIcon from '../assets/Akun Icon.svg?react'
-import CetakIcon from '../assets/CetakIcon.svg?react'
-import ListrikIcon from '../assets/ListrikIcon.svg?react'
-import KomputerIcon from '../assets/KomputerIcon.svg?react'
-import KertasIcon from '../assets/KertasIcon.svg?react'
-import PaluIcon from '../assets/PaluIcon.svg?react'
-import PembersihIcon from '../assets/PembersihIcon.svg?react'
-import AtkIcon from '../assets/AtkIcon.svg?react'
+import DashboardIcon from '../assets/svgs/DashboardIcon.svg?react';
+import ChartIcon from '../assets/svgs/Chart.svg?react';
+import PenerimaanIcon from '../assets/svgs/Penerimaan.svg?react';
+import PengeluaranIcon from '../assets/svgs/Pengeluaran.svg?react';
+import PegawaiIcon from '../assets/svgs/hashtag.svg?react'
+import AkunIcon from '../assets/svgs/Akun Icon.svg?react'
+import CetakIcon from '../assets/svgs/CetakIcon.svg?react'
+import ListrikIcon from '../assets/svgs/ListrikIcon.svg?react'
+import KomputerIcon from '../assets/svgs/KomputerIcon.svg?react'
+import KertasIcon from '../assets/svgs/KertasIcon.svg?react'
+import PaluIcon from '../assets/svgs/PaluIcon.svg?react'
+import PembersihIcon from '../assets/svgs/PembersihIcon.svg?react'
+import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
 
 
 

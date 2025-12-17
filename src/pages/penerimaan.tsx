@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
-import PlusIcon from '../assets/plus.svg?react';
+import { Plus } from 'lucide-react';
 import PenerimaanTable from '../components/PenerimaanTable';
-import { NavLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { deletePenerimaanDetail, getPenerimaanList, getRiwayatCheckedPenerimaanList, getRiwayatPenerimaanList } from '../services/penerimaanService';
 import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
@@ -10,11 +10,12 @@ import { PenerimaanData, RiwayatPenerimaanData } from '../Mock Data/data';
 import { ROLES, type BASTAPI } from '../constant/roles';
 import { getBASTList, getRiwayatBASTList } from '../services/bastService';
 import Pagination from '../components/pagination';
-import PenerimaanIcon from '../assets/arrow-down.svg?react';
-import RiwayatPenerimaanIcon from '../assets/refresh.svg?react';
+import PenerimaanIcon from '../assets/svgs/arrow-down.svg?react';
+import RiwayatPenerimaanIcon from '../assets/svgs/refresh.svg?react';
 import { NavigationTabs } from '../components/navTabs';
 import Loader from '../components/loader';
 import ConfirmModal from '../components/confirmModal';
+import Button from '../components/button';
 
 type PenerimaanItem = typeof PenerimaanData[0];
 type RiwayatItem = typeof RiwayatPenerimaanData[0];
@@ -51,7 +52,9 @@ const PenerimaanPage = () => {
     const [refreshKey, setRefreshKey] = useState(0); // Untuk trigger ulang useEffect
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
+    
+    const navigate = useNavigate();
+    
     const requiredRoles = useMemo(() =>
         [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS],
         []
@@ -158,10 +161,14 @@ const PenerimaanPage = () => {
                         {activeTab === 'penerimaan' ? 'Daftar Penerimaan' : 'Riwayat Penerimaan'}
                     </h2>
                     {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (
-                        <NavLink to={PATHS.PENERIMAAN.TAMBAH} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors shadow-sm">
-                            <PlusIcon className="w-5 h-5 text-white" />
+                        <Button
+                            variant="primary"
+                            onClick={() => navigate(PATHS.PENERIMAAN.TAMBAH)} // 2. Navigate on click
+                            className="flex items-center gap-2 shadow-sm"     // 3. Layout adjustments
+                        >
+                            <Plus className="w-5 h-5" />
                             <span>Tambah Barang Belanja</span>
-                        </NavLink>
+                        </Button>
                     )}
                 </div>
 

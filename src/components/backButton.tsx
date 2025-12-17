@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 // Pastikan Anda punya icon panah kiri, atau ganti dengan text "<"
-import ArrowLeftIcon from '../assets/arrow-left.svg?react';
+import ArrowLeftIcon from '../assets/svgs/arrow-left.svg?react';
 
 interface BackButtonProps {
     to?: string; // Opsional: jika ingin arahkan ke link spesifik

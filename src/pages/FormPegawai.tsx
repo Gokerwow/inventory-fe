@@ -6,13 +6,12 @@ import { getJabatanSelect } from "../services/jabatanService";
 import { useToast } from "../hooks/useToast";
 import Input from "../components/input";
 import DropdownInput from "../components/dropdownInput";
-import Modal from "../components/modal";
-import ButtonConfirm from "../components/buttonConfirm";
-import WarnButton from "../components/warnButton";
 import { createPegawai, updatePegawai } from "../services/pegawaiService";
 import { PATHS } from "../Routes/path";
 import { useLocation, useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/confirmModal";
+import Button from "../components/button";
+import Loader from "../components/loader";
 
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -221,6 +220,10 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         handleOpenModal();
     };
 
+    if (isLoading) {
+        <Loader />
+    }
+
     return (
         <div className={`w-full h-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
             <div className={`text-center ${isEdit ? 'mt-8' : ''}`}>
@@ -329,11 +332,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                         </div>
 
                         <div className="flex justify-end mt-auto pt-6">
-                            <ButtonConfirm
-                                text={isSubmitting ? "Menyimpan..." : "Selesai"}
+                            <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                            />
+                            >
+                                {isSubmitting ? "Menyimpan..." : "Selesai"}
+                            </Button>
                         </div>
                     </form>
 

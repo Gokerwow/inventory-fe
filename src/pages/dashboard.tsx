@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthorization } from '../hooks/useAuthorization';
 import DiagramBatang from '../components/DiagramBatang';
+import Card from '../components/Card'; // Import the new Card component
 import {
     getDashboardStats,
     getChartBarangMasuk,
     getChartBarangKeluar
 } from '../services/dashboardService';
 import { ROLES } from '../constant/roles';
+import Loader from '../components/loader';
 
 interface ChartData {
     bulan: string;
@@ -19,26 +21,30 @@ interface StatsData {
     belumBayar: number;
 }
 
+const semesters = [
+    { id: 1, label: 'Semester 1', period: 'Jan - Jun' },
+    { id: 2, label: 'Semester 2', period: 'Jul - Des' }
+];
+
 export default function Dashboard() {
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
-    const { user } = useAuth()
+    const { user } = useAuth();
 
     const [stats, setStats] = useState<StatsData | null>(null);
     const [chartMasuk, setChartMasuk] = useState<ChartData[]>([]);
     const [chartKeluar, setChartKeluar] = useState<ChartData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Dropdown states
     const [isOpenMasuk, setIsOpenMasuk] = useState(false);
     const [isOpenKeluar, setIsOpenKeluar] = useState(false);
-
     const [selectedSemesterMasuk, setSelectedSemesterMasuk] = useState(1);
     const [selectedSemesterKeluar, setSelectedSemesterKeluar] = useState(1);
 
     useEffect(() => {
         checkAccess(user?.role);
-        if (!hasAccess(user?.role)) {
-            return;
-        }
+        if (!hasAccess(user?.role)) return;
 
         const fetchDashboardData = async () => {
             try {
@@ -64,229 +70,135 @@ export default function Dashboard() {
         fetchDashboardData();
     }, [user, checkAccess, hasAccess]);
 
-    if (!hasAccess(user?.role)) {
-        return null;
-    }
+    if (!hasAccess(user?.role)) return null;
+    if (isLoading) return <Loader />
+    if (error) return <div className='flex justify-center items-center h-full text-danger'>{error}</div>;
 
-    if (isLoading) {
-        return <div className='flex justify-center items-center h-full'>Memuat data dashboard...</div>;
-    }
-    if (error) {
-        return <div className='flex justify-center items-center h-full text-red-500'>{error}</div>;
-    }
-
-    const semesters = [
-        { id: 1, label: 'Semester 1', period: 'Jan - Jun' },
-        { id: 2, label: 'Semester 2', period: 'Jul - Des' }
-    ];
-
-    const handleSelectMasuk = (semester: number) => {
-        setSelectedSemesterMasuk(semester);
-    }
-    const handleSelectKeluar = (semester: number) => {
-        setSelectedSemesterKeluar(semester);
-    }
-
-    const currentMasukItems = selectedSemesterMasuk === 1
-        ? chartMasuk.slice(0, 6)
-        : chartMasuk.slice(6, 12);
-
-    const currentKeluarItems = selectedSemesterKeluar === 1
-        ? chartKeluar.slice(0, 6)
-        : chartKeluar.slice(6, 12);
+    // Helper for chart slicing
+    const getChartData = (data: ChartData[], semester: number) => {
+        return semester === 1 ? data.slice(0, 6) : data.slice(6, 12);
+    };
 
     return (
         <div className='flex flex-col gap-6 h-full'>
-            {/* Statistik Cards */}
+            {/* --- SECTION 1: STATS CARDS --- */}
             <div className="grid grid-cols-3 gap-6">
-                {/* Total Stok Barang Card */}
-                <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
-                    <h3 className="text-sm font-bold">Total Stok Barang</h3>
+
+                {/* Total Stok */}
+                <Card title="Total Stok Barang">
                     <div className="flex flex-col justify-center mt-2">
-                        {/* --- UBAHAN --- */}
-                        <span className="text-3xl font-bold text-[#1d4ed8]">{stats?.totalStok || 0}</span>
-                        <span className="text-green-500 text-sm font-medium flex items-center">
+                        {/* Uses CSS variable --color-primary-text defined in index.css */}
+                        <span className="text-3xl font-bold text-primary-text">{stats?.totalStok || 0}</span>
+                        <span className="text-green-600 text-sm font-medium flex items-center mt-1">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                             </svg>
                             +12% dari bulan lalu
                         </span>
                     </div>
-                </div>
+                </Card>
 
-                {/* BAST yang sudah diterima Card */}
-                <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
-                    <h3 className="text-sm font-bold">BAST yang sudah diterima</h3>
+                {/* BAST Diterima */}
+                <Card title="BAST yang sudah diterima">
                     <div className="flex flex-col justify-center mt-2">
-                        {/* --- UBAHAN --- */}
-                        <span className="text-3xl font-bold text-[#1d4ed8]">{stats?.bastDiterima || 0}</span>
-                        <span className="text-green-500 text-sm">Dalam bulan ini</span>
+                        <span className="text-3xl font-bold text-primary-text">{stats?.bastDiterima || 0}</span>
+                        <span className="text-green-600 text-sm mt-1">Dalam bulan ini</span>
                     </div>
-                </div>
+                </Card>
 
-                {/* Barang yang belum dibayar Card */}
-                <div className="bg-white p-6 border-2 border-white rounded-lg shadow-md">
-                    <h3 className="text-sm font-bold">Barang yang belum dibayar</h3>
+                {/* Belum Bayar */}
+                <Card title="Barang yang belum dibayar">
                     <div className="flex flex-col justify-center mt-2">
-                        {/* --- UBAHAN --- */}
-                        <span className="text-3xl font-bold text-[#1d4ed8]">{stats?.belumBayar || 0}</span>
-                        <span className="text-red-500 text-sm font-medium flex">
+                        <span className="text-3xl font-bold text-primary-text">{stats?.belumBayar || 0}</span>
+                        <span className="text-danger text-sm font-medium flex mt-1">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                             -9% dari bulan lalu
                         </span>
                     </div>
-                </div>
+                </Card>
             </div>
 
-            {/* Charts Section */}
+            {/* --- SECTION 2: CHARTS --- */}
             <div className="grid grid-cols-2 gap-6 h-full">
-                {/* Penerimaan Barang per Bulan Chart */}
-                <div className="bg-white p-4 border-2 border-white rounded-lg shadow-md h-full flex flex-col">
-                    <h1 className='font-bold text-xl mb-4'>
-                        Penerimaan Barang per Bulan
-                    </h1>
-                    {/* DROPDOWN MENU */}
-                    <div className='relative'>
-                        <button
-                            onClick={() => setIsOpenMasuk(!isOpenMasuk)}
-                            className='flex items-center gap-3 px-5 py-2.5 bg-white border-2 border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 min-w-[200px] justify-between group'>
-                            <span className="text-md font-medium text-slate-700 group-hover:text-blue-600">
-                                Semester {selectedSemesterMasuk}
-                            </span>
-                            <svg
-                                className={`w-4 h-4 ms-3 transition-transform duration-200`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 10 6"
-                            >
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
-                            </svg>
-                        </button>
 
-                        {isOpenMasuk && (
-
-                            <div className='absolute left-0 z-10 mt-2 w-[200px] bg-white rounded-lg shadow-lg border border-slate-200 overflow-hidden transition-all duration-200 origin-top'>
-                                {semesters.map((index) => (
-                                    <button
-                                        key={index.id}
-                                        onClick={() => handleSelectMasuk(index.id)}
-                                        className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors duration-150 flex items-center justify-between group ${selectedSemesterMasuk === index.id
-                                            ? 'bg-blue-50 border-l-4 border-blue-500'
-                                            : 'border-l-4 border-transparent'
-                                            }`}
-                                    >
-                                        <div className="flex flex-col">
-                                            <span className={`text-sm font-medium ${selectedSemesterMasuk === index.id
-                                                ? 'text-blue-600'
-                                                : 'text-slate-700 group-hover:text-blue-600'
-                                                }`}>
-                                                {index.label}
-                                            </span>
-                                            <span className="text-xs text-slate-500 mt-0.5">
-                                                {index.period}
-                                            </span>
-                                        </div>
-                                        {selectedSemesterMasuk === index.id && (
-                                            <svg
-                                                className="w-5 h-5 text-blue-600"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M5 13l4 4L19 7"
-                                                />
-                                            </svg>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                {/* Chart Masuk */}
+                <Card
+                    className="h-full"
+                    title="Penerimaan Barang per Bulan"
+                    action={
+                        <SemesterDropdown
+                            isOpen={isOpenMasuk}
+                            setIsOpen={setIsOpenMasuk}
+                            selectedSemester={selectedSemesterMasuk}
+                            onSelect={setSelectedSemesterMasuk}
+                        />
+                    }
+                >
+                    <div className="h-full w-full min-h-[300px]">
+                        <DiagramBatang type="masuk" data={getChartData(chartMasuk, selectedSemesterMasuk)} />
                     </div>
-                    <div className="p-4 grow">
-                        {/* --- UBAHAN: Kirim data via prop --- */}
-                        <DiagramBatang type="masuk" data={currentMasukItems} />
+                </Card>
+
+                {/* Chart Keluar */}
+                <Card
+                    className="h-full"
+                    title="Pengeluaran Barang per Bulan"
+                    action={
+                        <SemesterDropdown
+                            isOpen={isOpenKeluar}
+                            setIsOpen={setIsOpenKeluar}
+                            selectedSemester={selectedSemesterKeluar}
+                            onSelect={setSelectedSemesterKeluar}
+                        />
+                    }
+                >
+                    <div className="h-full w-full min-h-[300px]">
+                        <DiagramBatang type="keluar" data={getChartData(chartKeluar, selectedSemesterKeluar)} />
                     </div>
-                </div>
-
-                {/* Pengeluaran Barang per Bulan Chart */}
-                <div className="bg-white p-4 border-2 border-white rounded-lg shadow-md h-full flex flex-col">
-                    <h1 className='font-bold text-xl mb-4'>
-                        Pengeluaran Barang per Bulan
-                    </h1>
-                    {/* DROPDOWN MENU */}
-                    <div className='relative'>
-                        <button
-                            onClick={() => setIsOpenKeluar(!isOpenKeluar)}
-                            className='flex items-center gap-3 px-5 py-2.5 bg-white border-2 border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 min-w-[200px] justify-between group'>
-                            <span className="text-md font-medium text-slate-700 group-hover:text-blue-600">
-                                Semesters {selectedSemesterKeluar}
-                            </span>
-                            <svg
-                                className={`w-4 h-4 ms-3 transition-transform duration-200`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 10 6"
-                            >
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4" />
-                            </svg>
-                        </button>
-
-                        {isOpenKeluar && (
-
-                            <div className='absolute left-0 z-10 mt-2 w-[200px] bg-white rounded-lg shadow-lg border border-slate-200 overflow-hidden transition-all duration-200 origin-top'>
-                                {semesters.map((index) => (
-                                    <button
-                                        key={index.id}
-                                        onClick={() => handleSelectKeluar(index.id)}
-                                        className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors duration-150 flex items-center justify-between group ${selectedSemesterKeluar === index.id
-                                            ? 'bg-blue-50 border-l-4 border-blue-500'
-                                            : 'border-l-4 border-transparent'
-                                            }`}
-                                    >
-                                        <div className="flex flex-col">
-                                            <span className={`text-sm font-medium ${selectedSemesterKeluar === index.id
-                                                ? 'text-blue-600'
-                                                : 'text-slate-700 group-hover:text-blue-600'
-                                                }`}>
-                                                {index.label}
-                                            </span>
-                                            <span className="text-xs text-slate-500 mt-0.5">
-                                                {index.period}
-                                            </span>
-                                        </div>
-                                        {selectedSemesterKeluar === index.id && (
-                                            <svg
-                                                className="w-5 h-5 text-blue-600"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M5 13l4 4L19 7"
-                                                />
-                                            </svg>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                    </div>
-                    <div className="p-4 grow">
-                        {/* --- UBAHAN: Kirim data via prop --- */}
-                        <DiagramBatang type="keluar" data={currentKeluarItems} />
-                    </div>
-                </div>
+                </Card>
             </div>
-        </div >
-    )
+        </div>
+    );
+}
+
+// --- Internal Helper Component for the Dropdown (Keeps the main component clean) ---
+function SemesterDropdown({ isOpen, setIsOpen, selectedSemester, onSelect }: any) {
+    return (
+        <div className='relative'>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className='flex items-center gap-3 px-4 py-2 bg-white border border-slate-300 rounded-lg hover:border-primary hover:bg-blue-50 transition-all duration-200 min-w-[160px] justify-between group text-sm'
+            >
+                <span className="font-medium text-slate-700 group-hover:text-primary">
+                    Semester {selectedSemester}
+                </span>
+                <svg className="w-4 h-4 text-slate-400 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            {isOpen && (
+                <div className='absolute right-0 z-10 mt-1 w-[180px] bg-white rounded-lg shadow-xl border border-slate-100 overflow-hidden'>
+                    {semesters.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                onSelect(item.id);
+                                setIsOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-left hover:bg-blue-50 transition-colors flex flex-col ${selectedSemester === item.id ? 'bg-blue-50 border-l-4 border-primary' : 'border-l-4 border-transparent'
+                                }`}
+                        >
+                            <span className={`text-sm font-medium ${selectedSemester === item.id ? 'text-primary' : 'text-slate-700'}`}>
+                                {item.label}
+                            </span>
+                            <span className="text-xs text-slate-500">{item.period}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }

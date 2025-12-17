@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import SearchIcon from '../assets/search-01.svg?react'
-import EyeIcon from '../assets/eye.svg?react'
+import SearchIcon from '../assets/svgs/search-01.svg?react'
+import EyeIcon from '../assets/svgs/eye.svg?react'
 import ReusableTable, { type ColumnDefinition } from '../components/table'; // Pastikan path ini benar
 import { NavigationTabs } from '../components/navTabs';
-import ShoppingCartIcon from '../assets/shopping-cart.svg?react'
+import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react'
 import { useAuth } from '../hooks/useAuth';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { ROLES, type APIPemesanan } from '../constant/roles';

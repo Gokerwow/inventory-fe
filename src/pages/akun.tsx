@@ -1,12 +1,12 @@
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale'; // Impor locale Indonesia
-import BurgerDot from '../assets/burgerDot.svg?react';
-import PencilIcon from '../assets/pencilIcon2.svg?react';
+import BurgerDot from '../assets/svgs/burgerDot.svg?react';
+import PencilIcon from '../assets/svgs/pencilIcon2.svg?react';
 import { getAkunUsers } from '../services/akunService'; // <-- TAMBAHKAN INI
 import Pagination from '../components/pagination';
 import { useEffect, useRef, useState } from 'react';
 import { Transition } from '@headlessui/react';
-// import PlusAkun from '../assets/plusAkun.svg?react'
+// import PlusAkun from '../assets/svgs/plusAkun.svg?react'
 import { useNavigate } from 'react-router-dom';
 import Dropdown from '../components/dropdown';
 import { PATHS } from '../Routes/path';
@@ -14,7 +14,7 @@ import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { type User } from '../constant/roles';
 import { ROLES } from '../constant/roles';
-import PfpExample from '../assets/Pfp Example.jpeg';
+import PfpExample from '../assets/svgs/Pfp Example.jpeg';
 import Loader from '../components/loader';
 import { useTag } from '../hooks/useTag';
 

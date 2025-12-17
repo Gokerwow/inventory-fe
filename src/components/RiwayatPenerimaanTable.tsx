@@ -1,6 +1,6 @@
 import { generatePath, useNavigate } from 'react-router-dom';
 import ReusableTable, { type ColumnDefinition } from '../components/table';
-import DownloadIcon from '../assets/download.svg?react';
+import DownloadIcon from '../assets/svgs/download.svg?react';
 import Status from './status';
 import { useAuth } from '../hooks/useAuth';
 import { PATHS } from '../Routes/path';

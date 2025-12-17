@@ -1,6 +1,5 @@
 import Input from "../components/input"
-import PencilIcon from '../assets/pencil Icon.svg?react'
-import ButtonConfirm from "../components/buttonConfirm"
+import PencilIcon from '../assets/svgs/pencil Icon.svg?react'
 import { useNavigate, useLocation } from "react-router-dom"
 import React, { useEffect, useRef, useState, type ChangeEvent, useMemo } from "react"
 import { createAkun, updateAkun } from "../services/akunService" // Pastikan updateAkun diimport
@@ -11,6 +10,7 @@ import { updatePegawai } from "../services/pegawaiService"
 import PasswordInput from "../components/passwordInput"
 import { ROLES } from "../constant/roles"
 import ConfirmModal from "../components/confirmModal"
+import Button from "../components/button"
 
 export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean }) {
     const navigate = useNavigate();
@@ -252,12 +252,14 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                                     onChange={handleChange}
                                     className="flex-1"
                                 />
-                                <ButtonConfirm
-                                    text={isSubmitting ? "Menyimpan..." : "Selesai"}
-                                    className="place-self-end mt-5"
+                                <Button
+                                    variant="primary"
                                     type="submit"
-                                    disabled={isSubmitting}
-                                />
+                                    isLoading={isSubmitting}
+                                    className="place-self-end mt-5"
+                                >
+                                    {isSubmitting ? "Menyimpan..." : "Selesai"}
+                                </Button>
                             </div>
                         ) : (
                             <div className="grid grid-rows-2 flex-1 w-full gap-8">
@@ -313,16 +315,19 @@ export default function TambahAkunPage({ isEdit = false }: { isEdit?: boolean })
                         )}
                     </div>
                     {!isEmployeeEdit &&
-                        <ButtonConfirm
-                            text={isSubmitting ? "Menyimpan..." : "Selesai"}
+                        <Button
+                            variant="primary"
                             className="place-self-end mt-5"
                             type="submit"
+                            isLoading={isSubmitting}
                             disabled={isSubmitting}
-                        />
+                        >
+                            {isSubmitting ? "Menyimpan..." : "Selesai"}
+                        </Button>
                     }
                 </form>
 
-                <ConfirmModal 
+                <ConfirmModal
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     onConfirm={handleConfirmSubmit}

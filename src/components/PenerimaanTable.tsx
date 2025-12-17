@@ -2,13 +2,13 @@ import { generatePath, useNavigate } from 'react-router-dom';
 import ReusableTable, { type ColumnDefinition } from '../components/table';
 import Status from './status';
 import { useAuth } from '../hooks/useAuth';
-import PencilIcon from '../assets/pencilIcon2.svg?react';
+import PencilIcon from '../assets/svgs/pencilIcon2.svg?react';
 import { PATHS } from '../Routes/path';
-import EyeIcon from '../assets/eye.svg?react';
+import EyeIcon from '../assets/svgs/eye.svg?react';
 import { ROLES, type BASTAPI, type PenerimaanItem, type RiwayatPenerimaanItem } from '../constant/roles';
-import DownloadIcon from '../assets/download.svg?react';
-import UploadIcon from '../assets/UnduhICON.svg?react';
-import DeleteIcon from '../assets/IconHapus.svg?react';
+import DownloadIcon from '../assets/svgs/download.svg?react';
+import UploadIcon from '../assets/svgs/UnduhICON.svg?react';
+import DeleteIcon from '../assets/svgs/IconHapus.svg?react';
 
 type DataItem = PenerimaanItem | RiwayatPenerimaanItem | BASTAPI;
 

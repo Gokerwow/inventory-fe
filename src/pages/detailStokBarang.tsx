@@ -4,7 +4,7 @@ import { CATEGORY_DATA, ROLES, type APIDetailBarang, type RiwayatPenerimaan } fr
 import { useAuth } from "../hooks/useAuth";
 import { getDetailStokBarang } from "../services/barangService";
 import { useParams } from "react-router-dom";
-import AtkIcon from '../assets/AtkIcon.svg?react';
+import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
 import ReusableTable, { type ColumnDefinition } from "../components/table"; // Sesuaikan path import
 
 const DetailStokBarang = () => {

@@ -1,4 +1,4 @@
-import PfpExample from '../assets/Pfp Example.jpeg';
+import PfpExample from '../assets/svgs/Pfp Example.jpeg';
 
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
@@ -199,7 +199,7 @@ export const PenerimaanData = [
         namaPegawai: 'Maya',
         kategori: 'ATK',
         status: 'Belum Dikonfirmasi',
-        linkUnduh: '../assets/dummyPDF.pdf',
+        linkUnduh: '../assets/svgs/dummyPDF.pdf',
         tipe: ''
     },
     {
@@ -219,7 +219,7 @@ export const PenerimaanData = [
         namaPegawai: 'Lina',
         kategori: 'Komputer',
         status: 'Belum Dikonfirmasi',
-        linkUnduh: '../assets/dummyPDF.pdf',
+        linkUnduh: '../assets/svgs/dummyPDF.pdf',
         tipe: ''
     }
 ];
@@ -342,7 +342,7 @@ export const RiwayatPenerimaanData = [
         namaPegawai: 'Maya',
         kategori: 'ATK',
         status: 'Telah Dikonfirmasi',
-        linkUnduh: '../assets/dummyPDF.pdf',
+        linkUnduh: '../assets/svgs/dummyPDF.pdf',
         tipe: ''
     },
     {
@@ -362,7 +362,7 @@ export const RiwayatPenerimaanData = [
         namaPegawai: 'Lina',
         kategori: 'Komputer',
         status: 'Telah Dikonfirmasi',
-        linkUnduh: '../assets/dummyPDF.pdf',
+        linkUnduh: '../assets/svgs/dummyPDF.pdf',
         tipe: ''
     }
 ];

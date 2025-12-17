@@ -1,2 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  /* Your Brand Colors (extracted from your Sidebar & Dashboard) */
+  --color-primary: #057cff; /* The bright blue from sidebar top */
+  --color-primary-dark: #003f93; /* The dark blue from sidebar bottom */
+  --color-primary-text: #1d4ed8; /* The blue text used in dashboard stats */
+
+  /* Accent Colors */
+  --color-success: #00a991; /* The Teal from your Toast/Layout */
+  --color-warning: #ffb14c; /* The Orange from your Status pill */
+  --color-danger: #ef4444; /* Standard red */
+
+  /* Sidebar Specific */
+    --color-sidebar-text-muted: #ffd7d7;
+}

@@ -1,4 +1,4 @@
-import AtkIcon from '../assets/AtkIcon.svg?react';
+import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
 import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles';
 import type { ColumnDefinition } from '../components/table';
 import { useEffect, useState, useMemo } from 'react';
@@ -11,15 +11,14 @@ import Loader from '../components/loader';
 import { useToast } from '../hooks/useToast';
 import Modal from '../components/modal';
 import Input from '../components/input';
-import ButtonConfirm from '../components/buttonConfirm';
 import Status from '../components/status';
 import { getBASTUnpaidList } from '../services/bastService';
-import EyeIcon from '../assets/eye.svg?react';
+import EyeIcon from '../assets/svgs/eye.svg?react';
 import { generatePath, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
 import { CategoryFilter } from '../components/categoryFilter';
 import { NavigationTabs } from '../components/navTabs';
-import WarnButton from '../components/warnButton';
+import Button from '../components/button';
 
 const stokTabs = [
     {
@@ -489,16 +488,8 @@ function StokBarang() {
                         />
                     </div>
                     <div className='flex items-center justify-center gap-3'>
-                        <WarnButton
-                            text='Cancel'
-                            onClick={() => setIsModalOpen(false)}
-                        />
-                        <ButtonConfirm
-                            text='Selesai'
-                            onClick={handleConfirmSubmit}
-                            disabled={isFormLoading || isUnchanged}
-                            className='w-[200px] self-center'
-                        />
+                        <Button variant="danger" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                        <Button variant="success" onClick={handleConfirmSubmit}>Selesai</Button>
                     </div>
                 </div>
             </Modal>

@@ -8,14 +8,14 @@ import { createPemesanan, getPemesananList, getStokPemesanan } from "../services
 import Pagination from "../components/pagination";
 import ReusableTable, { type ColumnDefinition } from "../components/table";
 import Loader from "../components/loader";
-import ShoppingCartIcon from '../assets/shopping-cart.svg?react'
-import AtkIcon from '../assets/AtkIcon.svg?react'
+import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react'
+import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
 import Status from "../components/status";
-import ReceiptIcon from "../assets/receipt-item.svg?react";
+import ReceiptIcon from "../assets/svgs/receipt-item.svg?react";
 import Input from "../components/input";
-import ButtonConfirm from "../components/buttonConfirm";
 import ConfirmModal from "../components/confirmModal";
 import { useToast } from "../hooks/useToast";
+import Button from "../components/button";
 
 const pemesananTabs = [
     {
@@ -57,11 +57,11 @@ export default function PemesananPage() {
 
     const targetRef = useRef<HTMLDivElement>(null);
 
-    
+
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
-        
+
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
@@ -119,11 +119,11 @@ export default function PemesananPage() {
         }
         setCurrentPage(1);
     }
-    
+
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
-    
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prevState => ({
@@ -131,7 +131,7 @@ export default function PemesananPage() {
             [name]: value,
         }));
     };
-    
+
     const handleScrollToTarget = () => {
         if (targetRef.current) {
             targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -142,10 +142,10 @@ export default function PemesananPage() {
         handleScrollToTarget();
         setBarangPesanan(prev => {
             const updated = [...prev];
-            
+
             // Cari index item yang sudah ada
             const existingIndex = updated.findIndex(p => p.stok_id === item.id);
-            
+
             if (action === true) {
                 if (existingIndex !== -1) {
                     // Jika sudah ada, tambah quantity
@@ -292,7 +292,7 @@ export default function PemesananPage() {
     }
 
     return (
-        <div className={`w-full h-full flex flex-col gap-5 ${activeTab === 'pemesanan' ? '' : 'h-full '}`}>
+        <div className={`w-full min-h-full flex flex-col gap-5 ${activeTab === 'pemesanan' ? '' : 'h-full '}`}>
 
             {/* Navigation Tabs */}
             <NavigationTabs
@@ -392,7 +392,7 @@ export default function PemesananPage() {
 
             {/* Form Pemesanan */}
             {activeTab === 'pemesanan' &&
-                <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-6">Pesanan Barang</h2>
 
                     {/* Table */}
@@ -505,12 +505,13 @@ export default function PemesananPage() {
 
                     {/* Submit Button */}
                     <div className="flex justify-end">
-                        <ButtonConfirm
-                            type="submit"
+                        <Button
+                            type='submit'
                             disabled={BarangPesanan.length === 0 || !formData.nama_pj_instalasi || !formData.ruangan}
-                            text="Ajukan Pemesanan"
                             className="self-end"
-                        />
+                        >
+                            Ajukan Pemesanan
+                        </Button>
                     </div>
                 </form>
             }
