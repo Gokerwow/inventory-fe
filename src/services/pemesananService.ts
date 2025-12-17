@@ -38,14 +38,18 @@ export const getStokPemesanan = async (
 
 export const getPemesananList = async (
     page: number = 1,
-    perPage?: number
+    perPage?: number,
+    search?: string
 ): Promise<PaginationResponse<APIPemesanan>> => {
     console.log(`SERVICE: Mengambil daftar riwayat pemesanan halaman ${page}...`);
 
     try {
-        const params: Record<string, number> = { page };
+        const params: Record<string, number | string> = { page };
         if (perPage) {
             params.per_page = perPage;
+        }
+        if (search) {
+            params.search = search;
         }
 
         const response = await apiClient.get('/api/v1/pemesanan', { params });

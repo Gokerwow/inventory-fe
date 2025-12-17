@@ -791,8 +791,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                             .filter(item => 'stok_name' in item)
                                             .map((item, index) => {
                                                 const detailItem = item as Detail_Barang;
-                                                // Ambil quantity layak, jika undefined/null anggap 0
-                                                const qtyLayak = (detailItem as any).quantity_layak ?? 0;
 
                                                 return (
                                                     <tr key={detailItem.stok_id || index} className="hover:bg-blue-50 transition-colors">

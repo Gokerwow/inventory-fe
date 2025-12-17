@@ -22,7 +22,7 @@ export const ROLES = {
     PPK: 'ppk',
     TEKNIS: 'teknis',
     INSTALASI: 'instalasi',
-    PENANGGUNG_JAWAB: 'penanggung jawab',
+    PENANGGUNG_JAWAB: 'penanggungjawab',
 };
 export const USERNAMES = {
     SUPER_ADMIN: 'superadmin',

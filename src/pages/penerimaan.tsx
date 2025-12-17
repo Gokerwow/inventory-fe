@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import PlusIcon from '../assets/plus.svg?react';
 import PenerimaanTable from '../components/PenerimaanTable';
 import { NavLink } from 'react-router-dom';
@@ -202,7 +202,3 @@ const PenerimaanPage = () => {
 };
 
 export default PenerimaanPage;
-
-function elseIf(arg0: boolean) {
-    throw new Error('Function not implemented.');
-}
