@@ -108,3 +108,15 @@ export const updateDetailBarangTerbayar = async (penerimaanId: number, detailBar
     const response = await apiClient.patch(`/api/v1/penerimaan/${penerimaanId}/barang/${detailBarangId}/paid`);
     return response.data;
 };
+
+export const getStokByAvailableBAST = async (id: number) => {
+    console.log(`SERVICE: Mengambil stok untuk stok ID: ${id}...`);
+    try {
+        const response = await apiClient.get(`/api/v1/stok/${id}/bast-available`)
+        console.log('response BE', response.data)
+        return response.data
+    } catch (error) {
+        console.error(`Gagal mengambil detail stok barang dengan ID ${id}:`, error);
+        throw new Error('Gagal mengambil detail stok barang.');
+    }
+}

@@ -765,6 +765,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 variant="primary"
                                 onClick={handleAddClick}
                                 className="flex items-center gap-2"
+                                type='button'
                             >
                                 <Plus className="w-4 h-4" /> {/* Standard icon size for buttons */}
                                 Tambah Barang

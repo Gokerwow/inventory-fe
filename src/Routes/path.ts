@@ -16,7 +16,11 @@ export const PATHS = {
         UNGGAH: '/penerimaan/unggah/:id',
         INSPECT: '/penerimaan/:id/inspect',
     },
-    PENGELUARAN: '/pengeluaran',
+    PENGELUARAN: {
+        INDEX : '/pengeluaran',
+        LIHAT : '/pengeluaran/lihat/:id',
+        EDIT : '/pengeluaran/edit/:id',
+    },
     PROFIL: {
         INDEX: '/profil',
         EDIT: '/profil/edit'

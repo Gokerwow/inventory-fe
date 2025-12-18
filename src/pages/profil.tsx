@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'; // <-- TAMBAHAN: useEffect
-import PfpExample from '../assets/svgs/Pfp Example.jpeg';
+import PfpExample from '../assets/images/Pfp Example.jpeg';
 import PencilIcon from '../assets/svgs/pencil Icon.svg?react'
 // --- HAPUS ---
 // import { employees, FAQ } from '../Mock Data/data';

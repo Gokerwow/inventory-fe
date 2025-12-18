@@ -8,7 +8,7 @@ import Dropdown from '../components/dropdown';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES, type LogItem } from '../constant/roles';
-import PfpExample from '../assets/svgs/Pfp Example.jpeg';
+import PfpExample from '../assets/images/Pfp Example.jpeg';
 import type { SortOption } from '../Mock Data/data';
 
 // ✅ UPDATE: Tambahkan properti 'icon' pada opsi sort

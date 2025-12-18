@@ -143,6 +143,7 @@ export interface PenerimaanItem {
     pegawai_name: string;   // Diubah dari namaPegawai
     category_name: string;  // Diubah dari kategori
     status: string;
+    status_code: string
     // 'linkUnduh' tidak ada di API, jadi kita hapus
 }
 
@@ -153,6 +154,7 @@ export interface RiwayatPenerimaanItem {
     pegawai_name: string;   // Diubah dari namaPegawai
     category_name: string;  // Diubah dari kategori
     status: string;
+    status_code: string
     // 'linkUnduh' tidak ada di API, jadi kita hapus
 }
 
@@ -287,6 +289,7 @@ export interface BASTAPI {
     category_name: string,
     pegawai_name: string,
     status: string,
+    status_code?: string,
     bast?: {
         id: number,
         file_url?: string,
@@ -327,6 +330,16 @@ export interface APIDetailBarang {
             created_at: string
         }
     ]
+}
+
+export interface APIDetailStokBAST {
+    detail_penerimaan_id: number;
+    bast_id: number;
+    tanggal_bast: string;
+    quantity_total: number;
+    quantity_used: number;
+    quantity_remaining: number;
+    harga: string;
 }
 
 export interface APIDataPenerimaan {
@@ -392,4 +405,66 @@ export interface APIPemesananBaru {
     ruangan: string,
     nama_pj_instalasi: string,
     items: APIPemesananBaruItem[]
+}
+
+// ✅ Interface yang diperbaiki - gunakan PaginationResponse yang sudah ada
+export interface APIDetailPemesanan {
+    id: number;
+    tanggal_pemesanan: string;
+    user_name: string;
+    ruangan: string;
+    status: string;
+    detail_items: PaginationResponse<APIDetailItemPemesanan>; // ✅ Gunakan generic yang sudah ada
+}
+
+// Interface untuk item tetap sama
+export interface APIDetailItemPemesanan {
+    id: number;
+    stok_id: number; // ✅ Ubah dari 19 ke number
+    stok_name: string;
+    satuan_name: string;
+    quantity: number;
+    quantity_pj: number | null;
+    quantity_admin_gudang: number | null;
+}
+
+export interface APIPatchDetailsQuantityPJ {
+    detail_id: number,
+    quantity_pj: number
+}
+export interface APIPatchQuantityPJ {
+    details: APIPatchDetailsQuantityPJ[]
+};
+
+// 1. Tipe untuk satu baris alokasi (Child)
+// Ini merepresentasikan { "detail_penerimaan_id": 12, "quantity": 4 }
+export interface AllocationTarget {
+    detail_penerimaan_id: number;
+    quantity: number;
+}
+
+// 2. Tipe untuk satu item pemesanan beserta alokasinya (Parent)
+// Ini merepresentasikan objek di dalam array "detailPemesanan"
+export interface ItemAllocationPayload {
+    detail_id: number;
+    quantity_admin: number;
+    allocations: AllocationTarget[];
+}
+
+// 3. Tipe Payload Utama ke Backend
+// Ini struktur JSON final yang dikirim
+export interface APIAlokasiPengeluaranPayload {
+    detailPemesanan: ItemAllocationPayload[];
+}
+
+export interface APIPengeluaranList {
+    id: number,
+    no_surat: string,
+    instalasi: string,
+    category_name: string,
+    quantity: number,
+    stok_name: string,
+    harga: number,
+    subtotal: number,
+    tanggal_pengeluaran: string
 }

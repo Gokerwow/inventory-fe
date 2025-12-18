@@ -1,21 +1,20 @@
-// Define the logic maps here
-const STATUS_STYLES = {
-    paid: "bg-success text-white", // uses var(--color-success) from index.css
-    unpaid: "bg-warning text-white",
-    pending: "bg-gray-400 text-white"
+// 1. Definisikan tipe agar konsisten
+type StatusVariant = 'pending' | 'success' | 'warning' | 'danger';
+
+// 2. Sesuaikan keys di sini agar sama persis dengan variant
+const STATUS_STYLES: Record<StatusVariant, string> = {
+    success: "bg-green-600 text-white", // Hijau (Cocok untuk Paid/Confirm)
+    warning: "bg-yellow-500 text-white", // Kuning (Cocok untuk Unpaid)
+    pending: "bg-gray-400 text-white",   // Abu-abu (Cocok untuk Pending)
+    danger: "bg-red-600 text-white",     // Merah (Opsional: untuk Cancelled/Failed)
 };
 
-export default function Status({ text }: { text: string }) {
-    // Determine variant based on text content automatically
-    let variant = 'pending';
+interface StatusProps {
+    text: string;
+    variant: StatusVariant;
+}
 
-    const lowerText = text.toLowerCase();
-    if (lowerText.includes('telah dibayar') || lowerText.includes('lunas')) {
-        variant = 'paid';
-    } else if (lowerText.includes('belum') || lowerText.includes('menunggu')) {
-        variant = 'unpaid';
-    }
-
+export default function Status({ text, variant }: StatusProps) {
     return (
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[variant]}`}>
             {text}

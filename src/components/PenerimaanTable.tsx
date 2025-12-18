@@ -23,10 +23,6 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const isBAST = (item: DataItem): item is BASTAPI => {
-        return 'bast' in item;
-    };
-
     const handleAction = async (id: number, type: 'edit' | 'inspect' | 'upload' | 'download' | 'hapus', item?: BASTAPI) => {
         if (type === 'edit') navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }));
         if (type === 'inspect') navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
@@ -37,7 +33,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
         if (type === 'download') {
             navigate(generatePath(PATHS.PENERIMAAN.UNDUH, { id: id.toString() }), { state: { data: item } });
         }
-        
+
         // 2. Modifikasi logika Hapus
         if (type === 'hapus') {
             if (onDelete) {
@@ -53,16 +49,17 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
         const userRole = user?.role;
         const iconSize = "w-5 h-5";
 
-        if (userRole === ROLES.ADMIN_GUDANG && isBAST(item)) {
+        if (userRole === ROLES.ADMIN_GUDANG) {
             if (variant === 'active') {
                 return (
                     <>
-                        <ActionBtn icon={<DownloadIcon className={iconSize} />} label="Unduh" onClick={() => handleAction(item.id, 'download', item)} />
-                        <ActionBtn icon={<UploadIcon className={iconSize} />} label="Upload" onClick={() => handleAction(item.id, 'upload', item)} />
+                        {/* Pastikan logic handleAction aman menerima item umum */}
+                        <ActionBtn icon={<DownloadIcon className={iconSize} />} label="Unduh" onClick={() => handleAction(item.id, 'download', item as BASTAPI)} />
+                        <ActionBtn icon={<UploadIcon className={iconSize} />} label="Upload" onClick={() => handleAction(item.id, 'upload', item as BASTAPI)} />
                     </>
                 )
             } else {
-                return <ActionBtn icon={<DownloadIcon className={iconSize} />} label="Unduh" onClick={() => handleAction(item.id, 'download', item)} />;
+                return <ActionBtn icon={<DownloadIcon className={iconSize} />} label="Unduh" onClick={() => handleAction(item.id, 'download', item as BASTAPI)} />;
             }
         }
 
@@ -99,7 +96,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
             cell: (item) => (
                 <Status
                     text={item.status}
-                    color={item.status.toLowerCase().includes('confirm') || item.status.toLowerCase().includes('selesai') ? 'bg-green-600' : 'bg-[#FFB14C]'}
+                    variant={item.status_code?.toLowerCase().trim() === 'pending' ? 'pending' : item.status_code === 'checked' ? 'warning' : 'success'}
                 />
             )
         },

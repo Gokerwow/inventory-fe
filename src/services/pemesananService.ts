@@ -1,4 +1,4 @@
-import type { APIPemesanan, APIPemesananBaru, APIStokPemesanan, PaginationResponse } from "../constant/roles";
+import { ROLES, type APIPemesanan, type APIPemesananBaru, type APIStokPemesanan, type PaginationResponse } from "../constant/roles";
 import apiClient from "./api";
 
 export const getStokPemesanan = async (
@@ -39,9 +39,10 @@ export const getStokPemesanan = async (
 export const getPemesananList = async (
     page: number = 1,
     perPage?: number,
-    search?: string
+    search?: string,
+    role?: string
 ): Promise<PaginationResponse<APIPemesanan>> => {
-    console.log(`SERVICE: Mengambil daftar riwayat pemesanan halaman ${page}...`);
+    console.log(`SERVICE: Mengambil daftar pemesanan halaman ${page}...`);
 
     try {
         const params: Record<string, number | string> = { page };
@@ -52,20 +53,59 @@ export const getPemesananList = async (
             params.search = search;
         }
 
-        const response = await apiClient.get('/api/v1/pemesanan', { params });
+        let endpoint = '/api/v1/pemesanan'
+
+        if (role === ROLES.INSTALASI) {
+            endpoint = '/api/v1/pemesanan/status'
+        }
+
+        if (role === ROLES.ADMIN_GUDANG) {
+            endpoint = '/api/v1/pemesanan/approved-pj'
+        }
+
+        const response = await apiClient.get(endpoint, { params });
 
         if (response.data && response.data.data) {
-            console.log("Data riwayat penerimaan diterima:", response.data.data);
+            console.log("Data pemesanan diterima:", response.data.data);
             return response.data.data as PaginationResponse<APIPemesanan>;
         } else {
             console.error("Struktur data tidak terduga:", response.data);
             throw new Error('Struktur data tidak sesuai');
         }
     } catch (error) {
-        console.error("Gagal mengambil data riwayat pemesanan:", error);
-        throw new Error('Gagal mengambil data riwayat pemesanan.');
+        console.error("Gagal mengambil data pemesanan:", error);
+        throw new Error('Gagal mengambil data pemesanan.');
     }
 };
+
+// ✅ FUNGSI YANG SUDAH DIPERBAIKI
+export const getDetailPemesanan = async (
+    id: number,
+    page: number = 1,
+    perPage?: number,
+    search?: string,
+) => {
+    console.log("SERVICE: Mengambil detail pemesanan...", id);
+    try {
+        // Build params object
+        const params: Record<string, number | string> = { page };
+        
+        if (perPage) {
+            params.per_page = perPage;
+        }
+        
+        if (search) {
+            params.search = search;
+        }
+        
+        const response = await apiClient.get(`/api/v1/pemesanan/${id}`, { params });
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error mengambil detail pemesanan:", error);
+        throw error;
+    }
+}
 
 
 export const createPemesanan = async (formData: APIPemesananBaru): Promise<APIPemesananBaru> => {

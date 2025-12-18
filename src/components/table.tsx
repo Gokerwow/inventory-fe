@@ -21,7 +21,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
     // PERBAIKAN 1: Menggunakan minmax(0, 1fr)
     // Ini memaksa kolom untuk mengecil (shrink) jika tidak muat, alih-alih memaksa melebar mengikuti konten.
     const gridTemplateColumns = useMemo(() => {
-        return columns.map(col => col.width || 'minmax(0, 1fr)').join(' ');
+        return (columns || []).map(col => col.width || 'minmax(0, 1fr)').join(' ');
     }, [columns]);
 
     const getAlignClass = (align?: string) => {
@@ -31,11 +31,11 @@ export default function ReusableTable<T extends { id?: number | string }>({
     };
 
     return (
-        <div className="flex flex-col w-full h-full bg-white overflow-hidden shadow-sm border border-gray-200">
-            
+        <div className="flex flex-col w-full h-full min-h-[300px] bg-white overflow-hidden shadow-sm border border-gray-200">
+
             {/* HEADER */}
             {/* PERBAIKAN 2: Kurangi gap jika perlu, misal gap-2 atau gap-4 tetap oke asal minmax diterapkan */}
-            <div 
+            <div
                 className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10"
                 style={{ gridTemplateColumns }}
             >
@@ -48,7 +48,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
 
             {/* BODY */}
             <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-gray-100">
-                {currentItems.length > 0 ? (
+                {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div
                             key={item.id || index}
@@ -56,7 +56,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
                             style={{ gridTemplateColumns }}
                         >
                             {columns.map((col) => (
-                                <div 
+                                <div
                                     key={col.key || col.header}
                                     // PERBAIKAN 3: Tambahkan `min-w-0` dan `truncate` (opsional)
                                     // min-w-0 sangat penting di dalam grid/flex child agar text-overflow bekerja

@@ -151,6 +151,19 @@ const PenerimaanPage = () => {
 
     const dataToShow = user?.role === ROLES.ADMIN_GUDANG ? (activeTab === 'penerimaan' ? bastItems : riwayatBastItems) : (activeTab === 'penerimaan' ? penerimaanItems : riwayatItems);
 
+    // Transform data to match DataItem type expected by PenerimaanTable
+    const transformedData = Array.isArray(dataToShow) ? dataToShow.map((item: any) => ({
+        id: item.id,
+        no_surat: item.noSurat || item.no_surat,
+        role_user: item.role || item.role_user,
+        pegawai_name: item.namaPegawai || item.pegawai_name,
+        category_name: item.kategori || item.category_name,
+        status: item.status,
+        status_code: item.status_code,
+        linkUnduh: item.linkUnduh,
+        tipe: item.tipe,
+    })) : [];
+
     return (
         <div className="flex flex-col h-full w-full gap-5">
             <NavigationTabs tabs={penerimaanTabs} activeTab={activeTab} onTabClick={handleClick} />
@@ -176,7 +189,7 @@ const PenerimaanPage = () => {
                     <Loader />
                 ) : error ? (
                     <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
-                ) : dataToShow.length === 0 ? (
+                ) : transformedData.length === 0 ? (
                     <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
                         <span className='font-medium text-gray-500'>DATA KOSONG</span>
                     </div>
@@ -184,7 +197,7 @@ const PenerimaanPage = () => {
                     <>
                         <div className="flex-1 overflow-auto">
                             <PenerimaanTable
-                                data={dataToShow}
+                                data={transformedData}
                                 variant={activeTab === 'penerimaan' ? 'active' : 'history'}
                                 // 3. Pass fungsi ke props table
                                 onDelete={handleDeleteRequest}

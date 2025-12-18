@@ -80,7 +80,7 @@ export default function PemesananPage() {
                     console.log('Fetching BAST Data....')
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
-                    const response = await getPemesananList(currentPage, itemsPerPage);
+                    const response = await getPemesananList(currentPage, itemsPerPage, debouncedSearch, user?.role);
                     console.log("📦 BAST Response:", response);
                     setCurrentPemesananItems(response.data.flat());
                     setTotalItems(response.total || 0);
@@ -242,8 +242,8 @@ export default function PemesananPage() {
             header: 'Status',
             cell: (item) => {
                 return <Status
+                    variant={item.status === 'pending' ? 'pending': 'success'}
                     text={item.status === 'pending' ? 'Belum Dikonfirmasi' : 'Telah Dikonfirmasi'}
-                    color={item.status.toLowerCase().includes('pending') ? 'bg-[#FFB14C]' : 'bg-green-600'}
                 />
             }
         },

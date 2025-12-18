@@ -1,73 +1,46 @@
-import { simulateApiCall } from './utils';
-
-// Data dari DiagramBatang.tsx (masuk)
-const dataBarangMasuk = [
-    { bulan: 'Januari', value: 40 },
-    { bulan: 'Februari', value: 35 },
-    { bulan: 'Maret', value: 50 },
-    { bulan: 'April', value: 48 },
-    { bulan: 'Mei', value: 60 },
-    { bulan: 'Juni', value: 52 },
-    { bulan: 'Juli', value: 65 },
-    { bulan: 'Agustus', value: 55 },
-    { bulan: 'September', value: 28 },
-    { bulan: 'Oktober', value: 65 },
-    { bulan: 'November', value: 38 },
-    { bulan: 'Desember', value: 45 },
-];
-
-// Data dari DiagramBatang.tsx (keluar)
-const dataBarangKeluar = [
-    { bulan: 'Januari', value: 30 },
-    { bulan: 'Februari', value: 28 },
-    { bulan: 'Maret', value: 45 },
-    { bulan: 'April', value: 40 },
-    { bulan: 'Mei', value: 55 },
-    { bulan: 'Juni', value: 47 },
-    { bulan: 'Juli', value: 55 },
-    { bulan: 'Agustus', value: 32 },
-    { bulan: 'September', value: 48 },
-    { bulan: 'Oktober', value: 42 },
-    { bulan: 'November', value: 60 },
-    { bulan: 'Desember', value: 95 },
-];
-
-// Data dari categoryBarChart.tsx
-const dataStokKategori = [
-    { kategori: 'Pembersih', 'Barang Masuk': 40, 'Barang Keluar': 60, 'Stok Tersedia': 90 },
-    { kategori: 'Listrik', 'Barang Masuk': 50, 'Barang Keluar': 90, 'Stok Tersedia': 50 },
-    { kategori: 'Kertas & Cover', 'Barang Masuk': 20, 'Barang Keluar': 30, 'Stok Tersedia': 50 },
-];
-
+import apiClient from './api';
 /**
  * Mengambil data statistik untuk card di dashboard.
  */
-export const getDashboardStats = () => {
-    const stats = {
-        totalStok: 1248,
-        bastDiterima: 9,
-        belumBayar: 20,
-    };
-    return simulateApiCall(stats);
-};
+
+export const getDashboardStats = async () => {
+    console.log("SERVICE: mengambil data Dashboard...");
+    try {
+        const response = await apiClient.get(`api/v1/pelaporan/dashboard`)
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error mengambil data Dashboard:", error);
+        throw error;
+    }
+}
 
 /**
  * Mengambil data chart barang masuk.
  */
-export const getChartBarangMasuk = () => {
-    return simulateApiCall(dataBarangMasuk);
+export const getChartBarangMasuk = async () => {
+    console.log("SERVICE: mengambil Chart masuk Dashboard...");
+    try {
+        const response = await apiClient.get(`api/v1/pelaporan/penerimaan-per-bulan`)
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error mengambil Chart masuk Dashboard:", error);
+        throw error;
+    }
 };
 
 /**
  * Mengambil data chart barang keluar.
  */
-export const getChartBarangKeluar = () => {
-    return simulateApiCall(dataBarangKeluar);
-};
-
-/**
- * Mengambil data chart stok per kategori.
- */
-export const getChartStokKategori = () => {
-    return simulateApiCall(dataStokKategori);
+export const getChartBarangKeluar = async () => {
+    console.log("SERVICE: mengambil Chart keluar Dashboard...");
+    try {
+        const response = await apiClient.get(`api/v1/pelaporan/pengeluaran-per-bulan`)
+        console.log("✅ Response dari BE:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error mengambil Chart keluar Dashboard:", error);
+        throw error;
+    }
 };

@@ -1,4 +1,4 @@
-import PfpExample from '../assets/svgs/Pfp Example.jpeg';
+import PfpExample from '../assets/images/Pfp Example.jpeg';
 
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 

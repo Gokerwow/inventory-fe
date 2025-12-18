@@ -20,6 +20,7 @@ import PemesananPage from './pages/pemesanan'
 import PenerimaanLayout from './components/PenerimaanLayout'
 import { FormPegawaiPage } from './pages/FormPegawai'
 import DetailStokBarang from './pages/detailStokBarang'
+import { DetailPengeluaranPage } from './pages/detailPengeluaran'
 
 function App() {
   return (
@@ -46,7 +47,10 @@ function App() {
             <Route path={PATHS.PENERIMAAN.UNGGAH} element={<LihatPenerimaan />} />
           </Route>
         </Route>
-        <Route path={PATHS.PENGELUARAN} element={<Pengeluaran />} />
+        <Route path={PATHS.PENGELUARAN.INDEX}>
+          <Route index element={<Pengeluaran />}/>
+          <Route path={PATHS.PENGELUARAN.LIHAT} element={<DetailPengeluaranPage/>}/>
+        </Route>
         <Route path={PATHS.PROFIL.INDEX}>
           <Route index element={<Profil />} />
           <Route path={PATHS.PROFIL.EDIT} element={<FormAkunPage isEdit={true} />} />
