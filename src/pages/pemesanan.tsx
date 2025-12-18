@@ -242,7 +242,7 @@ export default function PemesananPage() {
             header: 'Status',
             cell: (item) => {
                 return <Status
-                    variant={item.status === 'pending' ? 'pending': 'success'}
+                    variant={item.status === 'pending' ? 'pending' : 'success'}
                     text={item.status === 'pending' ? 'Belum Dikonfirmasi' : 'Telah Dikonfirmasi'}
                 />
             }
@@ -274,12 +274,27 @@ export default function PemesananPage() {
         },
         {
             header: 'Aksi',
-            cell: (item) => (
-                <button onClick={() => handlePesanClick(item)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                    <ShoppingCartIcon className='w-5 h-5' />
-                    Pesan
-                </button>
-            )
+            cell: (item) => {
+                // 1. Cek apakah stok habis
+                const isHabis = item.total_stok <= 0;
+
+                return (
+                    <button
+                        // 2. Nonaktifkan klik jika habis
+                        onClick={() => !isHabis && handlePesanClick(item)}
+                        disabled={isHabis}
+                        // 3. Ubah styling berdasarkan status stok
+                        className={`flex items-center justify-start gap-1 w-full transition-colors ${isHabis
+                                ? 'text-gray-400 cursor-not-allowed' // Style jika habis
+                                : 'text-gray-900 hover:text-blue-600 cursor-pointer' // Style jika ada
+                            }`}
+                    >
+                        <ShoppingCartIcon className={`w-5 h-5 ${isHabis ? 'text-gray-400' : ''}`} />
+                        {/* 4. Ubah teks tombol */}
+                        {isHabis ? 'Stok Habis' : 'Pesan'}
+                    </button>
+                )
+            }
         },
     ];
 

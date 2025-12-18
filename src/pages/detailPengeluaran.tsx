@@ -15,7 +15,7 @@ import { PATHS } from "../Routes/path"
 import { useToast } from "../hooks/useToast"
 import Pagination from "../components/pagination"
 import { useAuthorization } from "../hooks/useAuthorization"
-import { X, Info, CheckCircle } from 'lucide-react'; // Ganti dengan path ikon SVG Anda jika ada
+import { X, Info, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import Modal from "../components/modal"
 import { getStokByAvailableBAST } from "../services/barangService"
 
@@ -26,7 +26,7 @@ export function DetailPengeluaranPage() {
     // State untuk Checkbox & Input dalam Tabel    
     const [checkedBastIds, setCheckedBastIds] = useState<number[]>([]);
     const [rowQuantities, setRowQuantities] = useState<Record<number, number | string>>({});
-    
+
     // State untuk Global "Jumlah di ACC"
     const [accAmount, setAccAmount] = useState<number | string>('');
 
@@ -294,14 +294,62 @@ export function DetailPengeluaranPage() {
             cell: (item) => <span className="text-gray-900 font-medium">{item.stok_name}</span>
         },
         {
-            header: 'JUMLAH STOK',
+            header: 'JUMLAH PERMINTAAN', // Diubah sedikit header-nya agar jelas
             key: 'jumlahStok',
-            cell: (item) => <span className="text-gray-900">{item.quantity}</span>
+            cell: (item) => {
+                // Tentukan jumlah yang diminta (prioritas quantity_pj jika ada)
+                const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+                return <span className="text-gray-900 font-bold">{requiredQty} Unit</span>
+            }
+        },
+        // --- KOLOM BARU UNTUK STATUS ALOKASI ---
+        {
+            header: 'STATUS ALOKASI',
+            key: 'status_alokasi',
+            cell: (item) => {
+                // 1. Hitung jumlah yang sudah dialokasikan di state
+                const allocationsMap = allAllocations[item.id] || {};
+                const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
+
+                // 2. Tentukan target
+                const targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+
+                // 3. Tentukan Status Visual
+                let statusColor = "bg-gray-100 text-gray-500 border-gray-200";
+                let statusText = "Belum Diatur";
+                let Icon = Clock;
+
+                if (currentAllocated === targetQty && targetQty > 0) {
+                    statusColor = "bg-green-50 text-green-700 border-green-200";
+                    statusText = "Selesai";
+                    Icon = CheckCircle;
+                } else if (currentAllocated > 0 && currentAllocated < targetQty) {
+                    statusColor = "bg-yellow-50 text-yellow-700 border-yellow-200";
+                    statusText = "Sebagian";
+                    Icon = AlertCircle;
+                } else if (currentAllocated > targetQty) {
+                    statusColor = "bg-red-50 text-red-700 border-red-200";
+                    statusText = "Kelebihan";
+                    Icon = AlertCircle;
+                }
+
+                return (
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit ${statusColor}`}>
+                        <Icon size={14} />
+                        <div className="flex flex-col leading-none">
+                            <span className="text-xs font-bold uppercase">{statusText}</span>
+                            <span className="text-[10px] opacity-80 mt-0.5">
+                                {currentAllocated} / {targetQty} Terpenuhi
+                            </span>
+                        </div>
+                    </div>
+                );
+            }
         },
         {
             header: 'SATUAN',
             key: 'satuan',
-            cell: (item) => <span className="text-gray-900">{item.satuan_name}</span>
+            cell: (item) => <span className="text-gray-500 text-sm">{item.satuan_name}</span>
         },
         {
             header: user?.role === ROLES.ADMIN_GUDANG ? 'AKSI' : 'JML DISETUJUI (PJ)',
@@ -309,13 +357,21 @@ export function DetailPengeluaranPage() {
             cell: (item) => {
                 // --- LOGIKA UTAMA: TAMPILAN UNTUK ADMIN GUDANG ---
                 if (user?.role === ROLES.ADMIN_GUDANG) {
+                    // Cek status untuk styling tombol
+                    const allocationsMap = allAllocations[item.id] || {};
+                    const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
+                    const targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+                    const isComplete = currentAllocated === targetQty && targetQty > 0;
+
                     return (
                         <button
                             type="button"
                             onClick={() => handlePilihClick(item.id, item.stok_id)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:scale-110 hover:text-blue-600 active:scale-95 transition-all duration-200"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 border shadow-sm ${isComplete
+                                    ? "bg-white border-green-200 text-green-600 hover:bg-green-50"
+                                    : "bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-blue-200"
+                                }`}
                         >
-                            {/* SVG Icon: Settings/Sliders */}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
@@ -338,14 +394,17 @@ export function DetailPengeluaranPage() {
                                 <line x1="17" y1="16" x2="23" y2="16" />
                             </svg>
 
-                            <span className="text-sm font-medium">Atur</span>
+                            <span className="text-sm font-semibold">
+                                {isComplete ? "Ubah" : "Atur"}
+                            </span>
                         </button>
                     );
                 }
 
-                // --- TAMPILAN UNTUK PENANGGUNG JAWAB (Counter +/-) ---
+                // ... (Kode untuk Role Penanggung Jawab tetap sama)
                 const displayValue = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
                 return (
+                    // ... kode counter +/- Penanggung Jawab ...
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => handleUpdateQuantity(item.id, -1)}
@@ -370,7 +429,7 @@ export function DetailPengeluaranPage() {
                 )
             }
         },
-    ], [pemesananItem, user?.role])
+    ], [pemesananItem, user?.role, allAllocations]); // Pastikan allAllocations masuk dependency array
 
     // 3. Update Modal Columns
     const modalColumns: ColumnDefinition<APIDetailStokBAST>[] = useMemo(() => [
@@ -446,16 +505,28 @@ export function DetailPengeluaranPage() {
     }
 
     return (
-        <div className={`w-full flex flex-col gap-5 ${user.role === ROLES.ADMIN_GUDANG ? 'h-full' : 'min-h-full'}`}>
+        <div className={`w-full flex flex-col gap-5 ${user.role === ROLES.ADMIN_GUDANG ? 'h-fit' : 'min-h-full'}`}>
 
-            <div className="flex items-center gap-4 shrink-0">
-                <BackButton />
-                <h1 className="text-2xl font-bold text-gray-800">Detail Pemesanan</h1>
+            <div className="bg-[#005DB9] rounded-xl p-6 text-white shadow-md relative">
+                {/* Back Button - Position Absolute di Kiri */}
+                <BackButton
+                    className="absolute left-6 top-1/2 -translate-y-1/2"
+                />
+
+                {/* Konten Tengah */}
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+                        DETAIL PENGELUARAN
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                        Dokumen Resmi RSUD Balung
+                    </p>
+                </div>
             </div>
 
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${user.role === ROLES.ADMIN_GUDANG ? 'h-full' : 'h-fit'}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1 ${user.role === ROLES.ADMIN_GUDANG ? 'h-full' : 'h-fit'}`}>
 
-                <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center gap-4 shrink-0">
                     <h2 className="text-xl font-bold text-[#002B5B] whitespace-nowrap">
                         Status Pemesanan
                     </h2>
@@ -469,12 +540,10 @@ export function DetailPengeluaranPage() {
                 </div>
 
                 {/* Container Table */}
-                <div className={`w-full flex flex-col ${user.role === ROLES.ADMIN_GUDANG ? 'h-full' : ''}`}>
                     <ReusableTable
                         columns={pengeluaranColumns}
                         currentItems={filteredItems}
                     />
-                </div>
 
                 {/* FOOTER: Pagination */}
                 <Pagination

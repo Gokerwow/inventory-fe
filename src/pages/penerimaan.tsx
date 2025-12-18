@@ -160,7 +160,11 @@ const PenerimaanPage = () => {
         category_name: item.kategori || item.category_name,
         status: item.status,
         status_code: item.status_code,
-        linkUnduh: item.linkUnduh,
+        bast: {
+            file_url: item.bast.file_url,
+            signed_file_url: item.bast.signed_file_url,
+            download_endpoint: item.bast.download_endpoint,
+        },
         tipe: item.tipe,
     })) : [];
 

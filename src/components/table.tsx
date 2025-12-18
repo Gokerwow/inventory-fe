@@ -31,12 +31,11 @@ export default function ReusableTable<T extends { id?: number | string }>({
     };
 
     return (
-        <div className="flex flex-col w-full h-full min-h-[300px] bg-white overflow-hidden shadow-sm border border-gray-200">
+        <div className="flex flex-col w-full h-full min-h-[380px] bg-white overflow-hidden shadow-md">
 
-            {/* HEADER */}
-            {/* PERBAIKAN 2: Kurangi gap jika perlu, misal gap-2 atau gap-4 tetap oke asal minmax diterapkan */}
+            {/* HEADER - STICKY & FLEX-SHRINK-0 */}
             <div
-                className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10"
+                className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 flex-shrink-0"
                 style={{ gridTemplateColumns }}
             >
                 {columns.map((col) => (
@@ -47,7 +46,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
             </div>
 
             {/* BODY */}
-            <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-gray-100">
+            <div className="flex-1 divide-y divide-gray-100">
                 {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div

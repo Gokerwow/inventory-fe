@@ -1,14 +1,48 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuthorization } from "../hooks/useAuthorization";
-import { CATEGORY_DATA, ROLES, type APIDetailBarang, type RiwayatPenerimaan } from "../constant/roles"; // Pastikan type RiwayatPenerimaan diexport juga
+import { CATEGORY_DATA, ROLES } from "../constant/roles";
 import { useAuth } from "../hooks/useAuth";
 import { getDetailStokBarang } from "../services/barangService";
 import { useParams } from "react-router-dom";
 import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
-import ReusableTable, { type ColumnDefinition } from "../components/table"; // Sesuaikan path import
+import ReusableTable, { type ColumnDefinition } from "../components/table";
+import BackButton from "../components/backButton";
+import Pagination from "../components/pagination";
+import Loader from "../components/loader";
+
+// --- Definisikan Type Sesuai JSON Backend ---
+// (Idealnya ini dipindah ke file types/interfaces terpisah)
+interface MutationItem {
+    tanggal: string;
+    tipe: 'masuk' | 'keluar';
+    no_surat: string;
+    quantity: number;
+    harga: string;
+    total_harga: string;
+}
+
+interface APIDetailBarang {
+    id: number;
+    name: string;
+    category_name: string;
+    satuan: string;
+    minimum_stok: string;
+    mutasi: {
+        current_page: number;
+        data: MutationItem[];
+    };
+}
 
 const DetailStokBarang = () => {
     const [data, setData] = useState<APIDetailBarang | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // State Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
     const { user } = useAuth();
     const { id: paramId } = useParams();
@@ -18,11 +52,26 @@ const DetailStokBarang = () => {
         if (!hasAccess(user?.role)) return;
 
         const fetchData = async () => {
-            const detailStok = await getDetailStokBarang(paramId ? parseInt(paramId) : 0);
-            setData(detailStok);
+            setIsLoading(true)
+            try {
+                // Pastikan service mengembalikan struktur data yang sesuai
+                const detailStok = await getDetailStokBarang(paramId ? parseInt(paramId) : 0);
+                setData(detailStok);
+                setTotalItems(detailStok.mutasi?.total || 0)
+                setItemsPerPage(detailStok.mutasi?.per_page || 10);
+                setTotalPages(detailStok.mutasi?.last_page || 1);
+            } catch (error) {
+                console.error("Gagal mengambil data", error)
+            } finally {
+                setIsLoading(false)
+            }
         };
         fetchData();
     }, [user?.role, paramId]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     // Helper: Format Rupiah
     const formatRupiah = (angka: string | number) => {
@@ -39,84 +88,90 @@ const DetailStokBarang = () => {
         const date = new Date(isoString);
         return new Intl.DateTimeFormat("id-ID", {
             day: "numeric",
-            month: "long",
+            month: "short", // Menggunakan short month agar lebih rapi di tabel
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
         }).format(date);
     };
 
-    // Definisi Kolom untuk ReusableTable
-    const columns = useMemo<ColumnDefinition<RiwayatPenerimaan>[]>(() => {
+    // --- Definisi Kolom untuk Mutasi ---
+    const columns = useMemo<ColumnDefinition<MutationItem>[]>(() => {
         if (!data) return [];
 
         return [
             {
-                header: "No. Surat",
-                key: "no_surat",
-                width: "1.5fr",
-                cell: (item) => <span className="font-medium text-gray-900">{item.no_surat}</span>,
-            },
-            {
-                header: "Tanggal Terima",
-                key: "created_at",
-                width: "1.5fr",
+                header: "Tanggal",
+                key: "tanggal",
+                width: "1.2fr",
                 cell: (item) => (
-                    <div className="flex items-center gap-2">
-                        {/* Icon: Calendar */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>{formatDate(item.created_at)}</span>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-900">
+                            {formatDate(item.tanggal).split(' pukul ')[0]}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                            {formatDate(item.tanggal).split(' pukul ')[1] || item.tanggal.split(' ')[1]}
+                        </span>
                     </div>
                 ),
+            },
+            {
+                header: "Tipe",
+                key: "tipe",
+                width: "0.8fr",
+                align: "center",
+                cell: (item) => (
+                    <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize 
+                        ${item.tipe === "masuk"
+                                ? "bg-green-100 text-green-800 border border-green-200"
+                                : "bg-orange-100 text-orange-800 border border-orange-200"
+                            }`}
+                    >
+                        {item.tipe}
+                    </span>
+                ),
+            },
+            {
+                header: "No. Surat / Referensi",
+                key: "no_surat",
+                width: "1.5fr",
+                cell: (item) => <span className="font-medium text-gray-700 text-sm">{item.no_surat}</span>,
             },
             {
                 header: "Jumlah",
                 key: "quantity",
                 width: "1fr",
-                align: "center",
-                cell: (item) => (
-                    <span className="font-semibold">
-                        {item.quantity} {data.satuan}
-                    </span>
-                ),
+                align: "left",
+                cell: (item) => {
+                    const isMasuk = item.tipe === 'masuk';
+                    return (
+                        <div className={`font-bold flex items-center gap-1 ${isMasuk ? 'text-green-600' : 'text-red-600'}`}>
+                            <span>{isMasuk ? '+' : '-'}</span>
+                            <span>{item.quantity}</span>
+                            <span className="text-xs font-normal text-gray-500">{data.satuan}</span>
+                        </div>
+                    );
+                },
             },
             {
                 header: "Harga Satuan",
                 key: "harga",
                 width: "1fr",
-                align: "right",
-                cell: (item) => formatRupiah(item.harga),
+                align: "left",
+                cell: (item) => <span className="text-gray-600">{formatRupiah(item.harga)}</span>,
             },
             {
-                header: "Total Harga",
+                header: "Total Nilai",
                 key: "total_harga",
                 width: "1fr",
-                align: "right",
+                align: "left",
                 cell: (item) => <span className="font-bold text-gray-800">{formatRupiah(item.total_harga)}</span>,
             },
-            {
-                header: "Status",
-                key: "status",
-                width: "1fr",
-                align: "center",
-                cell: (item) => (
-                    <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            item.status === "checked"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                        }`}
-                    >
-                        {item.status}
-                    </span>
-                ),
-            },
         ];
-    }, [data]); // Re-create columns if data (satuan) changes
+    }, [data]);
 
-    if (!data) return <div className="p-8 text-center text-gray-500">Memuat data...</div>;
+    if (isLoading || !data) return <Loader />
 
     // Logic Kategori & Icon
     const config = CATEGORY_DATA.find((c) => c.name === data.category_name);
@@ -124,74 +179,96 @@ const DetailStokBarang = () => {
     const colorClass = config?.colorClass || "bg-gray-100 text-gray-700";
 
     return (
-        <div className="min-h-screen p-6 font-sans rounded-xl flex flex-col gap-6">
-            {/* --- Header Halaman & Tombol Kembali --- */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => window.history.back()}
-                        className="p-2 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
-                    >
-                        {/* Icon: Arrow Left */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                    </button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Detail Stok Barang</h1>
-                        <p className="text-sm text-gray-500">Informasi detail dan riwayat penerimaan</p>
-                    </div>
+        <div className="min-h-full font-sans rounded-xl flex flex-col gap-6">
+            <div className="bg-[#005DB9] rounded-xl p-6 text-white shadow-md relative overflow-hidden">
+                {/* Decoration Background - Turunkan z-index */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-16 -mt-16 pointer-events-none z-0"></div>
+
+                {/* Back Button - Pastikan z-index lebih tinggi */}
+                <BackButton className="absolute left-6 top-1/2 -translate-y-1/2 z-20" />
+
+                {/* Header Content */}
+                <div className="text-center relative z-10">
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+                        DETAIL STOK BARANG
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                        Informasi stok dan riwayat mutasi
+                    </p>
                 </div>
             </div>
 
             {/* --- Kartu Informasi Utama Barang --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100 pb-6">
-                    <div className="flex items-start gap-4">
-                        <div className={`w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500 ${colorClass}`}>
-                             <div className={`shrink-0 rounded-lg flex items-center justify-center `}>
-                                <IconComponent className='w-10 h-10' />
-                            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 flex flex-col">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-gray-100 pb-6">
+                    {/* Icon & Nama Barang */}
+                    <div className="flex items-start gap-5">
+                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-sm ${colorClass} bg-opacity-20`}>
+                            <IconComponent className={`w-10 h-10 ${colorClass.replace('bg-', 'text-').split(' ')[1]}`} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800">{data.name}</h2>
-                            <div className={`mt-2 flex items-center gap-3 w-fit px-3 py-2 rounded-2xl ${colorClass}`}>
-                                <span className={`rounded-full text-xs font-medium`}>
-                                    {data.category_name}
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-100 text-gray-500 border border-gray-200">
+                                    {data?.category_name}
                                 </span>
                             </div>
+                            <h2 className="text-2xl font-bold text-gray-800 leading-tight">{data.name}</h2>
+                            <p className="text-sm text-gray-400 mt-1">ID Barang: #{data.id}</p>
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="px-5 py-3 bg-gray-50 rounded-lg border border-gray-100 text-center">
-                            <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">Satuan</p>
-                            <p className="font-bold text-gray-800">{data.satuan}</p>
+                    {/* Statistik Mini */}
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <div className="flex-1 md:flex-none px-6 py-4 bg-gray-50 rounded-xl border border-gray-100 text-center min-w-[120px]">
+                            <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Satuan</p>
+                            <p className="text-lg font-bold text-gray-700 capitalize">{data.satuan}</p>
                         </div>
-                        <div className="px-5 py-3 bg-red-50 rounded-lg border border-red-100 text-center">
-                            <p className="text-xs text-red-500 mb-1 uppercase tracking-wider">Min. Stok</p>
-                            <p className="font-bold text-red-700">{parseFloat(data.minimum_stok)}</p>
+                        <div className="flex-1 md:flex-none px-6 py-4 bg-red-50 rounded-xl border border-red-100 text-center min-w-[120px]">
+                            <p className="text-xs text-red-500 mb-1 uppercase tracking-wider font-semibold">Min. Stok</p>
+                            <p className="text-lg font-bold text-red-600">{parseFloat(data.minimum_stok)}</p>
                         </div>
                     </div>
                 </div>
 
-                {/* --- Section Riwayat Penerimaan dengan ReusableTable --- */}
-                <div className="flex flex-col gap-4">
-                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        {/* Icon: Layers */}
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-[18px] h-[18px] text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        Riwayat Penerimaan (BAST)
-                    </h3>
-                    
-                    {/* Container Table: Berikan height tertentu jika ingin scrollable, atau biarkan auto */}
-                    <div className="h-[400px] border border-gray-200 rounded-lg overflow-hidden">
-                        <ReusableTable 
-                            columns={columns} 
-                            currentItems={data.riwayat_penerimaan} 
-                        />
+                {/* --- Section Riwayat Mutasi --- */}
+                <div className="flex flex-col gap-4 flex-1">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            Riwayat Mutasi Barang
+                        </h3>
+                        <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                            Page {data.mutasi.current_page}
+                        </span>
                     </div>
+
+
+                    {/* Jika data kosong */}
+                    {data.mutasi.data.length === 0 ?
+                        <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex-1 flex justify-center items-center">
+                            <p className="text-gray-500">Belum ada riwayat mutasi untuk barang ini.</p>
+                        </div>
+                        :
+                        isLoading ? <Loader /> :
+                        <>
+                            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                <ReusableTable
+                                    columns={columns}
+                                    currentItems={data.mutasi.data} // Menggunakan data mutasi dari JSON
+                                />
+                            </div>
+                            {/* FOOTER: Pagination */}
+                            <Pagination
+                                currentPage={currentPage}
+                                totalItems={totalItems}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={handlePageChange}
+                                totalPages={totalPages}
+                            />
+                        </>
+                    }
                 </div>
             </div>
         </div>

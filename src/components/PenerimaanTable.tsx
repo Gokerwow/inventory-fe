@@ -24,6 +24,8 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
     const navigate = useNavigate();
 
     const handleAction = async (id: number, type: 'edit' | 'inspect' | 'upload' | 'download' | 'hapus', item?: BASTAPI) => {
+        console.log("Item yang dikirim:", item);
+        
         if (type === 'edit') navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }));
         if (type === 'inspect') navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
 

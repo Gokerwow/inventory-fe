@@ -26,6 +26,7 @@ import ModalTambahBarang from './FormDataBarangBelanja';
 import ConfirmModal from '../components/confirmModal';
 import Loader from '../components/loader';
 import Button from '../components/button';
+import BackButton from '../components/backButton';
 
 export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS, ROLES.ADMIN_GUDANG], []);
@@ -601,13 +602,19 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         <div className="flex flex-col gap-6">
 
             {/* HEADER HALAMAN (Biru) */}
-            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md">
-                <h1 className="text-2xl font-bold uppercase tracking-wide">
-                    {isEdit ? "EDIT DATA PENERIMAAN" :
-                        isView ? "DETAIL DATA PENERIMAAN" :
-                            "FORM DATA BARANG BELANJA"}
-                </h1>
-                <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSUD Balung</p>
+            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
+                {/* Back Button - Position Absolute di Kiri */}
+                <BackButton
+                    className="absolute left-6 top-1/2 -translate-y-1/2"
+                />
+                <div className='text-center'>
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+                        {isEdit ? "EDIT DATA PENERIMAAN" :
+                            isView ? "DETAIL DATA PENERIMAAN" :
+                                "FORM DATA BARANG BELANJA"}
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSUD Balung</p>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -817,7 +824,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                 // --- MODE 1: VIEW (Pembayaran) ---
                                                                 detailItem.is_paid ? (
                                                                     // Use the standard Status component (Auto-colors based on text)
-                                                                    <Status text="Lunas" />
+                                                                    <Status text="Lunas" variant='success' />
                                                                 ) : (
                                                                     // Use standard Primary Button
                                                                     <Button

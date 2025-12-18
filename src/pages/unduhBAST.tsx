@@ -9,11 +9,13 @@ import { useAuthorization } from "../hooks/useAuthorization"
 import { ROLES, type BASTAPI } from "../constant/roles"
 import apiClient from "../services/api"
 import Button from "../components/button"
+import BackButton from "../components/backButton"
 
 export default function UnduhPage() {
     const location = useLocation()
     const stateData = location.state as { data: BASTAPI } | null;
     const data = stateData?.data;
+    console.log(data)
 
     const navigate = useNavigate()
     const { showToast } = useToast()
@@ -92,10 +94,21 @@ export default function UnduhPage() {
         // Container Utama: Background Putih, Rounded, Shadow
         <div className="min-h-full bg-white rounded-lg shadow-md flex flex-col overflow-hidden">
 
-            {/* Header Biru Full Width */}
-            <div className="bg-[#057CFF] w-full py-5 px-4 text-center text-white">
-                <h1 className="text-xl font-bold">DOKUMEN BERITA ACARA SERAH TERIMA (BAST)</h1>
-                <p className="mt-1 text-sm opacity-90">Nomor: {data.no_surat}</p>
+            <div className="bg-[#005DB9] rounded-t-xl p-6 text-white shadow-md relative">
+                {/* Back Button - Position Absolute di Kiri */}
+                <BackButton
+                    className="absolute left-6 top-1/2 -translate-y-1/2"
+                />
+
+                {/* Konten Tengah */}
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+                        DOKUMEN BERITA ACARA SERAH TERIMA (BAST)
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                        Nomor: {data.no_surat}
+                    </p>
+                </div>
             </div>
 
             {/* Content Body dengan Padding */}
