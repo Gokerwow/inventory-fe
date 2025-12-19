@@ -11,15 +11,16 @@ export interface ColumnDefinition<T> {
 interface ReusableTableProps<T> {
     columns: ColumnDefinition<T>[];
     currentItems: T[];
+    onRowClick?: (item: T) => void;
 }
 
 export default function ReusableTable<T extends { id?: number | string }>({
     columns,
     currentItems = [],
+    onRowClick
 }: ReusableTableProps<T>) {
 
-    // PERBAIKAN 1: Menggunakan minmax(0, 1fr)
-    // Ini memaksa kolom untuk mengecil (shrink) jika tidak muat, alih-alih memaksa melebar mengikuti konten.
+    // Menggunakan minmax(0, 1fr) untuk grid kolom
     const gridTemplateColumns = useMemo(() => {
         return (columns || []).map(col => col.width || 'minmax(0, 1fr)').join(' ');
     }, [columns]);
@@ -31,11 +32,12 @@ export default function ReusableTable<T extends { id?: number | string }>({
     };
 
     return (
-        <div className="flex flex-col w-full h-full min-h-[380px] bg-white overflow-hidden shadow-md">
+        <div className="flex flex-col w-full h-full min-h-[380px] bg-white overflow-hidden shadow-sm rounded-lg">
 
             {/* HEADER - STICKY & FLEX-SHRINK-0 */}
+            {/* PERBAIKAN: header dipisah dari kontainer scrollable */}
             <div
-                className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 flex-shrink-0"
+                className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-20 shrink-0"
                 style={{ gridTemplateColumns }}
             >
                 {columns.map((col) => (
@@ -45,23 +47,24 @@ export default function ReusableTable<T extends { id?: number | string }>({
                 ))}
             </div>
 
-            {/* BODY */}
-            <div className="flex-1 divide-y divide-gray-100">
+            {/* BODY - WRAPPER UNTUK SCROLL */}
+            {/* PERBAIKAN: container body yang bisa di-scroll */}
+            <div className="flex-1 overflow-y-auto">
                 {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div
                             key={item.id || index}
-                            className="grid gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center border-b border-gray-100 last:border-0"
+                            onClick={() => {
+                                if (onRowClick) onRowClick(item);
+                            }}
+                            className={`grid gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center border-b border-gray-100 last:border-0 ${onRowClick ? 'cursor-pointer hover:bg-blue-50 transition-colors' : ''}`}
                             style={{ gridTemplateColumns }}
                         >
                             {columns.map((col) => (
                                 <div
                                     key={col.key || col.header}
-                                    // PERBAIKAN 3: Tambahkan `min-w-0` dan `truncate` (opsional)
-                                    // min-w-0 sangat penting di dalam grid/flex child agar text-overflow bekerja
                                     className={`text-sm text-gray-700 flex items-center min-w-0 ${getAlignClass(col.align)}`}
                                 >
-                                    {/* Bungkus konten cell agar bisa di-truncate jika panjang */}
                                     <div className="truncate w-full">
                                         {col.cell(item)}
                                     </div>

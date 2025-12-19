@@ -16,7 +16,7 @@ export default function Button({
 }: ButtonProps) {
 
   // Base styles (Layout, Focus, Transition)
-  const baseStyles = "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300 disabled:cursor-not-allowed";
 
   // Variants (Colors) - Using your new CSS variables
   const variants = {

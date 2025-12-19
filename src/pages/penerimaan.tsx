@@ -52,9 +52,9 @@ const PenerimaanPage = () => {
     const [refreshKey, setRefreshKey] = useState(0); // Untuk trigger ulang useEffect
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     const navigate = useNavigate();
-    
+
     const requiredRoles = useMemo(() =>
         [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS],
         []
@@ -160,10 +160,11 @@ const PenerimaanPage = () => {
         category_name: item.kategori || item.category_name,
         status: item.status,
         status_code: item.status_code,
+        // PERBAIKAN DI SINI: Gunakan ?. (optional chaining)
         bast: {
-            file_url: item.bast.file_url,
-            signed_file_url: item.bast.signed_file_url,
-            download_endpoint: item.bast.download_endpoint,
+            file_url: item.bast?.file_url ?? null,
+            signed_file_url: item.bast?.signed_file_url ?? null,
+            download_endpoint: item.bast?.download_endpoint ?? null,
         },
         tipe: item.tipe,
     })) : [];

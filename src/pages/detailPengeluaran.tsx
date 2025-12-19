@@ -45,6 +45,14 @@ export function DetailPengeluaranPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
 
+    // --- STATE BARU: Pagination Khusus Modal ---
+    const [modalCurrentPage, setModalCurrentPage] = useState(1);
+    const [modalTotalItems, setModalTotalItems] = useState(0);
+    const [modalItemsPerPage, setModalItemsPerPage] = useState(10);
+    const [modalTotalPages, setModalTotalPages] = useState(1);
+    const [activeStokId, setActiveStokId] = useState<number | null>(null); // Menyimpan ID Stok yang sedang dibuka
+    const [isModalLoading, setIsModalLoading] = useState(false); // Loading khusus modal
+
     const { id: paramId } = useParams()
     const requiredRoles = useMemo(() =>
         [ROLES.ADMIN_GUDANG, ROLES.PENANGGUNG_JAWAB],
@@ -91,8 +99,41 @@ export function DetailPengeluaranPage() {
         };
     }, [search])
 
+    // --- FUNGSI BARU: Fetch Data Modal ---
+    const fetchModalData = async (stokId: number, page: number) => {
+        setIsModalLoading(true);
+        try {
+            const response = await getStokByAvailableBAST(stokId, page, modalItemsPerPage);
+
+            // SESUAIKAN DENGAN STRUKTUR JSON BARU:
+            // response       = { data: { current_page: 1, data: [...] } }
+            // paginationData = response.data
+            const paginationData = response.data;
+
+            setSelectedItem(paginationData.data); // Array data item
+
+            // Set State Pagination
+            setModalCurrentPage(paginationData.current_page);
+            setModalTotalItems(paginationData.total);
+            setModalItemsPerPage(paginationData.per_page);
+            setModalTotalPages(paginationData.last_page);
+
+        } catch (error) {
+            console.error("Error fetching modal data", error);
+            showToast("Gagal memuat data BAST", "error");
+        } finally {
+            setIsModalLoading(false);
+        }
+    };
+
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
+    };
+
+    const handleModalPageChange = (page: number) => {
+        if (activeStokId) {
+            fetchModalData(activeStokId, page);
+        }
     };
 
     // Fungsi untuk mengubah jumlah item
@@ -118,37 +159,28 @@ export function DetailPengeluaranPage() {
     };
 
     // Fungsi untuk handle klik pilih (Admin Gudang)
-    // GANTI baris definisi fungsi ini:
     const handlePilihClick = async (detailId: number, stokId: number) => {
-        // Gunakan detailId untuk state key
         setActiveDetailId(detailId);
+        setActiveStokId(stokId);
+        setModalCurrentPage(1); // Reset ke halaman 1
 
-        // Cari item berdasarkan detailId (item.id)
+        // Ambil data simpanan (checkbox & quantity)
         const selectedDetail = detailItems.find(item => item.id === detailId);
-
         const quantityToSet = selectedDetail
             ? (selectedDetail.quantity_pj !== null ? selectedDetail.quantity_pj : selectedDetail.quantity)
             : 0;
 
         setAccAmount(quantityToSet);
 
-        try {
-            // Gunakan stokId untuk fetch API
-            const response = await getStokByAvailableBAST(stokId)
-            const data = response.data.data;
-            setSelectedItem(data)
+        const savedAllocations = allAllocations[detailId] || {};
+        setRowQuantities(savedAllocations);
+        const savedIds = Object.keys(savedAllocations).map(Number);
+        setCheckedBastIds(savedIds);
 
-            // Gunakan detailId untuk mengambil data simpanan
-            const savedAllocations = allAllocations[detailId] || {};
+        // Fetch Data Halaman 1
+        await fetchModalData(stokId, 1);
 
-            setRowQuantities(savedAllocations);
-            const savedIds = Object.keys(savedAllocations).map(Number);
-            setCheckedBastIds(savedIds);
-        } catch (error) {
-            console.error('Terjadi error', error)
-        } finally {
-            setIsModalInputOpen(true)
-        }
+        setIsModalInputOpen(true);
     };
 
     const handleSaveModal = () => {
@@ -286,6 +318,45 @@ export function DetailPengeluaranPage() {
         );
     }, [detailItems, debouncedSearch]);
 
+    // LOGIKA BARU: Cek apakah ada perubahan data
+    const isSaveDisabled = useMemo(() => {
+        if (activeDetailId === null) return true;
+
+        // 1. Ambil data yang tersimpan sebelumnya (Original)
+        const savedData = allAllocations[activeDetailId] || {};
+
+        // 2. Bentuk data saat ini berdasarkan input user (Current)
+        // Logic ini harus sama persis dengan logic di handleSaveModal
+        const currentData: Record<number, number> = {};
+        checkedBastIds.forEach(id => {
+            const val = rowQuantities[id];
+            // Pastikan dikonversi ke number
+            const numVal = typeof val === 'number' ? val : parseInt(val as string) || 0;
+
+            // Hanya masukkan jika quantity > 0
+            if (numVal > 0) {
+                currentData[id] = numVal;
+            }
+        });
+
+        // 3. Bandingkan kedua Object
+        const savedKeys = Object.keys(savedData).sort();
+        const currentKeys = Object.keys(currentData).sort();
+
+        // Cek panjang keys
+        if (savedKeys.length !== currentKeys.length) return false; // Jika jumlah item beda, berarti ada perubahan
+
+        // Cek isi value per key
+        for (const key of savedKeys) {
+            // Jika key tidak ada di current atau nilainya beda
+            if (currentData[parseInt(key)] !== savedData[parseInt(key)]) {
+                return false; // Ada perubahan nilai
+            }
+        }
+
+        return true; // Tidak ada perubahan (Button Disabled)
+    }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds]);
+
 
     const pengeluaranColumns: ColumnDefinition<APIDetailItemPemesanan>[] = useMemo(() => [
         {
@@ -368,8 +439,8 @@ export function DetailPengeluaranPage() {
                             type="button"
                             onClick={() => handlePilihClick(item.id, item.stok_id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 border shadow-sm ${isComplete
-                                    ? "bg-white border-green-200 text-green-600 hover:bg-green-50"
-                                    : "bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-blue-200"
+                                ? "bg-white border-green-200 text-green-600 hover:bg-green-50"
+                                : "bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-blue-200"
                                 }`}
                         >
                             <svg
@@ -434,7 +505,6 @@ export function DetailPengeluaranPage() {
     // 3. Update Modal Columns
     const modalColumns: ColumnDefinition<APIDetailStokBAST>[] = useMemo(() => [
         {
-            // Header Kosong (Select All Dihapus)
             header: '',
             key: 'select',
             width: '50px',
@@ -444,6 +514,7 @@ export function DetailPengeluaranPage() {
                         type="checkbox"
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         checked={checkedBastIds.includes(item.detail_penerimaan_id)}
+                        onClick={(e) => e.stopPropagation()}
                         onChange={() => handleToggleCheckbox(item.detail_penerimaan_id)}
                     />
                 </div>
@@ -540,10 +611,10 @@ export function DetailPengeluaranPage() {
                 </div>
 
                 {/* Container Table */}
-                    <ReusableTable
-                        columns={pengeluaranColumns}
-                        currentItems={filteredItems}
-                    />
+                <ReusableTable
+                    columns={pengeluaranColumns}
+                    currentItems={filteredItems}
+                />
 
                 {/* FOOTER: Pagination */}
                 <Pagination
@@ -635,7 +706,7 @@ export function DetailPengeluaranPage() {
                 isOpen={isModalInputOpen}
                 onClose={() => setIsModalInputOpen(false)}
                 isForm={true}
-                maxWidth="max-w-3xl"
+                maxWidth="max-w-4xl"
             >
                 {/* Container Modal */}
                 <div className="w-full bg-white rounded-xl shadow-2xl">
@@ -677,11 +748,34 @@ export function DetailPengeluaranPage() {
                         </div>
 
                         {/* 3. UPDATE TABLE DI SINI */}
-                        <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
-                            <ReusableTable
-                                columns={modalColumns}
-                                currentItems={selectedItem}
-                            />
+                        <div className="border border-gray-200 rounded-lg overflow-hidden relative min-h-[300px] flex flex-col">
+
+                            {/* Loading Overlay */}
+                            {isModalLoading && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-20">
+                                    <Loader />
+                                </div>
+                            )}
+
+                            {/* Tabel Area */}
+                            <div className="flex-1 overflow-hidden relative max-h-[250px]">
+                                <ReusableTable
+                                    columns={modalColumns}
+                                    currentItems={selectedItem}
+                                    onRowClick={(item) => handleToggleCheckbox(item.detail_penerimaan_id)}
+                                />
+                            </div>
+
+                            {/* Pagination Area (Sticky di bawah tabel) */}
+                            <div className="border-t border-gray-100 bg-gray-50 z-10">
+                                <Pagination
+                                    currentPage={modalCurrentPage}
+                                    totalItems={modalTotalItems}
+                                    itemsPerPage={modalItemsPerPage}
+                                    onPageChange={handleModalPageChange}
+                                    totalPages={modalTotalPages}
+                                />
+                            </div>
                         </div>
 
                         {/* Summary Text (Opsional: Bisa dihitung dinamis) */}
@@ -693,30 +787,53 @@ export function DetailPengeluaranPage() {
                                 } Unit
                             </p>
                         </div>
-
-                        {/* Success Message Box */}
-                        {/* Tampilkan jika: Total SAMA DENGAN Target DAN Target lebih dari 0 */}
-                        {(totalAmbil === targetAmount && targetAmount > 0) && (
-                            <div className="bg-[#E6F4EA] border border-green-100 rounded-lg p-4 flex items-center gap-3">
-                                <div className="bg-[#00A86B] rounded-full p-0.5">
-                                    <CheckCircle size={16} className="text-white" />
-                                </div>
-                                <p className="text-sm text-gray-700">
-                                    <span className="font-bold text-[#00A86B]">Jumlah telah sesuai</span>, klik untuk mengonfirmasi
-                                </p>
+                        {/* Status Message Box (Green/Red) */}
+                        {targetAmount > 0 && (
+                            <div className="mt-4">
+                                {totalAmbil === targetAmount ? (
+                                    // --- KONDISI HIJAU (Sesuai) ---
+                                    <div className="bg-[#E6F4EA] border border-green-100 rounded-lg p-4 flex items-center gap-3 transition-all duration-300">
+                                        <div className="bg-[#00A86B] rounded-full p-0.5 shrink-0">
+                                            <CheckCircle size={16} className="text-white" />
+                                        </div>
+                                        <p className="text-sm text-gray-700">
+                                            <span className="font-bold text-[#00A86B]">Jumlah telah sesuai</span>, siap disimpan.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    // --- KONDISI MERAH (Tidak Sesuai) ---
+                                    <div className="bg-red-50 border border-red-100 rounded-lg p-4 flex items-center gap-3 transition-all duration-300">
+                                        <div className="bg-red-500 rounded-full p-0.5 shrink-0">
+                                            <X size={16} className="text-white" />
+                                        </div>
+                                        <div className="flex flex-col text-sm text-gray-700">
+                                            <span className="font-bold text-red-600">
+                                                Jumlah belum sesuai!
+                                            </span>
+                                            <span>
+                                                {totalAmbil < targetAmount
+                                                    ? `Masih kurang ${targetAmount - totalAmbil} unit lagi.`
+                                                    : `Kelebihan ${totalAmbil - targetAmount} unit.`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
+
 
                     </div>
 
                     {/* Footer Modal */}
                     <div className="px-6 pb-6 flex justify-end">
-                        <button
-                            onClick={handleSaveModal} // <--- GANTI INI
-                            className="bg-[#4CD964] hover:bg-green-500 text-white font-semibold py-2 px-6 rounded-md shadow-sm transition-colors"
+                        <Button
+                            variant="success"
+                            onClick={handleSaveModal}
+                            disabled={isSaveDisabled}
+                            className="shadow-sm min-w-[180px]"
                         >
-                            Simpan Alokasi
-                        </button>
+                            {isSaveDisabled ? "Tidak Ada Perubahan" : "Simpan Alokasi"}
+                        </Button>
                     </div>
 
                 </div>
