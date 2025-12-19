@@ -270,6 +270,10 @@ export function DetailPengeluaranPage() {
                 const payload = {
                     detailPemesanan: filteredItems.map(item => {
                         const allocationsMap = allAllocations[item.id] || {};
+
+                        // HITUNG TOTAL ALOKASI REAL
+                        const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
+
                         const allocationsArray = Object.entries(allocationsMap).map(([penerimaanId, qty]) => ({
                             detail_penerimaan_id: parseInt(penerimaanId),
                             quantity: qty
@@ -277,7 +281,9 @@ export function DetailPengeluaranPage() {
 
                         return {
                             detail_id: item.id,
-                            quantity_admin: item.quantity,
+                            // PERBAIKAN DI SINI:
+                            // Gunakan totalAllocated, bukan item.quantity
+                            quantity_admin: totalAllocated,
                             allocations: allocationsArray
                         };
                     })
