@@ -6,11 +6,13 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // <-- WAJIB Impor CSS-nya
 import { useEffect } from 'react';
 import { ToasterCustom } from '../components/toaster';
+import { useAuth } from '../hooks/useAuth';
 
 
 function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { isAuthenticated, isLoggingOut, login } = useAuth();
 
     // Gunakan useEffect untuk memeriksa 'state' setiap kali halaman dimuat
     useEffect(() => {
@@ -35,6 +37,36 @@ function Layout() {
             navigate(location.pathname, { replace: true, state: null });
         }
     }, [location, navigate]); // Jalankan efek ini setiap kali lokasi berubah
+
+    // 1. JIKA SEDANG PROSES LOGOUT
+    // Tampilkan loading visual, jangan layar putih kosong/gepeng
+    if (isLoggingOut) {
+        return (
+            <div className="flex items-center justify-center h-screen w-full bg-gray-50">
+                <div className="text-center">
+                    <h2 className="text-lg font-semibold text-gray-700">Sedang Keluar...</h2>
+                    <p className="text-sm text-gray-500">Mohon tunggu sebentar.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // 2. JIKA BELUM LOGIN (Dan bukan sedang logout)
+    if (!isAuthenticated) {
+        // PENTING: Jangan return null begitu saja!
+        // Kita harus paksa redirect ke login SSO di sini, 
+        // karena Layout membungkus semua halaman.
+
+        // Panggil login() secara manual agar tidak stuck di layar putih
+        login();
+
+        // Sambil menunggu redirect, tampilkan loading
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p>Mengalihkan ke Login...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen fixed w-screen">

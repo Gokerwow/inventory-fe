@@ -20,7 +20,6 @@ export default function ReusableTable<T extends { id?: number | string }>({
     onRowClick
 }: ReusableTableProps<T>) {
 
-    // Menggunakan minmax(0, 1fr) untuk grid kolom
     const gridTemplateColumns = useMemo(() => {
         return (columns || []).map(col => col.width || 'minmax(0, 1fr)').join(' ');
     }, [columns]);
@@ -34,22 +33,22 @@ export default function ReusableTable<T extends { id?: number | string }>({
     return (
         <div className="flex flex-col w-full h-full min-h-[380px] bg-white overflow-hidden shadow-sm rounded-lg">
 
-            {/* HEADER - STICKY & FLEX-SHRINK-0 */}
-            {/* PERBAIKAN: header dipisah dari kontainer scrollable */}
-            <div
-                className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-20 shrink-0"
-                style={{ gridTemplateColumns }}
-            >
-                {columns.map((col) => (
-                    <div key={col.key || col.header} className={`flex items-center ${getAlignClass(col.align)}`}>
-                        {col.header}
-                    </div>
-                ))}
-            </div>
-
-            {/* BODY - WRAPPER UNTUK SCROLL */}
-            {/* PERBAIKAN: container body yang bisa di-scroll */}
+            {/* BODY WRAPPER - Sekarang parent untuk scroll */}
             <div className="flex-1 overflow-y-auto">
+                
+                {/* HEADER - Sticky di dalam scrollable container */}
+                <div
+                    className="grid gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-20"
+                    style={{ gridTemplateColumns }}
+                >
+                    {columns.map((col) => (
+                        <div key={col.key || col.header} className={`flex items-center ${getAlignClass(col.align)}`}>
+                            {col.header}
+                        </div>
+                    ))}
+                </div>
+
+                {/* ROWS */}
                 {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div

@@ -6,8 +6,9 @@ import { createContext } from 'react';
 export interface AuthContextType {
     user: MockUser | null;
     isAuthenticated: boolean;
-    login: (username: Usernames) => void;
+    login: () => void;
     logout: () => void;
+    isLoggingOut: boolean
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

@@ -21,20 +21,73 @@ import PenerimaanLayout from './components/PenerimaanLayout'
 import { FormPegawaiPage } from './pages/FormPegawai'
 import DetailStokBarang from './pages/detailStokBarang'
 import { DetailPengeluaranPage } from './pages/detailPengeluaran'
+import SSOCallback from './pages/SSOCallback'
+import { useEffect } from 'react'
+import { useAuth } from './hooks/useAuth'
+import { menuItems } from './constant/roles'
+
+// 1. Buat Komponen Kecil untuk Menangani Akar Aplikasi ("/")
+const RootHandler = () => {
+  const { isAuthenticated, login, user, isLoggingOut } = useAuth();
+
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      login();
+    }
+  }, [isAuthenticated, login]);
+  
+  // --- LOGIKA BARU ---
+  // Jika sedang logout, TAHAN! Jangan lakukan apa-apa, tampilkan loading saja.
+  if (isLoggingOut) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Sedang Logout...</p>
+      </div>
+    );
+  }
+  // -------------------
+  
+  if (isAuthenticated && user) {
+    // --- LOGIKA BARU: Cari Halaman Rumah berdasarkan Role ---
+    
+    // 1. Ambil role user saat ini
+    const userRole = user.role;
+    console.log(user)
+    
+    // 2. Cari menu pertama yang mengizinkan role ini
+    const allowedMenu = menuItems.find(item => item.role.includes(userRole));
+    
+    // 3. Tentukan tujuan: kalau ketemu pakai path-nya, kalau tidak lempar ke unauthorized
+    const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
+
+    // 4. Redirect ke halaman yang sesuai
+    return <Navigate to={targetPath} replace />;
+  }
+
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <p>Mengalihkan ke Login SSO...</p>
+    </div>
+  );
+};
 
 function App() {
   return (
     <Routes>
+      <Route path="/auth/sso-callback" element={<SSOCallback />} />
+
       <Route path={PATHS.ROLE_PICK} element={<RolePick />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<Navigate to="/unauthorized" replace />} />
+
       <Route path="/" element={<Layout />}>
         {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
-        <Route index element={<Navigate to={PATHS.ROLE_PICK} replace />} />
+        <Route index element={<RootHandler />} />
         <Route path={PATHS.DASHBOARD} element={<Dashboard />} />
         <Route path={PATHS.STOK_BARANG.INDEX}>
           <Route index element={<StokBarang />} />
-          <Route path={PATHS.STOK_BARANG.LIHAT} element={<DetailStokBarang  />} />
+          <Route path={PATHS.STOK_BARANG.LIHAT} element={<DetailStokBarang />} />
         </Route>
         <Route path={PATHS.PENERIMAAN.INDEX}>
           <Route index element={<Penerimaan />} />
@@ -48,8 +101,8 @@ function App() {
           </Route>
         </Route>
         <Route path={PATHS.PENGELUARAN.INDEX}>
-          <Route index element={<Pengeluaran />}/>
-          <Route path={PATHS.PENGELUARAN.LIHAT} element={<DetailPengeluaranPage/>}/>
+          <Route index element={<Pengeluaran />} />
+          <Route path={PATHS.PENGELUARAN.LIHAT} element={<DetailPengeluaranPage />} />
         </Route>
         <Route path={PATHS.PROFIL.INDEX}>
           <Route index element={<Profil />} />

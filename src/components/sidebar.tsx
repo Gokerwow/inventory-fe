@@ -7,7 +7,6 @@ import { menuItems } from '../constant/roles';
 import { useTag } from '../hooks/useTag';
 
 export default function SideBar() {
-    const navigate = useNavigate();
     const location = useLocation(); // ✅ Tambahkan ini
     const { user, logout } = useAuth();
     const { setTag } = useTag();
@@ -23,10 +22,7 @@ export default function SideBar() {
     }, [location.pathname, setTag]);
 
     const handleLogout = () => {
-        navigate('/role-pick');
-        setTimeout(() => {
-            logout();
-        }, 100);
+        logout();
     };
 
     const allowedMenuItems = menuItems.filter((menuItem) => {

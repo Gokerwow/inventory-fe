@@ -224,7 +224,12 @@ function StokBarang() {
                             >
                                 {item.name}
                             </div>
-                            <div className="text-xs text-gray-500">Kategori: {item.category_name}</div>
+                            <div
+                                className="text-xs text-gray-500 truncate"
+                                title={`Kategori: ${item.category_name}`}
+                            >
+                                Kategori: {item.category_name}
+                            </div>
                         </div>
                     </div>
                 );

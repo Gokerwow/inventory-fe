@@ -55,10 +55,15 @@ export const getStokBarang = async (
 };
 
 // DAPETIN DETAIL STOK BARANG BUAT DIEDIT
-export const getDetailStokBarang = async (id: number): Promise<APIDetailBarang> => {
+export const getDetailStokBarang = async (id: number, page: number = 1, perPage?: number,): Promise<APIDetailBarang> => {
     console.log(`SERVICE: Mengambil detail stok barang dengan ID: ${id}...`);
     try {
-        const response = await apiClient.get(`/api/v1/stok/${id}/bast`);
+        // Buat params untuk query string
+        const params: Record<string, number | string> = { page };
+        if (perPage) {
+            params.per_page = perPage;
+        }
+        const response = await apiClient.get(`/api/v1/stok/${id}/bast`, { params });
         const detailData = response.data.data as APIDetailBarang;
         return detailData;
     } catch (error) {

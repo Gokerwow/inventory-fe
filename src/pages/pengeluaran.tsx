@@ -176,6 +176,8 @@ function Pengeluaran() {
         {
             header: 'JUMLAH',
             key: 'jumlah',
+            width: '50px',
+            align: 'center', 
             cell: (item) => <span className="text-gray-900">{item.quantity}</span>
         },
         {

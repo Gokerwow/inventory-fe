@@ -17,12 +17,12 @@ import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
 export const ROLES = {
-    SUPER_ADMIN: 'super_admin',
-    ADMIN_GUDANG: 'admin gudang umum',
-    PPK: 'ppk',
-    TEKNIS: 'teknis',
+    SUPER_ADMIN: 'super-admin',
+    ADMIN_GUDANG: 'admin-gudang-umum',
+    PPK: 'tim-ppk',
+    TEKNIS: 'tim-teknis',
     INSTALASI: 'instalasi',
-    PENANGGUNG_JAWAB: 'penanggungjawab',
+    PENANGGUNG_JAWAB: 'penanggung-jawab',
 };
 export const USERNAMES = {
     SUPER_ADMIN: 'superadmin',

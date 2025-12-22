@@ -55,7 +55,7 @@ const DetailStokBarang = () => {
             setIsLoading(true)
             try {
                 // Pastikan service mengembalikan struktur data yang sesuai
-                const detailStok = await getDetailStokBarang(paramId ? parseInt(paramId) : 0);
+                const detailStok = await getDetailStokBarang(paramId ? parseInt(paramId) : 0, currentPage);
                 setData(detailStok);
                 setTotalItems(detailStok.mutasi?.total || 0)
                 setItemsPerPage(detailStok.mutasi?.per_page || 10);
@@ -67,7 +67,7 @@ const DetailStokBarang = () => {
             }
         };
         fetchData();
-    }, [user?.role, paramId]);
+    }, [user?.role, paramId, currentPage]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -171,7 +171,7 @@ const DetailStokBarang = () => {
         ];
     }, [data]);
 
-    if (isLoading || !data) return <Loader />
+    if (!data) return <Loader />
 
     // Logic Kategori & Icon
     const config = CATEGORY_DATA.find((c) => c.name === data.category_name);
@@ -251,7 +251,9 @@ const DetailStokBarang = () => {
                             <p className="text-gray-500">Belum ada riwayat mutasi untuk barang ini.</p>
                         </div>
                         :
-                        isLoading ? <Loader /> :
+                        isLoading ? <div className="flex-1 flex justify-center items-center">
+                            <Loader />
+                        </div> :
                         <>
                             <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                                 <ReusableTable
