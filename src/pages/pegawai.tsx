@@ -11,7 +11,17 @@ import ReusableTable from "../components/table";
 import Pagination from "../components/pagination";
 import { getJabatanSelect } from "../services/jabatanService";
 import { useToast } from "../hooks/useToast";
+import SearchBar from "../components/searchBar";
+import { NavigationTabs } from "../components/navTabs";
+import PegawaiIcon from '../assets/svgs/Akun Icon.svg?react'
+import Button from "../components/button";
+import { Plus } from "lucide-react";
 
+const PegawaiTabs = [
+    {
+        id: 'pegawai', label: 'Pegawai', icon: <PegawaiIcon className="-ml-0.5 mr-2 h-5 w-5" />
+    },
+];
 
 export default function PegawaiPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +37,7 @@ export default function PegawaiPage() {
     const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [activeTab, setActiveTab] = useState('pegawai');
 
     const PegawaiStatus = [
         { label: 'Aktif', value: 'active' },
@@ -42,6 +53,8 @@ export default function PegawaiPage() {
     const handleTambahClick = () => {
         navigate(PATHS.PEGAWAI.TAMBAH)
     }
+
+    const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
 
     const handleEditClick = (pegawaiData: DaftarPegawai) => {
         navigate(PATHS.PEGAWAI.EDIT, {
@@ -229,90 +242,63 @@ export default function PegawaiPage() {
     ];
 
     return (
-        <div className="h-full flex flex-col">
-
-            <div className="w-full mb-6 flex justify-between items-center gap-4 shrink-0">
-                <div className="flex gap-4 w-full">
-                    <div className="relative w-full sm:w-auto">
-                        <select onChange={(e) => handleFilterJabatanChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                            <option value=''>Semua Jabatan</option>
-                            {jabatanList.map((jabatan) => (
-                                <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div className="relative w-full sm:w-auto">
-                        <select onChange={(e) => handleFilterStatusChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                            <option value=''>Semua Status</option>
-                            {PegawaiStatus.map((status) => (
-                                <option key={status.value} value={status.value}>{status.label}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-
-                </div>
-
-                <button onClick={handleTambahClick} className="w-70 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-5 rounded-lg flex items-center justify-center shadow-sm transition-colors duration-200 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Tambah Pegawai
-                </button>
-            </div>
+        <div className="flex flex-col h-full w-full gap-5">
+            <NavigationTabs tabs={PegawaiTabs} activeTab={activeTab} onTabClick={handleClick} />
 
             {/* Table Card */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="p-4 border-b border-gray-200 flex items-center gap-4 shrink-0">
-                    <h1 className="text-lg font-semibold text-gray-900">Daftar Pegawai</h1>
-                    {/* Search Input */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            name="search"
-                            className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all duration-200 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
-                            placeholder="Cari pegawai..."
+                <div className='p-6 pb-4 flex justify-between items-center'>
+                    <div className="flex items-center justify-center gap-3">
+                        <h2 className="text-xl font-semibold">Daftar Pegawai</h2>
+                        {/* Search Input */}
+                        <SearchBar
+                            placeholder='Cari Pegawai...'
                             onChange={(e) => setSearch(e.target.value)}
                         />
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="w-5 h-5 text-gray-400"
-                                viewBox="0 0 512 512"
-                            >
-                                <path
-                                    d="M221.09 64a157.09 157.09 0 10157.09 157.09A157.1 157.1 0 00221.09 64z"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeMiterlimit="10"
-                                    strokeWidth="32"
-                                />
-                                <path
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeMiterlimit="10"
-                                    strokeWidth="32"
-                                    d="M338.29 338.29L448 448"
-                                />
-                            </svg>
+                        <div className="relative w-full sm:w-auto">
+                            <select onChange={(e) => handleFilterJabatanChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
+                                <option value=''>Semua Jabatan</option>
+                                {jabatanList.map((jabatan) => (
+                                    <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="relative w-full sm:w-auto">
+                            <select onChange={(e) => handleFilterStatusChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
+                                <option value=''>Semua Status</option>
+                                {PegawaiStatus.map((status) => (
+                                    <option key={status.value} value={status.value}>{status.label}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
                         </div>
                     </div>
+
+                    <Button onClick={handleTambahClick} variant="primary" className="flex items-center gap-2 shadow-sm">
+                        <Plus className="w-5 h-5" />
+                        Tambah Pegawai
+                    </Button>
+
                 </div>
 
                 <div className="flex-1 overflow-auto">
                     {isLoading ? (
                         <Loader />
+                    ) : error ? (
+                        <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
+                    ) : currentItems.length === 0 ? (
+                        <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                            <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                        </div>
                     ) : (
                         <ReusableTable
                             columns={pegawaiColumns}
@@ -321,15 +307,13 @@ export default function PegawaiPage() {
                     )}
                 </div>
 
-                <div className="px-4 py-3 bg-white border-t border-gray-200 shrink-0">
-                    <Pagination
-                        currentPage={currentPage}
-                        totalItems={totalItems}
-                        itemsPerPage={itemsPerPage}
-                        onPageChange={handlePageChange}
-                        totalPages={totalPages}
-                    />
-                </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={totalItems}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    totalPages={totalPages}
+                />
             </div>
         </div>
     )

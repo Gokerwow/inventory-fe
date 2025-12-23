@@ -23,10 +23,11 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const handleAction = async (id: number, type: 'edit' | 'inspect' | 'upload' | 'download' | 'hapus', item?: BASTAPI) => {
+    const handleAction = async (id: number, type: 'edit' | 'detail' | 'inspect' | 'upload' | 'download' | 'hapus', item?: BASTAPI) => {
         console.log("Item yang dikirim:", item);
-        
+
         if (type === 'edit') navigate(generatePath(PATHS.PENERIMAAN.EDIT, { id: id.toString() }));
+        if (type === 'detail') navigate(generatePath(PATHS.PENERIMAAN.PREVIEW, { id: id.toString() }));
         if (type === 'inspect') navigate(generatePath(PATHS.PENERIMAAN.INSPECT, { id: id.toString() }));
 
         if (type === 'upload') {
@@ -74,6 +75,11 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
             )
         }
 
+        if (userRole === ROLES.PPK && variant === 'history') {
+            return <ActionBtn icon={<EyeIcon className={iconSize} />} label="Lihat" onClick={() => handleAction(item.id, 'detail')} />;
+
+        }
+
         if (userRole === ROLES.TEKNIS && variant === 'active') {
             return <ActionBtn icon={<EyeIcon className={iconSize} />} label="Lihat" onClick={() => handleAction(item.id, 'inspect')} />;
         }
@@ -87,18 +93,20 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
         { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
             header: 'Kategori',
-            cell: (item) => (
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.category_name === 'Komputer' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                    {item.category_name}
-                </span>
-            )
+            cell: (item) => item.category_name
         },
         {
             header: 'Status',
             cell: (item) => (
                 <Status
-                    text={item.status}
-                    variant={item.status_code?.toLowerCase().trim() === 'pending' ? 'pending' : item.status_code === 'checked' ? 'warning' : 'success'}
+                    // Logic warna ikut status_code (misal: "0", "pending")
+                    code={item.status_code}
+
+                    // Teks yang muncul ikut status (misal: "Belum Ditandatangani")
+                    label={item.status}
+
+                    // Fallback (jaga-jaga jika code/label kosong)
+                    value={item.status_code || item.status}
                 />
             )
         },

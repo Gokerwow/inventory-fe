@@ -30,13 +30,13 @@ import { menuItems } from './constant/roles'
 const RootHandler = () => {
   const { isAuthenticated, login, user, isLoggingOut } = useAuth();
 
-  
+
   useEffect(() => {
     if (!isAuthenticated) {
       login();
     }
   }, [isAuthenticated, login]);
-  
+
   // --- LOGIKA BARU ---
   // Jika sedang logout, TAHAN! Jangan lakukan apa-apa, tampilkan loading saja.
   if (isLoggingOut) {
@@ -47,17 +47,17 @@ const RootHandler = () => {
     );
   }
   // -------------------
-  
+
   if (isAuthenticated && user) {
     // --- LOGIKA BARU: Cari Halaman Rumah berdasarkan Role ---
-    
+
     // 1. Ambil role user saat ini
     const userRole = user.role;
     console.log(user)
-    
+
     // 2. Cari menu pertama yang mengizinkan role ini
     const allowedMenu = menuItems.find(item => item.role.includes(userRole));
-    
+
     // 3. Tentukan tujuan: kalau ketemu pakai path-nya, kalau tidak lempar ke unauthorized
     const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
 
@@ -92,10 +92,33 @@ function App() {
         <Route path={PATHS.PENERIMAAN.INDEX}>
           <Route index element={<Penerimaan />} />
           <Route element={<PenerimaanLayout />}>
-            <Route path={PATHS.PENERIMAAN.TAMBAH} element={<FormPenerimaan />} />
-            <Route path={PATHS.PENERIMAAN.EDIT} element={<FormPenerimaan isEdit={true} />} />
-            <Route path={PATHS.PENERIMAAN.INSPECT} element={<FormPenerimaan isInspect={true} />} />
-            <Route path={PATHS.PENERIMAAN.LIHAT} element={<FormPenerimaan isView={true} />} />
+            {/* Mode: Create (Form Kosong) */}
+            <Route
+              path={PATHS.PENERIMAAN.TAMBAH}
+              element={<FormPenerimaan mode="create" />}
+            />
+
+            {/* Mode: Edit (PPK Edit Data) */}
+            <Route
+              path={PATHS.PENERIMAAN.EDIT}
+              element={<FormPenerimaan mode="edit" />}
+            />
+
+            {/* Mode: Inspect (Tim Teknis Cek Barang) */}
+            <Route
+              path={PATHS.PENERIMAAN.INSPECT}
+              element={<FormPenerimaan mode="inspect" />}
+            />
+
+            {/* Mode: Finance (Keuangan Cek/Bayar) - Dulunya isView */}
+            <Route
+              path={PATHS.PENERIMAAN.LIHAT}
+              element={<FormPenerimaan mode="finance" />}
+            />
+
+            {/* JIKA INGIN MENAMBAH ROUTE BARU (Hanya Lihat / Preview Saja) */}
+            <Route path={PATHS.PENERIMAAN.PREVIEW} element={<FormPenerimaan mode="preview" />} />
+
             <Route path={PATHS.PENERIMAAN.UNDUH} element={<UnduhBast />} />
             <Route path={PATHS.PENERIMAAN.UNGGAH} element={<LihatPenerimaan />} />
           </Route>

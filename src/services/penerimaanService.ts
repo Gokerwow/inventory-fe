@@ -1,16 +1,7 @@
-import {
-    PenerimaanData,
-    RiwayatPenerimaanData,
-} from '../Mock Data/data';
+import type { PenerimaanItem, RiwayatPenerimaanItem } from '../constant/roles';
 import apiClient from './api';
 import axios from 'axios';
 import { ROLES, type APIDataPenerimaan, type APIDetailPenerimaan, type PaginationResponse } from '../constant/roles';
-
-// Tipe data dari item di tabel penerimaan
-type PenerimaanItem = typeof PenerimaanData[0];
-// Tipe data dari item di riwayat upload
-type RiwayatPenerimaanItem = typeof RiwayatPenerimaanData[0];
-
 /**
  * Mengambil daftar penerimaan untuk tab "Penerimaan".
  * Digunakan di: src/pages/penerimaan.tsx
@@ -183,7 +174,7 @@ export const confirmPenerimaan = async (id: number) => {
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
-        console.error("❌ Error membuat penerimaan:", error);
+        console.error("❌ Error Mengoinfirmasi penerimaan:", error);
         // Log detail error dari backend if axios error
         if (axios.isAxiosError(error) && error.response) {
             console.error("Status:", error.response.status);

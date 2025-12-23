@@ -582,7 +582,7 @@ export function DetailPengeluaranPage() {
     }
 
     return (
-        <div className={`w-full flex flex-col gap-5 ${user.role === ROLES.ADMIN_GUDANG ? 'h-fit' : 'min-h-full'}`}>
+        <div className={`w-full flex flex-col gap-5 ${user?.role === ROLES.ADMIN_GUDANG ? 'h-fit' : 'min-h-full'}`}>
 
             <div className="bg-[#005DB9] rounded-xl p-6 text-white shadow-md relative">
                 {/* Back Button - Position Absolute di Kiri */}

@@ -2,8 +2,9 @@ import DashboardIcon from '../assets/svgs/DashboardIcon.svg?react';
 import ChartIcon from '../assets/svgs/Chart.svg?react';
 import PenerimaanIcon from '../assets/svgs/Penerimaan.svg?react';
 import PengeluaranIcon from '../assets/svgs/Pengeluaran.svg?react';
-import PegawaiIcon from '../assets/svgs/hashtag.svg?react'
-import AkunIcon from '../assets/svgs/Akun Icon.svg?react'
+import PegawaiIcon from '../assets/svgs/people.svg?react'
+import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react'
+// import AkunIcon from '../assets/svgs/Akun Icon.svg?react'
 import CetakIcon from '../assets/svgs/CetakIcon.svg?react'
 import ListrikIcon from '../assets/svgs/ListrikIcon.svg?react'
 import KomputerIcon from '../assets/svgs/KomputerIcon.svg?react'
@@ -16,6 +17,7 @@ import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
 
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
+
 export const ROLES = {
     SUPER_ADMIN: 'super-admin',
     ADMIN_GUDANG: 'admin-gudang-umum',
@@ -24,6 +26,16 @@ export const ROLES = {
     INSTALASI: 'instalasi',
     PENANGGUNG_JAWAB: 'penanggung-jawab',
 };
+
+export const ROLE_DISPLAY_NAMES = {
+    [ROLES.SUPER_ADMIN]: 'Super Admin',       
+    [ROLES.ADMIN_GUDANG]: 'Admin Gudang Umum', 
+    [ROLES.PPK]: 'Tim PPK',
+    [ROLES.TEKNIS]: 'Tim Teknis',
+    [ROLES.INSTALASI]: 'Instalasi',
+    [ROLES.PENANGGUNG_JAWAB]: 'Penanggung Jawab'
+};
+
 export const USERNAMES = {
     SUPER_ADMIN: 'superadmin',
     ADMIN_GUDANG: 'admingudangumum',
@@ -125,15 +137,11 @@ export interface Role {
 }
 
 export interface User {
-    id: number;
-    sso_user_id: number;
-    name: string;
-    photo: string,
-    email: string;
-    password: string; // Seharusnya hash, tapi kita ikuti data mock
-    role: string;
-    created_at: string;
-    updated_at: string;
+    id: number,
+    name: string,
+    email: string,
+    photo: string | null,
+    role: string,
 }
 
 export interface PenerimaanItem {
@@ -234,9 +242,10 @@ export interface PaginationResponse<T> {
 }
 
 export const menuItems = [
-    { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
+    // { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
+    { path: '/profil', icon: '', label: 'Pegawai', role: [], tag: 'Profil' },
     { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Pegawai' },
-    { path: '/monitoring', icon: PenerimaanIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Monitoring' },
+    { path: '/monitoring', icon: MonitoringIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Monitoring' },
     { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: [ROLES.ADMIN_GUDANG], tag: 'Dashboard' },
     { path: '/stok-barang', icon: ChartIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Manajemen Barang' },
     { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], tag: 'Manajemen Penerimaan' },

@@ -34,7 +34,7 @@ const DiagramBatang: React.FC<DiagramBatangProps> = ({ type, data }) => { // <--
                     data={data} // <-- UBAHAN: Gunakan data dari props
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
                     <XAxis
                         dataKey="bulan"
                         tick={{ fill: '#666' }}

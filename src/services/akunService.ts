@@ -1,4 +1,4 @@
-import { MOCK_USERS, type MockUser } from '../Mock Data/data';
+import { User } from '../constant/roles';
 import { simulateApiCall } from './utils';
 import apiClient from './api';
 
@@ -6,12 +6,12 @@ import apiClient from './api';
  * Mengambil semua data akun pengguna.
  * Digunakan di: src/pages/akun.tsx
  */
-export const getAkunUsers = async (): Promise<MockUser[]> => {
+export const getAkunUsers = async (): Promise<User[]> => {
     console.log("SERVICE: Mengambil semua data akun...");
     try {
         const response = await apiClient.get('/api/v1/account')
         console.log("Data akun diterima:", response.data.data.data);
-        const dataAkun = response.data.data.data as MockUser[];
+        const dataAkun = response.data.data.data as User[];
         return dataAkun;
     } catch (error) {
         // --- 2. FIX: Tangani error di sini ---
@@ -35,20 +35,15 @@ export const getAkunUsers = async (): Promise<MockUser[]> => {
 /**
  * Mengambil satu data akun berdasarkan ID.
  */
-export const getAkunById = (userId: number): Promise<MockUser | undefined> => {
-    console.log(`SERVICE: Mengambil akun by ID: ${userId}...`);
-    const user = MOCK_USERS.find(u => u.user_id === userId);
-    return simulateApiCall(user);
-};
 
 /**
  * Membuat akun baru.
  * Digunakan di: src/pages/FormAkun.tsx
  * Catatan: Ini hanya simulasi. Data tidak akan benar-benar tersimpan.
  */
-export const createAkun = (data: Partial<MockUser>): Promise<MockUser> => {
+export const createAkun = (data: Partial<User>): Promise<User> => {
     console.log("SERVICE: Membuat akun baru...", data);
-    const newAkun: MockUser = {
+    const newAkun: User = {
         user_id: Date.now(),
         sso_user_id: Date.now(),
         nama_pengguna: data.nama_pengguna || 'userBaru',

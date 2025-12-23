@@ -6,7 +6,7 @@ import { deletePenerimaanDetail, getPenerimaanList, getRiwayatCheckedPenerimaanL
 import { PATHS } from '../Routes/path';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
-import { PenerimaanData, RiwayatPenerimaanData } from '../Mock Data/data';
+import type { PenerimaanItem, RiwayatPenerimaanItem } from '../constant/roles';
 import { ROLES, type BASTAPI } from '../constant/roles';
 import { getBASTList, getRiwayatBASTList } from '../services/bastService';
 import Pagination from '../components/pagination';
@@ -16,9 +16,6 @@ import { NavigationTabs } from '../components/navTabs';
 import Loader from '../components/loader';
 import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
-
-type PenerimaanItem = typeof PenerimaanData[0];
-type RiwayatItem = typeof RiwayatPenerimaanData[0];
 
 const penerimaanTabs = [
     {
@@ -32,7 +29,7 @@ const penerimaanTabs = [
 const PenerimaanPage = () => {
     // ... State data lainnya
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);
-    const [riwayatItems, setRiwayatItems] = useState<RiwayatItem[]>([]);
+    const [riwayatItems, setRiwayatItems] = useState<RiwayatPenerimaanItem[]>([]);
     const [bastItems, setBastItems] = useState<BASTAPI[]>([]);
     const [riwayatBastItems, setRiwayatBastItems] = useState<BASTAPI[]>([]);
 
@@ -175,7 +172,7 @@ const PenerimaanPage = () => {
 
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
                 <div className="p-6 pb-4 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">
+                    <h2 className="text-xl font-bold">
                         {activeTab === 'penerimaan' ? 'Daftar Penerimaan' : 'Riwayat Penerimaan'}
                     </h2>
                     {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (

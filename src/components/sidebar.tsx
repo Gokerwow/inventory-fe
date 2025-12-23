@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import SimbaLogo from '../assets/svgs/logoSimba.svg?react';
 import LogoutIcon from '../assets/svgs/logout.svg?react'
@@ -29,7 +29,7 @@ export default function SideBar() {
         if (!user) {
             return false;
         }
-        return menuItem.role.includes(user.role);
+        return menuItem.role.includes(user?.role);
     });
 
     return (

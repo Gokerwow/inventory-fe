@@ -225,6 +225,7 @@ export default function PemesananPage() {
                 nama_pj_instalasi: '',
                 items: []
             });
+            showToast('Anda berhasil membuat pesanan baru!', 'success')
             window.location.reload();
         } catch (err) {
             console.error("❌ Error submitting form:", err);
@@ -242,8 +243,9 @@ export default function PemesananPage() {
             header: 'Status',
             cell: (item) => {
                 return <Status
-                    variant={item.status === 'pending' ? 'pending' : 'success'}
-                    text={item.status === 'pending' ? 'Belum Dikonfirmasi' : 'Telah Dikonfirmasi'}
+                    code={item.status_code}
+                    label={item.status}
+                    value={item.status}
                 />
             }
         },
@@ -285,8 +287,8 @@ export default function PemesananPage() {
                         disabled={isHabis}
                         // 3. Ubah styling berdasarkan status stok
                         className={`flex items-center justify-start gap-1 w-full transition-colors ${isHabis
-                                ? 'text-gray-400 cursor-not-allowed' // Style jika habis
-                                : 'text-gray-900 hover:text-blue-600 cursor-pointer' // Style jika ada
+                            ? 'text-gray-400 cursor-not-allowed' // Style jika habis
+                            : 'text-gray-900 hover:text-blue-600 cursor-pointer' // Style jika ada
                             }`}
                     >
                         <ShoppingCartIcon className={`w-5 h-5 ${isHabis ? 'text-gray-400' : ''}`} />
@@ -297,6 +299,8 @@ export default function PemesananPage() {
             }
         },
     ];
+
+    const currentActiveData = activeTab === 'pemesanan' ? currentStokItems : currentPemesananItems;
 
     if (error) {
         return (
@@ -375,8 +379,15 @@ export default function PemesananPage() {
                 <div className="flex flex-col">
                     {/* ✅ Ubah div ini dengan height yang konsisten */}
                     <div className="w-full h-[700px] flex items-center justify-center">
-                        {isLoading ? <Loader />
-                            :
+                        {isLoading ? (
+                            <Loader />
+                        ) : error ? (
+                            <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
+                        ) : currentActiveData.length === 0 ? (
+                            <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                                <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                            </div>
+                        ) : (
                             <div className="w-full h-full overflow-auto">
                                 {activeTab === 'pemesanan' ?
                                     <ReusableTable
@@ -390,7 +401,7 @@ export default function PemesananPage() {
                                     />
                                 }
                             </div>
-                        }
+                        )}
                     </div>
 
                     <div className="px-4 bg-white shrink-0 rounded-b-xl">

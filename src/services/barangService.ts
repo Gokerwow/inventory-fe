@@ -1,5 +1,3 @@
-import { BARANG_BELANJA } from "../Mock Data/data";
-import { simulateApiCall } from "./utils";
 import apiClient from "./api";
 import { type APIDetailBarang, type APIDetailStokBAST, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
@@ -24,7 +22,6 @@ export const getStokBarang = async (
     perPage?: number,
     categoryId?: number,
     search?: string,
-    year?: string
 ): Promise<PaginationResponse<BARANG_STOK[]>> => {
     console.log("SERVICE: Mengabil barang stok...");
     try {
@@ -38,9 +35,6 @@ export const getStokBarang = async (
         }
         if (search) {
             params.search = search;
-        }
-        if (year) {
-            params.year = year;
         }
 
         const response = await apiClient.get('/api/v1/stok', {
@@ -75,7 +69,7 @@ export const getDetailStokBarang = async (id: number, page: number = 1, perPage?
 export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangId: number): Promise<APIStokUpdate> => {
     console.log("SERVICE: Mengedit stok...", formData);
     try {
-        const response = await apiClient.patch(`/api/v1/stok/${barangId}/bast`, formData);
+        const response = await apiClient.patch(`/api/v1/stok/${barangId}`, formData);
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
@@ -96,16 +90,6 @@ export const updateBarangStatus = async (penerimaanId: number, detailId: number,
         }
     );
     return response.data;
-};
-
-/**
- * Mengambil daftar barang belanja untuk sebuah form (simulasi).
- * Digunakan di: src/pages/FormPenerimaan.tsx
- */
-export const getBarangBelanjaByPenerimaanId = (id: number): Promise<TIPE_BARANG_STOK[]> => {
-    console.log(`SERVICE: Mengambil barang belanja untuk penerimaan ID: ${id}...`);
-    // Hanya simulasi, ambil 3 barang pertama
-    return simulateApiCall(BARANG_BELANJA.slice(0, 3));
 };
 
 export const updateDetailBarangTerbayar = async (penerimaanId: number, detailBarangId: number) => {

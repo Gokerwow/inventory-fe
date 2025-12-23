@@ -9,19 +9,24 @@ import { type LogItem } from '../constant/roles';
  */
 export const getLogAktivitas = async (
     page: number = 1,
-    perPage: number = 7 
+    perPage?: number,
+    search?: string
 ): Promise<{ data: LogItem[], total: number }> => {
     
     console.log(`SERVICE: Mengambil log aktivitas page ${page}...`);
     
     try {
+        
+        const params: Record<string, number | string> = { page };
+        if (perPage) {
+            params.per_page = perPage
+        }
+        if (search) {
+            params.search = search
+        }
+        
         // Hanya mengirim parameter pagination, tanpa sort_by
-        const response = await apiClient.get('/api/v1/monitoring', {
-            params: {
-                page: page,
-                per_page: perPage
-            }
-        });
+        const response = await apiClient.get('/api/v1/monitoring', {params});
 
         // Mengambil data dari struktur response Laravel (Resource/Paginate)
         // response.data.data biasanya berisi object pagination (data, total, current_page, dll)

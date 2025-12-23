@@ -14,7 +14,8 @@ export const PATHS = {
         LIHAT: '/penerimaan/lihat/:id',
         UNDUH: '/penerimaan/unduhBAST/:id',
         UNGGAH: '/penerimaan/unggah/:id',
-        INSPECT: '/penerimaan/:id/inspect',
+        INSPECT: '/penerimaan/inspect/:id',
+        PREVIEW: '/penerimaan/detail/:id/',
     },
     PENGELUARAN: {
         INDEX : '/pengeluaran',

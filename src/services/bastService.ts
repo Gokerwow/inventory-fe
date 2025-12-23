@@ -134,58 +134,19 @@ export const getBASTUnpaidList = async (
         if (categoryid) params.category = categoryid;
         if (search) params.search = search;
         if (year) params.year = year;
-
-        // 1. Definisikan variabel di luar IF agar bisa diakses nanti
-        let resultData: PaginationResponse<BASTAPI>;
-
-        if (category === 'paid') {
-            // Perbaikan: endpoint /paid untuk kategori 'paid'
-            const response = await apiClient.get('/api/v1/bast/paid', { params });
-            resultData = response.data.data;
-
-        } else if (category === 'unpaid') {
-            // Perbaikan: endpoint /unpaid untuk kategori 'unpaid'
-            const response = await apiClient.get('/api/v1/bast/unpaid', { params });
-            resultData = response.data.data;
-
-        } else {
-            // 2. Kategori Kosong ('') -> Ambil KEDUANYA (Parallel Request)
-            console.log("Fetching gabungan Paid & Unpaid...");
-            
-            const [resPaid, resUnpaid] = await Promise.all([
-                apiClient.get('/api/v1/bast/paid', { params }),
-                apiClient.get('/api/v1/bast/unpaid', { params })
-            ]);
-
-            // Ambil array data dari masing-masing response
-            // Pastikan structure response sesuai backend Anda (Laravel biasanya .data.data)
-            const paidItems = resPaid.data.data.data || [];
-            const unpaidItems = resUnpaid.data.data.data || [];
-
-            // Gabungkan Array
-            const combinedItems = [...unpaidItems, ...paidItems];
-
-            // Konstruksi manual Pagination Response hasil gabungan
-            // Catatan: Pagination akan sedikit aneh (misal page 1 ada 20 item jika perPage 10)
-            // karena kita menggabungkan page 1 dari A dan page 1 dari B.
-            resultData = {
-                ...resUnpaid.data.data, // Ambil meta data dari salah satu saja sebagai base
-                data: combinedItems,
-                total: resPaid.data.data.total + resUnpaid.data.data.total,
-                to: (resPaid.data.data.to || 0) + (resUnpaid.data.data.to || 0),
-                // Recalculate total pages jika perlu, atau biarkan mengikuti salah satu
-            };
-        }
+        if (category) params.status = category;
+        const response = await apiClient.get('/api/v1/bast/payment', { params });
+        const resultData = response.data.data as PaginationResponse<BASTAPI>
 
         if (resultData) {
-            console.log("Data penerimaan diterima:", resultData);
+            console.log("Data BAST diterima:", resultData);
             return resultData;
         } else {
             throw new Error('Data kosong atau struktur tidak sesuai');
         }
 
     } catch (error) {
-        console.error("Gagal mengambil data penerimaan:", error);
+        console.error("Gagal mengambil data BAST:", error);
         throw error; // Lempar error asli agar bisa ditangkap di UI
     }
 };

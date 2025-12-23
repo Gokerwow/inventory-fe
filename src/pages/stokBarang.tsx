@@ -35,13 +35,6 @@ const stokTabs = [
 ];
 
 function StokBarang() {
-    // 1. Definisikan Tahun Saat Ini
-    const currentYear = new Date().getFullYear();
-
-    // 2. Buat Opsi Tahun (Tahun ini, -1, -2)
-    const yearOptions = useMemo(() => {
-        return [currentYear, currentYear - 1, currentYear - 2];
-    }, [currentYear]);
 
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -57,12 +50,10 @@ function StokBarang() {
     const [currentStokItems, setCurrentStokItems] = useState<BARANG_STOK[]>([]);
     const [currentBASTItems, setCurrentBASTItems] = useState<BASTAPI[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [initialFormData, setInitialFormData] = useState<APIStokUpdate | null>(null);
     const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
     const navigate = useNavigate();
 
     // 3. Set default state year ke string tahun saat ini
-    const [year, setYear] = useState(String(currentYear));
     const [activeTab, setActiveTab] = useState('stokBarang');
 
     const { showToast } = useToast();
@@ -98,7 +89,7 @@ function StokBarang() {
                     console.log('Fetching Stok Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
-                    const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year);
+                    const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch);
                     console.log("📦 Stok Response:", response);
                     setCurrentStokItems(response.data.flat());
                     setTotalItems(response.total || 0);
@@ -108,7 +99,7 @@ function StokBarang() {
                     console.log('Fetching BAST Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
-                    const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch, year);
+                    const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch);
                     console.log("📦 BAST Response:", response);
                     setCurrentBASTItems(response.data.flat());
                     setTotalItems(response.total || 0);
@@ -124,7 +115,7 @@ function StokBarang() {
         };
         FetchData();
         // Tambahkan year ke dependency array agar refresh saat tahun diganti
-    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, year, activeTab, refreshTrigger, paymentStatus]);
+    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, activeTab, refreshTrigger, paymentStatus]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -173,7 +164,6 @@ function StokBarang() {
             // Hapus atau abaikan setItemDetail jika hanya digunakan untuk form
             // Masukkan data langsung ke formData
             setFormData(dataToSet);
-            setInitialFormData(dataToSet);
             setIsFormLoading(false);
         } catch (error) {
             console.error("Error fetching detail stok barang:", error);
@@ -295,8 +285,8 @@ function StokBarang() {
             header: 'Status',
             cell: (item) => {
                 return <Status
-                    text={item.status}
-                    color={item.status.toLowerCase().includes('telah dibayar') ? 'bg-green-600' : 'bg-[#FFB14C]'}
+                    label={item.status}
+                    value={item.status}
                 />;
             }
         },
@@ -371,24 +361,6 @@ function StokBarang() {
                                 </div>
                             </div>
                         )}
-
-                        <div className="relative">
-                            {/* 4. Implementasi Dropdown Dinamis (Tahun) - Kode Lama Tetap Ada */}
-                            <select
-                                value={year}
-                                onChange={(e) => setYear(e.target.value)}
-                                className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
-                            >
-                                {yearOptions.map((optionYear) => (
-                                    <option key={optionYear} value={optionYear}>
-                                        {optionYear}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

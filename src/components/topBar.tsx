@@ -1,8 +1,10 @@
 import NotifIcon from '../assets/images/Notification.png';
-import PfpExample from '../assets/images/Pfp Example.jpeg';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTag } from '../hooks/useTag';
+import { ROLE_DISPLAY_NAMES } from '../constant/roles';
+import Avatar from '../assets/svgs/Avatar.svg'
+
 
 export default function TopBar() {
     const { user } = useAuth()
@@ -26,9 +28,9 @@ export default function TopBar() {
                         </div>
                         <div className='flex items-center gap-4 cursor-pointer w-60 px-4 py-4.5 hover:bg-gray-200 transition-all duration-200 h-full'>
                             <div className='bg-white rounded-full w-10 h-10 flex items-center justify-center overflow-hidden'>
-                                <img src={PfpExample} alt="Profile Picture" className='w-full' />
+                                <img src={user?.photo ?? Avatar} alt="Profile Picture" className='w-full' />
                             </div>
-                            <span className='max-w-[150px] wrap-break-word leading-tight font-semibold text-sm'>{user?.role}</span>
+                            <span className='max-w-[150px] wrap-break-word leading-tight font-semibold text-sm'>{ROLE_DISPLAY_NAMES[user.role] || user.role}</span>
                         </div>
                     </div>
                 </NavLink>

@@ -27,8 +27,16 @@ import ConfirmModal from '../components/confirmModal';
 import Loader from '../components/loader';
 import Button from '../components/button';
 import BackButton from '../components/backButton';
+import TrashIcon from '../assets/svgs/trashIcon.svg?react'
 
-export default function TambahPenerimaan({ isEdit = false, isInspect = false, isView = false }: { isEdit?: boolean, isInspect?: boolean, isView?: boolean }) {
+// Tipe Mode yang tersedia
+export type FormMode = 'create' | 'edit' | 'inspect' | 'finance' | 'preview';
+
+interface FormPenerimaanProps {
+    mode: FormMode;
+}
+
+export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     const requiredRoles = useMemo(() => [ROLES.PPK, ROLES.TEKNIS, ROLES.ADMIN_GUDANG], []);
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
     const { user } = useAuth()
@@ -36,6 +44,18 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
     const location = useLocation()
     const { id: paramId } = useParams();
     const { showToast } = useToast();
+    
+    // --- LOGIC HELPER BERDASARKAN MODE ---
+    const isCreateMode = mode === 'create';
+    const isEditMode = mode === 'edit';
+    const isInspectMode = mode === 'inspect';
+    const isFinanceMode = mode === 'finance'; // Dahulu isView (Keuangan)
+    const isPreviewMode = mode === 'preview'; // Mode baru (Hanya Lihat)
+
+    // Helper untuk menentukan apakah Form Read Only
+    const isReadOnly = isInspectMode || isFinanceMode || isPreviewMode;
+    const canEditInputs = isCreateMode || isEditMode;
+
     const [isDelete, setIsDelete] = useState(false)
     const [payingItemId, setPayingItemId] = useState<number | null>(null);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -76,8 +96,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                 setKategoriOptions(kategoriData);
                 setPihak(pihakData);
 
-                if (!location.state?.keepLocalData && (isEdit || isInspect || isView) && paramId) {
-                    console.log('🔄 Fetching data penerimaan untuk edit...');
+                // Logic Fetch: Jika BUKAN create, maka ambil data detail
+                if (!location.state?.keepLocalData && !isCreateMode && paramId) {
+                    console.log('🔄 Fetching data penerimaan...');
                     const id = Number(paramId);
                     const detailData = await getPenerimaanDetail(id);
 
@@ -112,12 +133,8 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 quantity: item.quantity,
                                 price: Number(item.harga),
                                 total_harga: Number(item.total_harga),
-
-                                // ✅ MAP LANGSUNG DARI JSON BACKEND
-                                is_layak: item.is_layak, // null, true, atau false
+                                is_layak: item.is_layak,
                                 is_paid: item.is_paid,
-
-                                // State tambahan untuk UI
                                 is_updating: false
                             };
                         }) || [];
@@ -137,7 +154,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         fetchAllData();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEdit, isInspect, isView, paramId, user?.role, checkAccess, hasAccess, showToast, location.state?.keepLocalData]);
+    }, [mode, paramId, user?.role, checkAccess, hasAccess, showToast, location.state?.keepLocalData]);
 
     useEffect(() => {
         console.log('📊 Barang updated:', barang);
@@ -147,9 +164,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         return null;
     }
 
-    // ✅ HANDLER UNTUK MEMBUKA MODAL TAMBAH BARANG
     const handleAddClick = () => {
-        // Cek dulu apakah kategori sudah dipilih
         if (formDataPenerimaan.category_id === 0) {
             showToast("Pilih kategori barang terlebih dahulu!", "error");
             return;
@@ -157,7 +172,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         setIsAddBarangModalOpen(true);
     }
 
-    // ✅ HANDLER UNTUK MENYIMPAN BARANG DARI MODAL KE STATE
     const handleSaveNewItem = (newItem: any) => {
         setBarang(prev => [...prev, newItem]);
         showToast('Barang berhasil ditambahkan ke daftar!', 'success');
@@ -176,21 +190,18 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
     const handleSetStatus = async (detailId: number, isLayak: boolean) => {
         if (!paramId) return;
 
-        // 1. Set Loading di row tersebut
         setBarang(prev => prev.map(item =>
             item.id === detailId ? { ...item, is_updating: true } : item
         ));
 
         try {
-            // 2. Panggil API
             await updateBarangStatus(Number(paramId), detailId, isLayak);
 
-            // 3. Update State Lokal jika sukses
             setBarang(prev => prev.map(item => {
                 if (item.id === detailId) {
                     return {
                         ...item,
-                        is_layak: isLayak, // Update status (true/false)
+                        is_layak: isLayak,
                         is_updating: false
                     };
                 }
@@ -202,7 +213,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
 
         } catch (err) {
             console.error(err);
-            // Revert loading jika gagal
             setBarang(prev => prev.map(item =>
                 item.id === detailId ? { ...item, is_updating: false } : item
             ));
@@ -211,31 +221,25 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
     };
 
     const handleSaveInspection = () => {
-        // Tidak perlu validasi form lengkap, karena hanya menyimpan progres cek barang
-        // Data barang sudah tersimpan atomic via Modal
         showToast("Progres pemeriksaan tersimpan.", "success");
         navigate(PATHS.PENERIMAAN.INDEX);
     };
 
-    // ✅ 1. Handler saat tombol "Bayar" diklik (Buka Modal)
     const handlePayClick = (detailId: number) => {
         setItemToPay(detailId);
         setIsPayModalOpen(true);
     };
 
-    // ✅ 2. Handler Eksekusi Pembayaran (Dipanggil saat Confirm Modal)
     const handleConfirmPay = async () => {
         if (!itemToPay || !paramId) return;
 
-        // Gunakan isSubmitting agar tombol di Modal loading
         setIsSubmitting(true);
-        setPayingItemId(itemToPay); // Opsional: untuk efek loading di baris tabel (jika modal tertutup cepat)
+        setPayingItemId(itemToPay);
 
         try {
             const penerimaanId = Number(paramId);
             await updateDetailBarangTerbayar(penerimaanId, itemToPay);
 
-            // Update state lokal biar langsung berubah jadi hijau
             setBarang(prev => prev.map(item =>
                 item.id === itemToPay ? { ...item, is_paid: true } : item
             ));
@@ -246,9 +250,9 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
             showToast("Gagal mengubah status pembayaran.", "error");
         } finally {
             setPayingItemId(null);
-            setIsSubmitting(false); // Matikan loading modal
-            setIsPayModalOpen(false); // Tutup modal
-            setItemToPay(null); // Reset ID
+            setIsSubmitting(false);
+            setIsPayModalOpen(false);
+            setItemToPay(null);
         }
     };
 
@@ -267,7 +271,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
 
         if (newCategoryId === oldCategoryId) return;
 
-        // Cek jika ada barang di keranjang
         if (barang.length > 0) {
             const isConfirmed = window.confirm(
                 "Mengganti kategori akan MENGHAPUS semua barang di keranjang belanja Anda. Lanjutkan?"
@@ -380,6 +383,13 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         if (isSubmitting) return;
         setIsSubmitting(true);
 
+        // --- VALIDASI UMUM (Kecuali Preview) ---
+        if (isPreviewMode) {
+            setIsSubmitting(false);
+            setIsModalOpen(false);
+            return;
+        }
+
         if (barang.length === 0) {
             showToast("Tambahkan minimal 1 barang belanja!", "error");
             setIsSubmitting(false);
@@ -388,8 +398,10 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         }
 
         try {
-            if (isInspect) {
-                // --- MODE INSPEKSI (TIM TEKNIS) ---
+            // --- LOGIC PER MODE ---
+            
+            if (isInspectMode) {
+                // --- MODE: INSPEKSI (TIM TEKNIS) ---
                 const allMarked = barang.every(item => 'is_layak' in item && item.is_layak !== null);
                 if (!allMarked) {
                     showToast("Harap tandai semua barang sebelum konfirmasi selesai.", "error");
@@ -400,29 +412,25 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
 
                 await confirmPenerimaan(Number(paramId));
                 showToast("Penerimaan berhasil dikonfirmasi!", "success");
+                navigate(PATHS.PENERIMAAN.INDEX);
 
-
-            } else if (isView) {
-                // --- ALUR: MODE VIEW (KEUANGAN) ---
-
-                // Cek apakah SEMUA barang sudah berstatus terbayar
-                // .every() akan return true hanya jika semua item memenuhi kondisi
+            } else if (isFinanceMode) {
+                // --- MODE: KEUANGAN (VIEW/PAY) ---
                 const allPaid = barang.every(item => (item as any).is_paid === true);
 
                 if (allPaid) {
-                    // Skenario: Semua barang LUNAS
-                    // Jika Anda perlu memanggil API untuk mengubah status Dokumen Penerimaan jadi 'Lunas', lakukan disini.
-                    // await updateStatusDokumenLunas(Number(paramId)); 
-
                     showToast("Semua barang telah terbayar! Status dokumen selesai.", "success");
                 } else {
-                    // Skenario: Masih ada yang belum dibayar
                     showToast("Data pembayaran berhasil disimpan.", "success");
                 }
-            }
+                
+                setIsModalOpen(false);
+                setIsSubmitting(false);
+                navigate(PATHS.STOK_BARANG.INDEX);
+                return;
 
-            else {
-                // --- ALUR 2: MODE CREATE / EDIT (TIM PPK) ---
+            } else if (isCreateMode || isEditMode) {
+                // --- MODE: CREATE / EDIT (TIM PPK) ---
 
                 if (!formDataPenerimaan.no_surat || formDataPenerimaan.pegawais[0].pegawai_id_pertama === 0) {
                     showToast("Nomor Surat dan Pihak Pertama wajib diisi!", "error");
@@ -456,9 +464,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                     deskripsi: formDataPenerimaan.deskripsi,
                     deleted_barang_ids: deletedIds,
                     detail_barangs: barang.map((item): Detail_Barang | APIBarangBaru => {
-                        // Cek apakah barang BARU (stok_id === 0 atau tidak ada stok_id)
                         if ('name' in item || ('stok_id' in item && item.stok_id === 0)) {
-                            // Item adalah APIBarangBaru
                             return {
                                 name: 'name' in item ? item.name : item.stok_name || '',
                                 satuan_name: item.satuan_name || '',
@@ -467,7 +473,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 harga: 'harga' in item ? item.harga : item.price,
                             };
                         } else {
-                            // Item adalah barang existing (stok_id !== 0)
                             return {
                                 stok_id: item.stok_id,
                                 quantity: item.quantity,
@@ -480,23 +485,22 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
 
                 console.log('📤 Data final untuk submit:', dataFinal);
 
-                if (isEdit) {
+                if (isEditMode) {
                     const penerimaanId = Number(paramId);
-                    if (!penerimaanId) {
-                        throw new Error("ID Penerimaan tidak ditemukan di URL.");
-                    }
+                    if (!penerimaanId) throw new Error("ID Penerimaan tidak ditemukan.");
+                    
                     await editPenerimaan(penerimaanId, dataFinal);
                     showToast("Berhasil mengupdate data penerimaan!", "success");
-
                 } else {
                     await createPenerimaan(dataFinal);
                     showToast("Berhasil membuat data penerimaan!", "success");
                 }
+                
+                navigate(PATHS.PENERIMAAN.INDEX);
             }
 
             setIsModalOpen(false);
             setIsSubmitting(false);
-            navigate(isView ? PATHS.STOK_BARANG : PATHS.PENERIMAAN.INDEX);
 
         } catch (err) {
             console.error("❌ Error submit:", err);
@@ -520,18 +524,10 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                         showToast(data.message || "Data tidak valid.", "error");
                     }
                 }
-                else if (status === 401) {
-                    showToast("Sesi habis. Silakan login ulang.", "error");
-                }
-                else if (status === 404) {
-                    showToast("Data referensi tidak ditemukan (404).", "error");
-                }
-                else if (status >= 500) {
-                    showToast("Terjadi kesalahan server. Hubungi admin.", "error");
-                }
-                else {
-                    showToast(data.message || `Terjadi kesalahan (${status})`, "error");
-                }
+                else if (status === 401) showToast("Sesi habis. Silakan login ulang.", "error");
+                else if (status === 404) showToast("Data referensi tidak ditemukan (404).", "error");
+                else if (status >= 500) showToast("Terjadi kesalahan server. Hubungi admin.", "error");
+                else showToast(data.message || `Terjadi kesalahan (${status})`, "error");
             } else {
                 showToast((err as Error).message || "Terjadi kesalahan sistem.", "error");
             }
@@ -566,11 +562,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         }
     }
 
-    if (isLoading) {
-        return (
-            <Loader />
-        );
-    }
+    if (isLoading) return <Loader />;
 
     if (error) {
         return (
@@ -580,7 +572,6 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         );
     }
 
-    // --- KOMPONEN KECIL UNTUK HEADER SECTION (Nomor Biru + Judul) ---
     const SectionHeader = ({ number, title, children }: { number: string, title: string, children?: React.ReactNode }) => (
         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100">
             <div className="flex items-center gap-3 flex-1">
@@ -597,21 +588,19 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
         .filter(item => 'stok_name' in item)
         .reduce((acc, item) => acc + ((item as Detail_Barang).total_harga ?? 0), 0);
 
-    // --- RENDER UTAMA ---
     return (
         <div className="flex flex-col gap-6">
 
             {/* HEADER HALAMAN (Biru) */}
             <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
-                {/* Back Button - Position Absolute di Kiri */}
-                <BackButton
-                    className="absolute left-6 top-1/2 -translate-y-1/2"
-                />
+                <BackButton className="absolute left-6 top-1/2 -translate-y-1/2" />
                 <div className='text-center'>
                     <h1 className="text-2xl font-bold uppercase tracking-wide">
-                        {isEdit ? "EDIT DATA PENERIMAAN" :
-                            isView ? "DETAIL DATA PENERIMAAN" :
-                                "FORM DATA BARANG BELANJA"}
+                        {isEditMode ? "EDIT DATA PENERIMAAN" :
+                            isFinanceMode ? "DETAIL PEMBAYARAN" :
+                                isInspectMode ? "PEMERIKSAAN BARANG" :
+                                    isPreviewMode ? "DETAIL PENERIMAAN" :
+                                        "FORM DATA BARANG BELANJA"}
                     </h1>
                     <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSUD Balung</p>
                 </div>
@@ -635,7 +624,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 onChange={handlePihakPertamaChange}
                                 name='namaPihakPertama'
                                 type='button'
-                                disabled={isInspect || isView}
+                                disabled={isReadOnly}
                             />
                             <Input
                                 id="jabatanPihakPertama"
@@ -663,7 +652,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 onChange={handleAlamatSatkerPertamaChange}
                                 name='alamatSatkerPihakPertama'
                                 value={formDataPenerimaan.pegawais[0].alamat_staker_pertama}
-                                readOnly={isInspect || isView}
+                                readOnly={isReadOnly}
                             />
                         </div>
 
@@ -678,7 +667,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 value={formDataPenerimaan?.pegawais[1].pegawai_name_kedua}
                                 onChange={handlePihakKeduaChange}
                                 name='namaPihakKedua'
-                                disabled={isInspect || isView}
+                                disabled={isReadOnly}
                             />
                             <Input
                                 id="jabatanPihakKedua"
@@ -706,13 +695,13 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 onChange={handleAlamatSatkerKeduaChange}
                                 name='alamatSatkerPihakKedua'
                                 value={formDataPenerimaan?.pegawais[1].alamat_staker_kedua}
-                                readOnly={isInspect || isView}
+                                readOnly={isReadOnly}
                             />
                         </div>
                     </div>
                 </div>
 
-                {/* ROW UNTUK NO SURAT & KATEGORI (Agar rapi bersandingan) */}
+                {/* ROW UNTUK NO SURAT & KATEGORI */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* SECTION 2: NOMOR SURAT */}
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -724,7 +713,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                             onChange={handleChange}
                             name='no_surat'
                             value={formDataPenerimaan.no_surat}
-                            readOnly={isInspect || isView}
+                            readOnly={isReadOnly}
                         />
                         {formErrors.no_surat && (
                             <span className="text-red-500 text-xs mt-1 block">{formErrors.no_surat}</span>
@@ -742,7 +731,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                             onChange={handleKategoriChange}
                             value={formDataPenerimaan.category_name}
                             name="category_name"
-                            disabled={isInspect || isView}
+                            disabled={isReadOnly}
                         />
                     </div>
                 </div>
@@ -758,7 +747,7 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                             onChange={handleChange}
                             name='deskripsi'
                             value={formDataPenerimaan.deskripsi}
-                            disabled={isInspect || isView}
+                            disabled={isReadOnly}
                         ></textarea>
                     </div>
                 </div>
@@ -766,15 +755,15 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                 {/* SECTION 5: DATA BARANG BELANJA (TABLE) */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <SectionHeader number="5" title="Data Barang Belanja">
-                        {/* Tombol Tambah Barang ada di Header Kanan */}
-                        {user?.role === ROLES.PPK && !isInspect && (
+                        {/* Tombol Tambah Barang hanya untuk PPK & Mode Edit/Create */}
+                        {user?.role === ROLES.PPK && canEditInputs && (
                             <Button
                                 variant="primary"
                                 onClick={handleAddClick}
                                 className="flex items-center gap-2"
                                 type='button'
                             >
-                                <Plus className="w-4 h-4" /> {/* Standard icon size for buttons */}
+                                <Plus className="w-4 h-4" />
                                 Tambah Barang
                             </Button>
                         )}
@@ -818,28 +807,25 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                             Rp {new Intl.NumberFormat('id-ID').format(detailItem.total_harga ?? 0)}
                                                         </td>
 
-                                                        {/* ✅ PERBAIKAN DI SINI: HAPUS LOGIKA PENGECEKAN NULL */}
                                                         <td className="py-3 px-4 text-center">
-                                                            {isView ? (
-                                                                // --- MODE 1: VIEW (Pembayaran) ---
+                                                            {isFinanceMode ? (
+                                                                // --- MODE 1: FINANCE (Pembayaran) ---
                                                                 detailItem.is_paid ? (
-                                                                    // Use the standard Status component (Auto-colors based on text)
-                                                                    <Status text="Lunas" variant='success' />
+                                                                    <Status label="Lunas" value='success' />
                                                                 ) : (
-                                                                    // Use standard Primary Button
                                                                     <Button
                                                                         size="sm"
                                                                         variant="primary"
+                                                                        type='button'
                                                                         onClick={() => handlePayClick(detailItem.id as number)}
                                                                         isLoading={payingItemId === detailItem.id}
                                                                     >
                                                                         Bayar
                                                                     </Button>
                                                                 )
-                                                            ) : isInspect ? (
+                                                            ) : isInspectMode ? (
                                                                 // --- MODE 2: INSPECT (Penerimaan) ---
                                                                 <div className="flex items-center justify-center gap-2">
-                                                                    {/* Tombol LAYAK (Green) */}
                                                                     <Button
                                                                         size="sm"
                                                                         variant="success"
@@ -848,14 +834,13 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                         isLoading={detailItem.is_updating}
                                                                         disabled={detailItem.is_layak === true}
                                                                         className={`font-bold transition-all ${detailItem.is_layak === true
-                                                                            ? "!bg-green-700 ring-4 ring-green-300 shadow-lg scale-110 !opacity-100"
+                                                                            ? "bg-green-700! ring-4 ring-green-300 shadow-lg scale-110 disabled:text-white"
                                                                             : ""
                                                                             }`}
                                                                     >
                                                                         {detailItem.is_layak === true ? "✓ LAYAK" : "✓ Layak"}
                                                                     </Button>
 
-                                                                    {/* Tombol TIDAK LAYAK (Red) */}
                                                                     <Button
                                                                         size="sm"
                                                                         variant="danger"
@@ -864,21 +849,25 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                                                         isLoading={detailItem.is_updating}
                                                                         disabled={detailItem.is_layak === true}
                                                                         className={`font-bold transition-all ${detailItem.is_layak === false
-                                                                            ? "!bg-red-700 ring-4 ring-red-300 shadow-lg scale-110 !opacity-100"
+                                                                            ? "bg-red-700! ring-4 ring-red-300 shadow-lg scale-110 disabled:text-white"
                                                                             : ""
                                                                             }`}
                                                                     >
                                                                         {detailItem.is_layak === false ? "✕ TIDAK" : "✕ Tidak"}
                                                                     </Button>
                                                                 </div>
+                                                            ) : isPreviewMode ? (
+                                                                // --- MODE 3: PREVIEW (View Only) ---
+                                                                <span className="text-gray-400">-</span>
                                                             ) : (
-                                                                // --- MODE 3: EDIT (Default) ---
+                                                                // --- MODE 4: EDIT/CREATE (Default) ---
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
                                                                     onClick={() => handleDeleteBarang(detailItem.stok_id)}
-                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center gap-2"
                                                                 >
+                                                                    <TrashIcon className='w-5 h-5' />
                                                                     Hapus
                                                                 </Button>
                                                             )}
@@ -890,27 +879,23 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                     {/* --- BAGIAN TOTAL (TFOOT) --- */}
                                     <tfoot className="bg-blue-50 border-t-2 border-blue-100 font-bold text-gray-700">
                                         <tr>
-                                            {/* Colspan 4: Menggabungkan kolom Nama, Satuan, Jumlah, Harga */}
                                             <td colSpan={4} className="py-4 px-4">
                                                 Total Semua
                                             </td>
-
-                                            {/* Kolom Total Harga */}
                                             <td className="py-4 px-4 text-center text-blue-600">
                                                 Rp {new Intl.NumberFormat('id-ID').format(totalSemua)}
                                             </td>
-
-                                            {/* Kolom Aksi (Kosong) */}
                                             <td className="py-4 px-4"></td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
                         )}
+                        
                         {/* FOOTER ACTIONS */}
                         <div className='flex justify-end gap-4 mt-4'>
                             {/* Tombol Hapus (Hanya Edit & PPK) */}
-                            {isEdit && user?.role === ROLES.PPK && paramId && (
+                            {isEditMode && user?.role === ROLES.PPK && paramId && (
                                 <Button
                                     variant='danger'
                                     onClick={handleDeleteClick}
@@ -920,44 +905,49 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                                 </Button>
                             )}
 
-                            {/* ✅ TOMBOL "SIMPAN" (Draft) -> HANYA MUNCUL DI MODE INSPECT */}
-                            {isInspect && (
+                            {/* Tombol Simpan Progress (Inspect) */}
+                            {isInspectMode && (
                                 <Button
                                     variant="primary"
-                                    size="lg"                  // Standardizes the "py-3" and large look
+                                    size="lg"
                                     onClick={handleSaveInspection}
-                                    isLoading={isSubmitting}   // Handles the opacity, cursor, and disabled state automatically
-                                    className="shadow-lg font-bold min-w-[120px]" // Optional: Keep specific "heavy" styles if you want this button to pop
+                                    isLoading={isSubmitting}
+                                    className="shadow-lg font-bold min-w-[120px]"
                                 >
                                     Simpan
                                 </Button>
                             )}
 
-                            {/* ✅ TOMBOL UTAMA (Hijau) */}
-                            <Button
-                                type="submit" // Trigger handleConfirmSubmit via form submit
-                                disabled={isSubmitting}
-                                className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-                            >
-                                {isSubmitting ? (
-                                    <>Memproses...</>
-                                ) : (
-                                    isView ? "Simpan" : (isInspect ? "Konfirmasi Selesai" : (isEdit ? "Simpan Perubahan" : "Selesai"))
-                                )}
-                            </Button>
+                            {/* Tombol Utama (Selesai/Submit) - Hidden on Preview */}
+                            {!isPreviewMode && (
+                                <Button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                >
+                                    {isSubmitting ? (
+                                        <>Memproses...</>
+                                    ) : (
+                                        isFinanceMode ? "Simpan" :
+                                            isInspectMode ? "Konfirmasi Selesai" :
+                                                isEditMode ? "Simpan Perubahan" :
+                                                    "Selesai"
+                                    )}
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
 
             </form>
 
-            {/* --- MODAL COMPONENTS (Biarkan tetap di bawah) --- */}
+            {/* --- MODAL COMPONENTS --- */}
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
                 isLoading={isSubmitting}
-                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : "Apa anda yakin ingin mengubah data belanja?"}
+                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : "Apa anda yakin ingin menyimpan perubahan ini?"}
             />
 
             <ConfirmModal
@@ -967,15 +957,13 @@ export default function TambahPenerimaan({ isEdit = false, isInspect = false, is
                     setItemToPay(null);
                 }}
                 onConfirm={handleConfirmPay}
-                isLoading={isSubmitting} // Loading spinner akan muncul di tombol modal
+                isLoading={isSubmitting}
                 text="Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan."
             />
 
-            {/* Modal Form Tambah Barang (Popup) */}
             <ModalTambahBarang
                 isOpen={isAddBarangModalOpen}
-                onClose={() => setIsAddBarangModalOpen(false)
-                }
+                onClose={() => setIsAddBarangModalOpen(false)}
                 onSave={handleSaveNewItem}
                 categoryId={formDataPenerimaan.category_id}
             />

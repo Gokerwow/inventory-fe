@@ -71,7 +71,7 @@ function Pengeluaran() {
                         setTotalPages(dataPemesanan.last_page || 1);
                     }
                 } else {
-                    const dataPengeluaran = await getPengeluaranList(currentPage, itemsPerPage, debouncedSearch)
+                    const dataPengeluaran = await getPengeluaranList(currentPage, itemsPerPage, debouncedSearch, user?.role)
                     setPengeluaranItem(dataPengeluaran.data)
                     setTotalItems(dataPengeluaran.total || 0);
                     setItemsPerPage(dataPengeluaran.per_page || 10);
@@ -132,7 +132,11 @@ function Pengeluaran() {
             header: 'STATUS',
             key: 'status',
             align: 'center',
-            cell: (item) => <Status text={item.status === 'pending' ? 'Belum Dikonfirmasi' : 'Telah Dikonfirmasi'} variant={item.status === 'pending' ? 'pending' : 'success'} />
+            cell: (item) =>  <Status
+                        code={item.status_code}
+                        label={item.status}
+                        value={item.status}
+                    />
         },
         {
             header: 'AKSI',
@@ -152,41 +156,91 @@ function Pengeluaran() {
         }
     ], []);
 
-    const riwatatPengeluaranColumns: ColumnDefinition<APIPengeluaranList>[] = useMemo(() => [
-        {
-            header: 'NO SURAT',
-            key: 'noSurat',
-            cell: (item) => <span className="text-gray-900">{item.no_surat}</span>
-        },
-        {
-            header: 'INSTALASI',
-            key: 'instalasi',
-            cell: (item) => <span className="text-gray-900">{item.instalasi}</span>
-        },
-        {
-            header: 'NAMA BARANG',
-            key: 'namaBarang',
-            cell: (item) => <span className="text-gray-900">{item.stok_name}</span>
-        },
-        {
-            header: 'KATEGORI',
-            key: 'kategori',
-            cell: (item) => <span className="text-gray-900">{item.category_name}</span>
-        },
-        {
-            header: 'JUMLAH',
-            key: 'jumlah',
-            width: '50px',
-            align: 'center', 
-            cell: (item) => <span className="text-gray-900">{item.quantity}</span>
-        },
-        {
-            header: 'TANGGAL',
-            key: 'tanggal',
-            align: 'center',
-            cell: (item) => <span className="text-gray-900">{item.tanggal_pengeluaran}</span>
-        },
-    ], []);
+    const riwayatPengeluaranColumns: ColumnDefinition<any>[] = useMemo(() => {
+
+        // --- A. JIKA ADMIN GUDANG: Tampilkan Detail Barang ---
+        // Sesuai JSON output: no_surat, instalasi, stok_name, quantity, dll
+        if (user?.role === ROLES.ADMIN_GUDANG) {
+            return [
+                {
+                    header: 'NO SURAT',
+                    key: 'no_surat',
+                    cell: (item) => <span className="text-gray-900 font-medium">{item.no_surat}</span>
+                },
+                {
+                    header: 'INSTALASI',
+                    key: 'instalasi',
+                    cell: (item) => <span className="text-gray-900">{item.instalasi}</span>
+                },
+                {
+                    header: 'NAMA BARANG',
+                    key: 'stok_name',
+                    cell: (item) => <span className="text-gray-900">{item.stok_name}</span>
+                },
+                {
+                    header: 'KATEGORI',
+                    key: 'category_name',
+                    cell: (item) => <span className="text-gray-500 text-sm">{item.category_name}</span>
+                },
+                {
+                    header: 'JUMLAH',
+                    key: 'quantity',
+                    width: '80px',
+                    align: 'center',
+                    cell: (item) => <span className="text-gray-900 font-bold">{item.quantity}</span>
+                },
+                {
+                    header: 'TANGGAL KELUAR',
+                    key: 'tanggal_pengeluaran',
+                    cell: (item) => <span className="text-gray-900 text-xs">{item.tanggal_pengeluaran}</span>
+                }
+            ];
+        }
+
+        return [
+            {
+                header: 'INSTALASI',
+                key: 'user_name', // Sesuai JSON PJ
+                cell: (item) => <span className="text-gray-900 font-medium">{item.user_name}</span>
+            },
+            {
+                header: 'RUANGAN',
+                key: 'ruangan',
+                cell: (item) => <span className="text-gray-900">{item.ruangan}</span>
+            },
+            {
+                header: 'TANGGAL',
+                key: 'tanggal_pemesanan',
+                cell: (item) => <span className="text-gray-900">{item.tanggal_pemesanan}</span>
+            },
+            {
+                header: 'STATUS',
+                key: 'status',
+                align: 'center',
+                cell: (item) => (
+                    <Status
+                        code={item.status_code}
+                        label={item.status}
+                        value={item.status}
+                    />
+                )
+            },
+            // {
+            //     header: 'AKSI',
+            //     key: 'aksi',
+            //     align: 'center',
+            //     cell: (item) => (
+            //         <button
+            //             className="flex items-center justify-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+            //             onClick={() => handleLihatClick(item.id)}
+            //         >
+            //             <EyeIcon className='w-5 h-5' />
+            //             <span className="text-sm font-medium">Detail</span>
+            //         </button>
+            //     )
+            // }
+        ];
+    }, [user?.role]);
 
     return (
         <div className="w-full flex flex-col gap-5 h-full"> {/* Container Utama */}
@@ -233,7 +287,7 @@ function Pengeluaran() {
 
                             <div className="flex-1 overflow-auto min-h-0">
                                 <ReusableTable
-                                    columns={riwatatPengeluaranColumns}
+                                    columns={riwayatPengeluaranColumns}
                                     currentItems={pengeluaranItem}
                                 />
                             </div>

@@ -18,10 +18,14 @@ export const getDashboardStats = async () => {
 /**
  * Mengambil data chart barang masuk.
  */
-export const getChartBarangMasuk = async () => {
+export const getChartBarangMasuk = async (year?: number) => {
     console.log("SERVICE: mengambil Chart masuk Dashboard...");
     try {
-        const response = await apiClient.get(`api/v1/pelaporan/penerimaan-per-bulan`)
+        const params: Record<string, number | string> = {};
+        if (year !== undefined) {
+            params.year = year;
+        }
+        const response = await apiClient.get(`api/v1/pelaporan/penerimaan-per-bulan`, {params})
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
@@ -33,10 +37,14 @@ export const getChartBarangMasuk = async () => {
 /**
  * Mengambil data chart barang keluar.
  */
-export const getChartBarangKeluar = async () => {
+export const getChartBarangKeluar = async (year?: number) => {
     console.log("SERVICE: mengambil Chart keluar Dashboard...");
     try {
-        const response = await apiClient.get(`api/v1/pelaporan/pengeluaran-per-bulan`)
+        const params: Record<string, number | string> = {};
+        if (year !== undefined) {
+            params.year = year;
+        }
+        const response = await apiClient.get(`api/v1/pelaporan/pengeluaran-per-bulan`, {params})
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {

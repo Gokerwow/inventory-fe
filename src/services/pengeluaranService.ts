@@ -20,6 +20,7 @@ export const getPengeluaranList = async (
     page: number = 1,
     perPage?: number,
     search?: string,
+    role?: string
 ): Promise<PaginationResponse<APIPengeluaranList>> => {
     console.log(`SERVICE: Mengambil daftar pengeluaran halaman ${page}...`);
 
@@ -32,7 +33,13 @@ export const getPengeluaranList = async (
             params.search = search;
         }
 
-        const response = await apiClient.get('/api/v1/pengeluaran', { params });
+        let endpoint = '/api/v1/pengeluaran'
+
+        if (role === ROLES.PENANGGUNG_JAWAB) {
+            endpoint = 'api/v1/pemesanan/riwayat-pj'
+        }
+
+        const response = await apiClient.get(endpoint, { params });
 
         if (response.data && response.data.data) {
             console.log("Data pengeluaran diterima:", response.data.data);

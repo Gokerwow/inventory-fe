@@ -10,6 +10,7 @@ import {
 } from '../services/dashboardService';
 import { ROLES } from '../constant/roles';
 import Loader from '../components/loader';
+import { TrendIndicator } from '../components/TrendIndicator';
 
 interface ChartData {
     bulan: string;
@@ -18,11 +19,16 @@ interface ChartData {
 
 interface StatsData {
     total_stok_barang: number;
+    stok_change_percent: number;   // <-- Tambahan
+    stok_change_trend: 'up' | 'down'; // <-- Tambahan
+    
     bast_sudah_diterima: number;
-    barang_belum_dibayar: number | string; 
+    
+    barang_belum_dibayar: number; 
+    belum_dibayar_change_percent: number; // <-- Tambahan
+    belum_dibayar_change_trend: 'up' | 'down'; // <-- Tambahan
 }
 
-// Mapping nama bulan
 const monthNames = [
     'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
     'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
@@ -32,118 +38,200 @@ export default function Dashboard() {
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
     const { user } = useAuth();
 
+    // 1. SETUP TAHUN & STATE TERPISAH
+    const currentYear = new Date().getFullYear();
+    const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+    // State Tahun Terpisah
+    const [yearMasuk, setYearMasuk] = useState<number>(currentYear);
+    const [yearKeluar, setYearKeluar] = useState<number>(currentYear);
+
+    // State Data
     const [stats, setStats] = useState<StatsData | null>(null);
     const [chartMasuk, setChartMasuk] = useState<ChartData[]>([]);
     const [chartKeluar, setChartKeluar] = useState<ChartData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    
+    // Loading State
+    const [isLoadingStats, setIsLoadingStats] = useState(true);
+    // Kita bisa buat loading terpisah agar chart tidak blinking semua saat ganti tahun
+    const [isLoadingMasuk, setIsLoadingMasuk] = useState(true);
+    const [isLoadingKeluar, setIsLoadingKeluar] = useState(true);
 
+    // Helper transform data
+    const transformChartData = (data: any[]) => {
+        return data.map((item) => ({
+            bulan: monthNames[item.month - 1],
+            value: item.total
+        }));
+    };
+
+    // 2. EFFECT 1: Fetch Stats (Hanya sekali saat mount)
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
 
-        const fetchDashboardData = async () => {
+        const fetchStats = async () => {
             try {
-                setIsLoading(true);
-                const [statsData, masukData, keluarData] = await Promise.all([
-                    getDashboardStats(),
-                    getChartBarangMasuk(),
-                    getChartBarangKeluar()
-                ]);
-
-                setStats(statsData.data);
-                
-                // Transform data dari API ke format yang dibutuhkan chart
-                const transformedMasuk = masukData.data.map((item: any) => ({
-                    bulan: monthNames[item.month - 1], // Convert month number to name
-                    value: item.total
-                }));
-                
-                const transformedKeluar = keluarData.data.map((item: any) => ({
-                    bulan: monthNames[item.month - 1],
-                    value: item.total
-                }));
-
-                setChartMasuk(transformedMasuk);
-                setChartKeluar(transformedKeluar);
-                setError(null);
+                const { data } = await getDashboardStats();
+                setStats(data);
             } catch (err) {
-                console.error("Gagal memuat data dashboard:", err);
-                setError("Gagal memuat data dashboard.");
+                console.error("Gagal load stats:", err);
             } finally {
-                setIsLoading(false);
+                setIsLoadingStats(false);
             }
         };
-
-        fetchDashboardData();
+        fetchStats();
     }, [user, checkAccess, hasAccess]);
 
+    // 3. EFFECT 2: Fetch Chart Masuk (Jalan saat yearMasuk berubah)
+    useEffect(() => {
+        if (!hasAccess(user?.role)) return;
+
+        const fetchMasuk = async () => {
+            setIsLoadingMasuk(true);
+            try {
+                const { data } = await getChartBarangMasuk(yearMasuk); // Pakai yearMasuk
+                setChartMasuk(transformChartData(data));
+            } catch (err) {
+                console.error("Gagal load chart masuk:", err);
+            } finally {
+                setIsLoadingMasuk(false);
+            }
+        };
+        fetchMasuk();
+    }, [yearMasuk, user, hasAccess]); // Dependency: yearMasuk
+
+    // 4. EFFECT 3: Fetch Chart Keluar (Jalan saat yearKeluar berubah)
+    useEffect(() => {
+        if (!hasAccess(user?.role)) return;
+
+        const fetchKeluar = async () => {
+            setIsLoadingKeluar(true);
+            try {
+                const { data } = await getChartBarangKeluar(yearKeluar); // Pakai yearKeluar
+                setChartKeluar(transformChartData(data));
+            } catch (err) {
+                console.error("Gagal load chart keluar:", err);
+            } finally {
+                setIsLoadingKeluar(false);
+            }
+        };
+        fetchKeluar();
+    }, [yearKeluar, user, hasAccess]); // Dependency: yearKeluar
+
+
     if (!hasAccess(user?.role)) return null;
-    if (isLoading) return <Loader />
-    if (error) return <div className='flex justify-center items-center h-full text-danger'>{error}</div>;
+    
+    // Global loader hanya muncul jika stats belum siap (layout awal)
+    if (isLoadingStats) return <Loader />;
 
     return (
         <div className='flex flex-col gap-6 h-full'>
+
             {/* --- SECTION 1: STATS CARDS --- */}
             <div className="grid grid-cols-3 gap-6">
-
-                {/* Total Stok */}
+{/* CARD 1: Stok Barang */}
                 <Card title="Total Stok Barang">
                     <div className="flex flex-col justify-center mt-2">
-                        <span className="text-3xl font-bold text-primary-text">{stats?.total_stok_barang || 0}</span>
-                        <span className="text-green-600 text-sm font-medium flex items-center mt-1">
-                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                            </svg>
-                            +12% dari bulan lalu
+                        <span className="text-3xl font-bold text-primary-text">
+                            {stats?.total_stok_barang || 0}
                         </span>
+                        
+                        {/* Panggil Helper Component */}
+                        {stats && (
+                            <TrendIndicator 
+                                percent={stats.stok_change_percent} 
+                                trend={stats.stok_change_trend} 
+                                // Default: Naik = Hijau (Stok nambah itu biasanya oke/netral)
+                            />
+                        )}
                     </div>
                 </Card>
 
-                {/* BAST Diterima */}
+                {/* CARD 2: BAST (Biasanya tidak ada trend di API kamu, jadi statis/kosong) */}
                 <Card title="BAST yang sudah diterima">
                     <div className="flex flex-col justify-center mt-2">
-                        <span className="text-3xl font-bold text-primary-text">{stats?.bast_sudah_diterima || 0}</span>
-                        <span className="text-green-600 text-sm mt-1">Dalam bulan ini</span>
+                        <span className="text-3xl font-bold text-primary-text">
+                            {stats?.bast_sudah_diterima || 0}
+                        </span>
+                        <span className="text-gray-500 text-sm mt-1">Total Dokumen</span>
                     </div>
                 </Card>
 
-                {/* Belum Bayar */}
+                {/* CARD 3: Barang Belum Dibayar */}
                 <Card title="Barang yang belum dibayar">
                     <div className="flex flex-col justify-center mt-2">
-                        <span className="text-3xl font-bold text-primary-text">{stats?.barang_belum_dibayar || 0}</span>
-                        <span className="text-danger text-sm font-medium flex mt-1">
-                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            -9% dari bulan lalu
+                        <span className="text-3xl font-bold text-primary-text">
+                            {stats?.barang_belum_dibayar || 0}
                         </span>
+
+                        {/* Panggil Helper Component dengan INVERSE */}
+                        {/* Karena kalau hutang NAIK ('up'), itu BURUK (Merah). Kalau TURUN ('down'), itu BAGUS (Hijau) */}
+                        {stats && (
+                            <TrendIndicator 
+                                percent={stats.belum_dibayar_change_percent} 
+                                trend={stats.belum_dibayar_change_trend}
+                                inverse={true} // <--- Penting!
+                            />
+                        )}
                     </div>
                 </Card>
             </div>
 
-            {/* --- SECTION 2: CHARTS --- */}
+            {/* --- SECTION 2: CHARTS DENGAN FILTER MASING-MASING --- */}
             <div className="grid grid-cols-2 gap-6 h-full">
 
-                {/* Chart Masuk */}
-                <Card
-                    className="h-full"
-                    title="Penerimaan Barang per Bulan"
-                >
+                {/* === CARD 1: BARANG MASUK === */}
+                <Card className="h-full" title="Penerimaan Barang">
+                    {/* Filter Area di dalam Card */}
+                    <div className="flex justify-end mb-4">
+                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
+                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
+                            <select 
+                                value={yearMasuk}
+                                onChange={(e) => setYearMasuk(Number(e.target.value))}
+                                className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+                            >
+                                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="h-full w-full min-h-[300px]">
-                        <DiagramBatang type="masuk" data={chartMasuk} />
+                        {/* Loading lokal agar user tahu chart sedang update */}
+                        {isLoadingMasuk ? (
+                            <Loader />
+                        ) : (
+                            <DiagramBatang type="masuk" data={chartMasuk} />
+                        )}
                     </div>
                 </Card>
 
-                {/* Chart Keluar */}
-                <Card
-                    className="h-full"
-                    title="Pengeluaran Barang per Bulan"
-                >
+                {/* === CARD 2: BARANG KELUAR === */}
+                <Card className="h-full" title="Pengeluaran Barang">
+                    {/* Filter Area di dalam Card */}
+                    <div className="flex justify-end mb-4">
+                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
+                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
+                            <select 
+                                value={yearKeluar}
+                                onChange={(e) => setYearKeluar(Number(e.target.value))}
+                                className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+                            >
+                                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="h-full w-full min-h-[300px]">
-                        <DiagramBatang type="keluar" data={chartKeluar} />
+                         {isLoadingKeluar ? (
+                            <Loader />
+                        ) : (
+                            <DiagramBatang type="keluar" data={chartKeluar} />
+                        )}
                     </div>
                 </Card>
+
             </div>
         </div>
     );

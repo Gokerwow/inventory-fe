@@ -164,14 +164,14 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                 const response = await createPegawai(pegawaiData)
                 console.log(response)
 
-                showToast('Pegawai berhasil ditambahkan!', 'success');
+                showToast('Anda berhasil membuat daftar pegawai baru', 'success');
             } else {
                 console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
 
                 const response = await updatePegawai(formData.id, pegawaiData)
                 console.log(response)
 
-                showToast('Pegawai berhasil diubah!', 'success');
+                showToast('Anda berhasil mengubah daftar pegawai baru', 'success');
             }
 
             navigate(PATHS.PEGAWAI.INDEX);
@@ -333,6 +333,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
                         <div className="flex justify-end mt-auto pt-6">
                             <Button
+                                variant="success"
                                 type="submit"
                                 disabled={isSubmitting}
                             >
