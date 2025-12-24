@@ -3,7 +3,8 @@ import { User, Users, HelpCircle } from 'lucide-react';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import Avatar from '../assets/svgs/Avatar.svg'
-import { ROLE_DISPLAY_NAMES } from '../constant/roles';
+import { FAQ_DATA, ROLE_DISPLAY_NAMES } from '../constant/roles';
+import FAQItem from '../components/FAQItem';
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = React.useState('profil');
@@ -14,9 +15,11 @@ export default function ProfilePage() {
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
-    })
+    }, [user, checkAccess, hasAccess])
 
     console.log(user)
+
+    const currentRoleFAQs = FAQ_DATA.find((item) => item.role === user?.role)?.faqs || [];
 
     return (
         <div className="w-full flex flex-col gap-5">
@@ -100,9 +103,27 @@ export default function ProfilePage() {
                         </div>
                     )}
                     {activeTab === 'faq' && (
-                        <div className="bg-white rounded-2xl shadow-lg p-8">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-4">FAQ</h2>
-                            <p className="text-gray-600">Pertanyaan yang sering diajukan akan ditampilkan di sini.</p>
+                        <div className="animate-fadeIn">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <HelpCircle className="text-blue-600" />
+                                FAQ - {ROLE_DISPLAY_NAMES[user?.role] || user?.role}
+                            </h2>
+                            
+                            {currentRoleFAQs.length > 0 ? (
+                                <div className="flex flex-col gap-2">
+                                    {currentRoleFAQs.map((faq, index) => (
+                                        <FAQItem 
+                                            key={index} 
+                                            question={faq.question} 
+                                            answer={faq.answer} 
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl">
+                                    <p>Tidak ada informasi FAQ yang tersedia untuk role Anda.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

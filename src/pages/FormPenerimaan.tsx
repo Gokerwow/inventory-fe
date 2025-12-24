@@ -44,7 +44,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     const location = useLocation()
     const { id: paramId } = useParams();
     const { showToast } = useToast();
-    
+
     // --- LOGIC HELPER BERDASARKAN MODE ---
     const isCreateMode = mode === 'create';
     const isEditMode = mode === 'edit';
@@ -173,7 +173,45 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     }
 
     const handleSaveNewItem = (newItem: any) => {
-        setBarang(prev => [...prev, newItem]);
+        setBarang((prevItems) => {
+            // 1. Cek apakah barang sudah ada di list?
+            // Jika barang lama (punya ID), cek by ID. Jika barang baru (ID 0), cek by Nama.
+            const existingItemIndex = prevItems.findIndex((item) => {
+                if (newItem.stok_id !== 0) {
+                    return item.stok_id === newItem.stok_id;
+                } else {
+                    // Cek case-insensitive untuk barang baru manual
+                    return item.stok_name.toLowerCase() === newItem.stok_name.toLowerCase();
+                }
+            });
+
+            // 2. Jika barang sudah ada (Index ketemu)
+            if (existingItemIndex !== -1) {
+                // Copy array agar tidak memutasi state langsung
+                const updatedItems = [...prevItems];
+                const existingItem = updatedItems[existingItemIndex];
+
+                // Tambahkan Quantity
+                const newQuantity = existingItem.quantity + newItem.quantity;
+
+                // Hitung Total Harga Baru 
+                // (Opsional: Anda bisa memilih harga mana yang dipakai, di sini kita pakai harga terbaru yang diinput)
+                const newTotalHarga = newQuantity * newItem.price;
+
+                // Update item yang ada
+                updatedItems[existingItemIndex] = {
+                    ...existingItem,
+                    quantity: newQuantity,
+                    price: newItem.price, // Update harga ke yang paling baru (opsional)
+                    total_harga: newTotalHarga,
+                };
+
+                return updatedItems;
+            }
+
+            // 3. Jika barang belum ada, tambahkan sebagai baris baru
+            return [...prevItems, newItem];
+        });
         showToast('Barang berhasil ditambahkan ke daftar!', 'success');
     };
 
@@ -399,7 +437,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
 
         try {
             // --- LOGIC PER MODE ---
-            
+
             if (isInspectMode) {
                 // --- MODE: INSPEKSI (TIM TEKNIS) ---
                 const allMarked = barang.every(item => 'is_layak' in item && item.is_layak !== null);
@@ -423,7 +461,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 } else {
                     showToast("Data pembayaran berhasil disimpan.", "success");
                 }
-                
+
                 setIsModalOpen(false);
                 setIsSubmitting(false);
                 navigate(PATHS.STOK_BARANG.INDEX);
@@ -488,14 +526,14 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 if (isEditMode) {
                     const penerimaanId = Number(paramId);
                     if (!penerimaanId) throw new Error("ID Penerimaan tidak ditemukan.");
-                    
+
                     await editPenerimaan(penerimaanId, dataFinal);
                     showToast("Berhasil mengupdate data penerimaan!", "success");
                 } else {
                     await createPenerimaan(dataFinal);
                     showToast("Berhasil membuat data penerimaan!", "success");
                 }
-                
+
                 navigate(PATHS.PENERIMAAN.INDEX);
             }
 
@@ -551,7 +589,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
 
         try {
             await deletePenerimaanDetail(id);
-            showToast("Data berhasil dihapus", "success");
+            showToast("Data Penerimaan berhasil dihapus", "success");
             navigate(PATHS.PENERIMAAN.INDEX);
         } catch (error) {
             console.error(error);
@@ -891,7 +929,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                 </table>
                             </div>
                         )}
-                        
+
                         {/* FOOTER ACTIONS */}
                         <div className='flex justify-end gap-4 mt-4'>
                             {/* Tombol Hapus (Hanya Edit & PPK) */}
@@ -919,22 +957,35 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                             )}
 
                             {/* Tombol Utama (Selesai/Submit) - Hidden on Preview */}
-                            {!isPreviewMode && (
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                >
-                                    {isSubmitting ? (
-                                        <>Memproses...</>
-                                    ) : (
-                                        isFinanceMode ? "Simpan" :
-                                            isInspectMode ? "Konfirmasi Selesai" :
-                                                isEditMode ? "Simpan Perubahan" :
-                                                    "Selesai"
-                                    )}
-                                </Button>
-                            )}
+                            {(() => {
+                                // Hitung status lunas secara realtime
+                                const isAllPaid = barang.length > 0 && barang.every((item: any) => item.is_paid);
+
+                                // Kondisi untuk menyembunyikan tombol:
+                                // 1. Jika mode Preview (Hidden)
+                                // 2. ATAU Jika mode Finance DAN semua sudah lunas (Hidden)
+                                const shouldHideButton = isPreviewMode || (isFinanceMode && isAllPaid);
+
+                                if (!shouldHideButton) {
+                                    return (
+                                        <Button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        >
+                                            {isSubmitting ? (
+                                                <>Memproses...</>
+                                            ) : (
+                                                isFinanceMode ? "Simpan" :
+                                                    isInspectMode ? "Konfirmasi Selesai" :
+                                                        isEditMode ? "Simpan Perubahan" :
+                                                            "Selesai"
+                                            )}
+                                        </Button>
+                                    );
+                                }
+                                return null;
+                            })()}
                         </div>
                     </div>
                 </div>

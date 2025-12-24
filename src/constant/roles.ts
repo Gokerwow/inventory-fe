@@ -28,13 +28,151 @@ export const ROLES = {
 };
 
 export const ROLE_DISPLAY_NAMES = {
-    [ROLES.SUPER_ADMIN]: 'Super Admin',       
-    [ROLES.ADMIN_GUDANG]: 'Admin Gudang Umum', 
+    [ROLES.SUPER_ADMIN]: 'Super Admin',
+    [ROLES.ADMIN_GUDANG]: 'Admin Gudang Umum',
     [ROLES.PPK]: 'Tim PPK',
     [ROLES.TEKNIS]: 'Tim Teknis',
     [ROLES.INSTALASI]: 'Instalasi',
     [ROLES.PENANGGUNG_JAWAB]: 'Penanggung Jawab'
 };
+
+export interface FAQItem {
+    question: string;
+    answer: string;
+}
+
+export interface RoleFAQ {
+    role: string;
+    faqs: FAQItem[];
+}
+
+export const FAQ_DATA: RoleFAQ[] = [
+    {
+        role: ROLES.ADMIN_GUDANG,
+        faqs: [
+            {
+                question: 'Apa fungsi utama Admin Gudang Umum di sistem SIMBA?',
+                answer: 'Admin Gudang Umum memiliki fungsi utama untuk mengelola operasional gudang, meliputi: Pengadaan barang, Penerimaan barang masuk, Pengeluaran barang, Pencatatan dan pemantauan stok barang yang tersedia di gudang.'
+            },
+            {
+                question: 'Bagaimana cara melihat data penerimaan barang?',
+                answer: 'Untuk melihat data penerimaan barang di sistem SIMBA, ikuti langkah berikut: 1) Klik menu Penerimaan pada sidebar, 2) Sistem akan menampilkan halaman penerimaan barang, 3) Pilih kategori penerimaan yang diinginkan, 4) Klik tombol Detail untuk melihat informasi penerimaan secara lengkap.'
+            },
+            {
+                question: 'Apa itu BAST dan kapan harus dibuat?',
+                answer: 'BAST (Berita Acara Serah Terima) adalah dokumen resmi yang berfungsi sebagai bukti sah bahwa barang, pekerjaan, atau jasa telah diserahkan secara resmi dari pihak pemberi kepada pihak penerima. BAST dibuat pada saat Tim PPK melakukan input penerimaan barang ke dalam sistem SIMBA.'
+            },
+            {
+                question: 'Bagaimana langkah membuat BAST di sistem?',
+                answer: 'Untuk membuat BAST, Tim PPK perlu melakukan langkah berikut: 1) Masuk ke dalam sistem SIMBA, 2) Klik menu Penerimaan pada sidebar, 3) Pilih opsi Tambah Penerimaan, 4) Isi formulir penerimaan barang sesuai data yang tersedia, 5) Simpan data, maka sistem akan secara otomatis menghasilkan dokumen BAST.'
+            },
+            {
+                question: 'Di mana saya bisa melihat file BAST yang sudah dibuat?',
+                answer: 'File BAST yang sudah dibuat dan dikonfirmasi dapat dilihat melalui halaman Riwayat Penerimaan dengan langkah berikut: 1) Klik menu Penerimaan pada sidebar, 2) Pilih submenu Riwayat Penerimaan, 3) Cari data penerimaan yang diinginkan, 4) Klik lihat untuk melihat atau mengunduh file BAST.'
+            }
+        ]
+    },
+    {
+        role: ROLES.PENANGGUNG_JAWAB,
+        faqs: [
+            {
+                question: 'Apa tugas utama Penanggung Jawab di sistem SIMBA?',
+                answer: 'Penanggung Jawab memiliki tugas utama untuk mengelola dan mengawasi proses pemesanan barang dari instalasi, meliputi: Mengkonfirmasi pemesanan barang dari instalasi, Mengubah jumlah stok yang dipesan sesuai kebutuhan dan kewenangan yang dimiliki.'
+            },
+            {
+                question: 'Bagaimana cara melihat daftar pemesanan barang yang perlu dikonfirmasi?',
+                answer: 'Untuk melihat daftar pemesanan barang yang masuk dan perlu dikonfirmasi, lakukan langkah berikut: 1) Buka menu Pengeluaran pada sistem SIMBA, 2) Sistem akan menampilkan daftar Pemesanan dari berbagai instalasi, 3) Pilih salah satu Pemesanan yang ingin ditinjau, 4) Klik tombol Lihat untuk melihat detail Pengeluaran.'
+            },
+            {
+                question: 'Apa yang dimaksud dengan status pada sistem?',
+                answer: 'Status pada sistem SIMBA berfungsi sebagai penanda kondisi pemesanan barang, antara lain: Pending (Pemesanan masih menunggu konfirmasi Penanggung Jawab), Dikonfirmasi (Pemesanan telah disetujui), Ditolak (Pemesanan tidak disetujui oleh Penanggung Jawab).'
+            },
+            {
+                question: 'Bagaimana cara mengkonfirmasi Pemesanan barang?',
+                answer: 'Untuk mengkonfirmasi pemesanan barang, Penanggung Jawab dapat mengikuti langkah berikut: 1) Masuk ke menu Pengeluaran, 2) Klik Lihat salah satu pemesanan dari instalasi, 3) Klik tombol plus/minus untuk mengubah jumlah barang, 4) Setelah selesai meninjau, Klik Konfirmasi.'
+            },
+            {
+                question: 'Apakah Penanggung Jawab bisa mengubah penerimaan barang?',
+                answer: 'Ya, Penanggung Jawab memiliki hak untuk mengubah jumlah pemesanan barang. Hal ini dilakukan sesuai dengan hirarki dan kewenangan yang berlaku di sistem SIMBA, terutama untuk menyesuaikan ketersediaan stok dan kebutuhan instalasi.'
+            }
+        ]
+    },
+    {
+        role: ROLES.PPK,
+        faqs: [
+            {
+                question: 'Apa peran utama Tim Bagian Umum (PPK) di sistem SIMBA?',
+                answer: 'Tim Bagian Umum (Pejabat Pembuat Komitmen) berperan sebagai pihak yang bertanggung jawab atas proses pengadaan barang, meliputi: Melakukan pembelian barang dari pihak ketiga, Membuat BAST (Berita Acara Serah Terima) atas barang yang diterima, Memastikan pengadaan barang sesuai dengan regulasi dan ketentuan yang berlaku, Menyediakan kebutuhan stok gudang agar operasional tetap berjalan.'
+            },
+            {
+                question: 'Bagaimana cara menambahkan data belanja baru di sistem?',
+                answer: 'Untuk menambahkan data belanja baru, Tim PPK perlu membuat BAST dengan langkah berikut: 1) Masuk ke menu Penerimaan pada sidebar, 2) Klik tombol Tambah Barang, 3) Isi formulir penerimaan barang sesuai data pembelian, 4) Tambahkan detail barang yang dibeli, 5) Klik Konfirmasi untuk menyimpan data belanja.'
+            },
+            {
+                question: 'Apa yang terjadi setelah data belanja dibuat?',
+                answer: 'Setelah data belanja dibuat, sistem akan menjalankan proses berikut: Data penerimaan akan diperiksa oleh tim teknis, Jika barang dinyatakan layak, maka barang akan otomatis masuk ke stok gudang, Jika barang tidak layak, maka akan dilakukan proses pengembalian (refund) oleh Tim PPK yang bersangkutan.'
+            },
+            {
+                question: 'Bagaimana cara melihat status penerimaan yang sudah diajukan?',
+                answer: 'Untuk melihat status penerimaan barang yang telah diajukan, lakukan langkah berikut: 1) Masuk ke menu Penerimaan, 2) Klik submenu Riwayat Penerimaan, 3) Sistem akan menampilkan daftar penerimaan beserta statusnya.'
+            },
+            {
+                question: 'Apa arti dari status "Selesai", "Pending" dan "Dibatalkan" pada data belanja?',
+                answer: 'Status pada sistem SIMBA berfungsi sebagai penanda kondisi penerimaan barang, antara lain: Pending (Pemesanan masih menunggu konfirmasi Penanggung Jawab), Dikonfirmasi (Pemesanan telah disetujui), Ditolak (Pemesanan tidak disetujui oleh Penanggung Jawab).'
+            }
+        ]
+    },
+    {
+        role: ROLES.TEKNIS,
+        faqs: [
+            {
+                question: 'Apa tugas utama Tim Teknis di sistem SIMBA?',
+                answer: 'Tim Teknis memiliki tugas utama untuk melakukan pemeriksaan dan penilaian terhadap barang yang diterima dari hasil pengadaan oleh Tim PPK, meliputi: Mengecek kesesuaian barang yang diterima dengan data pemesanan, Menilai kelayakan barang (layak atau tidak layak).'
+            },
+            {
+                question: 'Bagaimana cara melihat data penerimaan barang yang harus diperiksa?',
+                answer: 'Untuk melihat data penerimaan barang yang perlu diperiksa oleh Tim Teknis, lakukan langkah berikut: 1) Masuk ke menu Penerimaan, 2) Sistem akan menampilkan daftar penerimaan dari Tim PPK, 3) Pilih salah satu data penerimaan yang ingin diperiksa, 4) Klik tombol Lihat, 5) Sistem akan menampilkan detail penerimaan sesuai data yang dipilih.'
+            },
+            {
+                question: 'Bagaimana untuk barang tidak layak dilakukan?',
+                answer: 'Untuk barang yang dinyatakan tidak layak, maka: Barang tidak akan dimasukkan ke stok gudang, Akan dilakukan proses pengembalian (refund) oleh Tim PPK yang bersangkutan sesuai ketentuan yang berlaku.'
+            },
+            {
+                question: 'Bagaimana cara Tim Teknis mengubah status belanja?',
+                answer: 'Untuk mengubah status penerimaan barang, Tim Teknis dapat mengikuti langkah berikut: 1) Masuk ke menu Penerimaan, 2) Klik Lihat pada salah satu data penerimaan dari Tim PPK, 3) Sistem akan menampilkan detail penerimaan barang, 4) Tentukan status barang menjadi Layak atau Tidak Layak, 5) Klik Simpan untuk menyimpan perubahan status.'
+            },
+            {
+                question: 'Apa yang terjadi setelah status belanja diubah menjadi "Layak" dan "Tidak Layak?',
+                answer: 'Penjelasan dari perubahan status penerimaan adalah sebagai berikut: Layak (Barang akan otomatis masuk ke stok gudang), Tidak Layak (Barang tidak masuk ke stok dan akan diproses refund oleh Tim PPK yang bersangkutan).'
+            }
+        ]
+    },
+    {
+        role: ROLES.INSTALASI,
+        faqs: [
+            {
+                question: 'Apa peran utama Instalasi dalam sistem SIMBA?',
+                answer: 'Instalasi berperan sebagai pihak yang mengajukan pemesanan barang untuk memenuhi kebutuhan operasional masing-masing unit, dengan fungsi utama: Mengajukan permintaan atau pemesanan barang, Menentukan jumlah barang yang dibutuhkan.'
+            },
+            {
+                question: 'Bagaimana cara Instalasi mengajukan pemesanan barang?',
+                answer: 'Untuk mengajukan pemesanan barang, Instalasi dapat mengikuti langkah berikut: 1) Masuk ke menu Pemesanan, 2) Klik tombol Pesan Barang, 3) Pilih barang yang dibutuhkan, 4) Tambahkan atau kurangi jumlah barang sesuai kebutuhan, 5) Klik Selesai untuk mengirim pengajuan pemesanan.'
+            },
+            {
+                question: 'Apa yang terjadi setelah pengajuan pemesanan selesai?',
+                answer: 'Setelah pengajuan pemesanan dikirim: Status pemesanan akan menjadi menunggu konfirmasi, Pemesanan akan ditinjau oleh Penanggung Jawab dan Admin Gudang.'
+            },
+            {
+                question: 'Bagaimana cara melihat status permintaan barang yang diajukan?',
+                answer: 'Untuk melihat status pemesanan barang yang telah diajukan, lakukan langkah berikut: 1) Masuk ke menu Pemesanan, 2) Klik submenu Riwayat Pemesanan, 3) Sistem akan menampilkan daftar pemesanan.'
+            },
+            {
+                question: 'Apakah Instalasi bisa mencetak laporan permintaan barang?',
+                answer: 'Tidak. Instalasi tidak memiliki akses untuk mencetak laporan permintaan barang. Instalasi hanya dapat melihat riwayat pemesanan dan statusnya melalui sistem SIMBA.'
+            }
+        ]
+    }
+];
 
 export const USERNAMES = {
     SUPER_ADMIN: 'superadmin',
@@ -262,10 +400,7 @@ export interface DaftarPegawai {
     jabatan_id: number,
     created_at: string,
     updated_at: string,
-    jabatan: {
-        id: number,
-        name: string
-    }
+    jabatan: string
 }
 
 export interface APIPegawaiBaru {

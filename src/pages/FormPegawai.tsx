@@ -12,6 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/confirmModal";
 import Button from "../components/button";
 import Loader from "../components/loader";
+import BackButton from "../components/backButton";
 
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -226,13 +227,19 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
     return (
         <div className={`w-full h-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
-            <div className={`text-center ${isEdit ? 'mt-8' : ''}`}>
-                <h1 className={`font-bold text-2xl`}>{!isEdit ? 'Tambah Pegawai Baru' : 'Form Manajemen Pegawai'}</h1>
-                <p className="mt-2">{!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}</p>
+            {/* HEADER HALAMAN (Biru) */}
+            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
+                <BackButton className="absolute left-6 top-1/2 -translate-y-1/2" />
+                <div className='text-center'>
+                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+                        {!isEdit ? 'Tambah Pegawai Baru' : 'Form Manajemen Pegawai'}
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">{!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}</p>
+                </div>
             </div>
-            <div className={`w-full rounded-xl shadow-lg overflow-hidden flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col`}>
+            <div className={`w-full rounded-xl shadow-lg flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col`}>
                 {!isEdit &&
-                    <div className="bg-blue-600 p-6 md:p-8 flex justify-between items-start text-white">
+                    <div className="bg-blue-600 p-6 rounded-t-xl md:p-8 flex justify-between items-start text-white">
                         <div className="flex gap-4 items-center">
                             <div className="bg-white p-2 rounded-lg shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 20 20" fill="currentColor">

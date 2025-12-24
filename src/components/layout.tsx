@@ -1,69 +1,65 @@
-// components/Layout.tsx
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import SideBar from '../components/sidebar'
-import TopBar from '../components/topBar'
+import SideBar from '../components/sidebar';
+import TopBar from '../components/topBar';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // <-- WAJIB Impor CSS-nya
+import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
 import { ToasterCustom } from '../components/toaster';
 import { useAuth } from '../hooks/useAuth';
-
 
 function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
     const { isAuthenticated, isLoggingOut, login } = useAuth();
 
-    // Gunakan useEffect untuk memeriksa 'state' setiap kali halaman dimuat
     useEffect(() => {
-        // Ambil pesan yang dikirim dari 'navigate'
-        const message = location.state?.toastMessage;
+        if (!isAuthenticated && !isLoggingOut) {
+            login();
+        }
+    }, [isAuthenticated, isLoggingOut, login]);
 
-        if (message) {
-            // 1. Tampilkan toast!
-            toast(<ToasterCustom message={message} />, {
-                // Beri style pada container-nya
-                style: {
-                    background: '#00A991',
-                    borderRadius: '30px',
-                    color: 'white',
-                    position: 'relative',
-                },
-                progress: undefined,
+    useEffect(() => {
+        const isLoginSuccess = localStorage.getItem('login_success');
+        if (isLoginSuccess) {
+            toast(<ToasterCustom message="Login Berhasil! Selamat Datang." type="success" />, {
+                className: '!bg-transparent !shadow-none !p-0 !min-h-0 !mb-0 overflow-visible',
+                bodyClassName: '!p-0 !m-0 !flex-none',
                 position: 'top-right',
+                icon: false,
+                closeButton: false,
             });
+            localStorage.removeItem('login_success');
+        }
 
-            // 2. Hapus state agar toast tidak muncul lagi saat refresh
+        const message = location.state?.toastMessage;
+        if (message) {
+            toast(<ToasterCustom message={message} />, {
+                className: '!bg-transparent !shadow-none !p-0 !min-h-0 !mb-0 overflow-visible',
+                bodyClassName: '!p-0 !m-0 !flex-none',
+                position: 'top-right',
+                icon: false,
+                closeButton: false,
+            });
             navigate(location.pathname, { replace: true, state: null });
         }
-    }, [location, navigate]); // Jalankan efek ini setiap kali lokasi berubah
+    }, [location, navigate]);
 
-    // 1. JIKA SEDANG PROSES LOGOUT
-    // Tampilkan loading visual, jangan layar putih kosong/gepeng
     if (isLoggingOut) {
         return (
             <div className="flex items-center justify-center h-screen w-full bg-gray-50">
                 <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4"></div>
                     <h2 className="text-lg font-semibold text-gray-700">Sedang Keluar...</h2>
-                    <p className="text-sm text-gray-500">Mohon tunggu sebentar.</p>
                 </div>
             </div>
         );
     }
 
-    // 2. JIKA BELUM LOGIN (Dan bukan sedang logout)
     if (!isAuthenticated) {
-        // PENTING: Jangan return null begitu saja!
-        // Kita harus paksa redirect ke login SSO di sini, 
-        // karena Layout membungkus semua halaman.
-
-        // Panggil login() secara manual agar tidak stuck di layar putih
-        login();
-
-        // Sambil menunggu redirect, tampilkan loading
         return (
-            <div className="flex items-center justify-center h-screen">
-                <p>Mengalihkan ke Login...</p>
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+                {/* Opsional: Tampilkan spinner jika koneksi lambat, atau null agar bersih */}
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4"></div>
             </div>
         );
     }
@@ -83,18 +79,12 @@ function Layout() {
                     draggable
                     pauseOnHover
                     closeButton={false}
-                    style={{
-                        top: '8rem', // Jarak dari atas untuk container
-                    }}
-                    toastStyle={{
-                        marginBottom: '2rem' // Jarak antar toast
-                    }}
+                    className="top-4! right-4! w-auto! max-w-[400px]!"
                 />
+                
                 <TopBar />
-                <div
-                    id="modal-portal-root"
-                    className="overflow-auto p-8 flex-1 relative"
-                >
+                
+                <div id="modal-portal-root" className="overflow-auto p-8 flex-1 relative">
                     <Outlet />
                 </div>
             </div>

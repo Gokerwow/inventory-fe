@@ -50,7 +50,7 @@ function StokBarang() {
     const [currentStokItems, setCurrentStokItems] = useState<BARANG_STOK[]>([]);
     const [currentBASTItems, setCurrentBASTItems] = useState<BASTAPI[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: 0 });
+    const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: '' });
     const navigate = useNavigate();
 
     // 3. Set default state year ke string tahun saat ini
@@ -149,7 +149,7 @@ function StokBarang() {
         }
     };
 
-    const handleEditClick = async (id: number) => {
+const handleEditClick = async (id: number) => {
         setIsFormLoading(true);
         setIsModalOpen(true);
         try {
@@ -158,11 +158,10 @@ function StokBarang() {
             const dataToSet = {
                 id: id,
                 name: detail.name,
-                minimum_stok: detail.minimum_stok
+                // UBAH DISINI: Konversi ke String agar input bisa membaca desimal dengan aman
+                minimum_stok: String(detail.minimum_stok) 
             };
 
-            // Hapus atau abaikan setItemDetail jika hanya digunakan untuk form
-            // Masukkan data langsung ke formData
             setFormData(dataToSet);
             setIsFormLoading(false);
         } catch (error) {
@@ -282,7 +281,7 @@ function StokBarang() {
             cell: (item) => {
                 return <Status
                     label={item.status}
-                    value={item.status}
+                    value={item.status_code}
                 />;
             }
         },
@@ -414,15 +413,19 @@ function StokBarang() {
                         />
 
                         {/* Field 2: Minimum Stok */}
-                        <Input
+<Input
                             id='minimum_stok'
                             judul='Minimum Stok'
                             placeholder='Masukkan Minimum Stok'
                             name='minimum_stok'
                             type="number"
-                            // UBAH DISINI: Langsung baca dari formData (handle angka 0 agar tidak kosong stringnya)
-                            value={isFormLoading ? 'Memuat Data...' : String(formData.minimum_stok)}
-                            onChange={(e) => setFormData({ ...formData, minimum_stok: parseInt(e.target.value) || 0 })}
+                            step="0.01" // Pastikan step ini tetap ada
+                            
+                            // UBAH DISINI: Hapus String() karena state sudah string
+                            value={isFormLoading ? 'Memuat Data...' : formData.minimum_stok}
+                            
+                            // UBAH DISINI: JANGAN pakai parseFloat dulu. Simpan string mentah.
+                            onChange={(e) => setFormData({ ...formData, minimum_stok: e.target.value })}
                         />
                     </div>
                     <div className='flex items-center justify-center gap-3'>

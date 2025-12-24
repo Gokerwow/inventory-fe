@@ -20,7 +20,9 @@ export const getPengeluaranList = async (
     page: number = 1,
     perPage?: number,
     search?: string,
-    role?: string
+    role?: string,
+    startDate?: string,
+    endDate?: string
 ): Promise<PaginationResponse<APIPengeluaranList>> => {
     console.log(`SERVICE: Mengambil daftar pengeluaran halaman ${page}...`);
 
@@ -32,6 +34,14 @@ export const getPengeluaranList = async (
         if (search) {
             params.search = search;
         }
+        if (startDate) {
+            params.start_date = startDate;
+        }
+        if (endDate) {
+            params.end_date = endDate;
+        }
+
+        console.log(params)
 
         let endpoint = '/api/v1/pengeluaran'
 
@@ -65,3 +75,24 @@ export const alokasiPengeluaran = async (id: number, formData: APIAlokasiPengelu
         throw error;
     }
 }
+
+export const exportPengeluaranExcel = async (
+    startDate?: string,
+    endDate?: string
+) => {
+    try {
+        const params: Record<string, string> = {};
+        if (startDate) params.start_date = startDate;
+        if (endDate) params.end_date = endDate;
+
+        const response = await apiClient.get('/api/v1/pengeluaran/export/excel', {
+            params,
+            responseType: 'blob',
+        });
+
+        return response;
+    } catch (error) {
+        console.error("Gagal export excel:", error);
+        throw error;
+    }
+};

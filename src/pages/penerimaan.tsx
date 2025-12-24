@@ -16,6 +16,7 @@ import { NavigationTabs } from '../components/navTabs';
 import Loader from '../components/loader';
 import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
+import { useToast } from '../hooks/useToast';
 
 const penerimaanTabs = [
     {
@@ -49,6 +50,8 @@ const PenerimaanPage = () => {
     const [refreshKey, setRefreshKey] = useState(0); // Untuk trigger ulang useEffect
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const { showToast } = useToast();
 
     const navigate = useNavigate();
 
@@ -73,13 +76,12 @@ const PenerimaanPage = () => {
         setIsSubmitting(true);
         try {
             await deletePenerimaanDetail(selectedDeleteId);
-            // Refresh data setelah hapus berhasil
             setRefreshKey(prev => prev + 1);
             setIsModalOpen(false);
             setSelectedDeleteId(null);
+            showToast("Data Penerimaan berhasil dihapus", "success");
         } catch (err) {
             console.error("Gagal menghapus:", err);
-            // Opsional: Tampilkan toast error disini
         } finally {
             setIsSubmitting(false);
         }
@@ -93,7 +95,6 @@ const PenerimaanPage = () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Logika fetch sama seperti sebelumnya...
                 if (activeTab === 'penerimaan') {
                     if (user?.role === ROLES.ADMIN_GUDANG) {
                         const response = await getBASTList(currentPage);
@@ -139,16 +140,13 @@ const PenerimaanPage = () => {
         };
 
         fetchData();
-        // Tambahkan refreshKey ke dependency array agar fetchData jalan ulang saat refreshKey berubah
     }, [user, checkAccess, hasAccess, activeTab, currentPage, refreshKey]);
 
-    // ... handler pagination & tab click lainnya ...
     const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
     const handlePageChange = (page: number) => { setCurrentPage(page); };
 
     const dataToShow = user?.role === ROLES.ADMIN_GUDANG ? (activeTab === 'penerimaan' ? bastItems : riwayatBastItems) : (activeTab === 'penerimaan' ? penerimaanItems : riwayatItems);
 
-    // Transform data to match DataItem type expected by PenerimaanTable
     const transformedData = Array.isArray(dataToShow) ? dataToShow.map((item: any) => ({
         id: item.id,
         no_surat: item.noSurat || item.no_surat,
@@ -157,7 +155,6 @@ const PenerimaanPage = () => {
         category_name: item.kategori || item.category_name,
         status: item.status,
         status_code: item.status_code,
-        // PERBAIKAN DI SINI: Gunakan ?. (optional chaining)
         bast: {
             file_url: item.bast?.file_url ?? null,
             signed_file_url: item.bast?.signed_file_url ?? null,

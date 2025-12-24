@@ -11,11 +11,13 @@ const SSOCallback = () => {
 
         if (token && userString) {
             try {
-                localStorage.setItem('access_token', token);
+                localStorage.setItem('access_token', token); // Pastikan key sesuai dengan AuthProvider ('access_token')
                 localStorage.setItem('user', userString);
 
+                localStorage.setItem('login_success', 'true');
+
                 setTimeout(() => {
-                    navigate('/', { replace: true });
+                    window.location.href = '/'; 
                 }, 100);
 
             } catch (err) {
@@ -30,11 +32,12 @@ const SSOCallback = () => {
     return (
         <div className="flex items-center justify-center h-screen w-full bg-gray-100">
             <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4"></div>
                 <h2 className="text-xl font-bold text-gray-700">
-                    Memproses Login SSO...
+                    Memproses Login...
                 </h2>
                 <p className="text-gray-500">
-                    Mohon tunggu sebentar, sedang mengalihkan.
+                    Mohon tunggu sebentar...
                 </p>
             </div>
         </div>

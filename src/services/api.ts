@@ -8,7 +8,7 @@ const apiClient = axios.create({
 // 1. Interceptor Request (Kirim Token)
 apiClient.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token'); // Pastikan key-nya sesuai ('token' atau 'api_token')
+        const token = localStorage.getItem('access_token'); // Pastikan key-nya sesuai ('token' atau 'api_token')
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -31,8 +31,8 @@ apiClient.interceptors.response.use(
             console.warn('Sesi habis atau tidak terotorisasi. Melakukan logout otomatis...');
 
             // A. Bersihkan LocalStorage
-            localStorage.removeItem('token');
-            localStorage.removeItem('currentUser');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
             
             // B. Redirect paksa ke halaman login atau trigger logout SSO
             // Kita gunakan window.location agar aplikasi refresh penuh dan membersihkan State React

@@ -324,44 +324,51 @@ export function DetailPengeluaranPage() {
         );
     }, [detailItems, debouncedSearch]);
 
-    // LOGIKA BARU: Cek apakah ada perubahan data
     const isSaveDisabled = useMemo(() => {
         if (activeDetailId === null) return true;
 
-        // 1. Ambil data yang tersimpan sebelumnya (Original)
         const savedData = allAllocations[activeDetailId] || {};
 
-        // 2. Bentuk data saat ini berdasarkan input user (Current)
-        // Logic ini harus sama persis dengan logic di handleSaveModal
         const currentData: Record<number, number> = {};
         checkedBastIds.forEach(id => {
             const val = rowQuantities[id];
-            // Pastikan dikonversi ke number
             const numVal = typeof val === 'number' ? val : parseInt(val as string) || 0;
 
-            // Hanya masukkan jika quantity > 0
             if (numVal > 0) {
                 currentData[id] = numVal;
             }
         });
 
-        // 3. Bandingkan kedua Object
         const savedKeys = Object.keys(savedData).sort();
         const currentKeys = Object.keys(currentData).sort();
 
-        // Cek panjang keys
         if (savedKeys.length !== currentKeys.length) return false; // Jika jumlah item beda, berarti ada perubahan
 
-        // Cek isi value per key
         for (const key of savedKeys) {
-            // Jika key tidak ada di current atau nilainya beda
             if (currentData[parseInt(key)] !== savedData[parseInt(key)]) {
-                return false; // Ada perubahan nilai
+                return false;
             }
         }
 
-        return true; // Tidak ada perubahan (Button Disabled)
+        return true; 
     }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds]);
+
+    const isConfirmDisabled = useMemo(() => {
+        if (user.role !== ROLES.ADMIN_GUDANG) return false;
+
+        const hasAllocations = Object.keys(allAllocations).length > 0;
+
+        if (!hasAllocations) return true;
+
+        const allComplete = filteredItems.every(item => {
+            const allocationsMap = allAllocations[item.id] || {};
+            const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
+            const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+            return totalAllocated === requiredQty;
+        });
+
+        return !allComplete;
+    }, [user.role, allAllocations, filteredItems]);
 
 
     const pengeluaranColumns: ColumnDefinition<APIDetailItemPemesanan>[] = useMemo(() => [
@@ -636,6 +643,7 @@ export function DetailPengeluaranPage() {
                             variant="success"
                             className="self-end"
                             onClick={handleConfirmClick}
+                            disabled={isConfirmDisabled}
                         >
                             Konfirmasi Alokasi
                         </Button>

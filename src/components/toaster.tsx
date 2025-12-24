@@ -1,24 +1,53 @@
-import CheckIcon from '../assets/svgs/checkIcon.svg?react'
-// GANTI MENJADI INI:
-// (Gunakan ikon dari lucide-react agar lebih aman, seperti yang kita bahas)
-// import { Check } from 'lucide-react';
+// src/components/toaster.tsx
+import { Check, X, AlertCircle } from 'lucide-react';
 
-// Perhatikan: TIDAK perlu impor 'toast' atau 'Toast'
-// TIDAK perlu interface Props
+interface ToasterCustomProps {
+    message: string;
+    type?: 'success' | 'error'; // Tambahkan prop type
+}
 
-export const ToasterCustom = ({ message } : { message: string }) => {
+export const ToasterCustom = ({ message, type = 'success' }: ToasterCustomProps) => {
+    // Tentukan warna dan ikon berdasarkan tipe
+    const isError = type === 'error';
+
     return (
-        // Ini hanyalah JSX murni
-        <div className="flex items-center w-full ">
-            {/* Ikon Checkmark */}
-            <CheckIcon className=" text-white absolute -top-5" />
+        <div className="relative w-full select-none pointer-events-none">
+            
+            {/* Kartu Utama */}
+            <div className="pointer-events-auto flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] overflow-hidden">
+                
+                {/* 1. GARIS AKSEN (Berubah Warna) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isError ? 'bg-red-500' : 'bg-green-500'}`} />
 
-            {/* Teks */}
-            <div className="w-full flex justify-center text-center">
-                <p className="text-lg font-semibold w-[200px]">{message}</p>
+                {/* 2. BACKGROUND IKON (Berubah Warna) */}
+                <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full ${isError ? 'bg-red-50' : 'bg-green-50'}`}>
+                    {/* 3. IKON (Berubah Sesuai Tipe) */}
+                    {isError ? (
+                        <AlertCircle className="w-5 h-5 text-red-600" strokeWidth={2.5} />
+                    ) : (
+                        <Check className="w-5 h-5 text-green-600" strokeWidth={3} />
+                    )}
+                </div>
+
+                {/* Bagian Teks */}
+                <div className="flex flex-col justify-center flex-1 min-w-0">
+                    {/* Judul Kecil */}
+                    <h4 className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${isError ? 'text-red-400' : 'text-gray-400'}`}>
+                        {isError ? 'Gagal' : 'Sukses'}
+                    </h4>
+                    {/* Pesan */}
+                    <p className="text-sm font-semibold text-gray-800 leading-snug break-words">
+                        {message}
+                    </p>
+                </div>
+                
+                {/* Tombol Close (Opsional, visual saja) */}
+                {isError && (
+                    <div className="text-gray-300">
+                        <X className="w-4 h-4" />
+                    </div>
+                )}
             </div>
-
-            {/* HAPUS TOMBOL CLOSE. ToastContainer akan menampilkannya. */}
         </div>
     );
 };

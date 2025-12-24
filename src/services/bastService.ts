@@ -58,37 +58,30 @@ export const getRiwayatBASTList = async (
     }
 };
 
-export const uploadBAST = async (penerimaanId: number, data: {
-    uploaded_signed_file: File | null
-}) => {
-    console.log(`SERVICE: Mengupload BAST dengan penerimaan id ${penerimaanId}...`);
+interface UploadBastPayload {
+    uploaded_signed_file: File | null;
+}
 
+export const uploadBAST = async (id: number, data: UploadBastPayload) => {
     // 1. Buat instance FormData
     const formData = new FormData();
 
     // 2. Masukkan file ke dalam FormData
-    // Pastikan key 'uploaded_signed_file' sesuai dengan yang diminta Backend (misal: 'file' atau 'bast_file')
     if (data.uploaded_signed_file) {
         formData.append('uploaded_signed_file', data.uploaded_signed_file);
     }
 
-    try {
-        // 3. Kirim FormData. 
-        // Axios biasanya otomatis mendeteksi FormData dan mengatur header 'multipart/form-data'
-        // tapi kita bisa set manual untuk memastikan.
-        const response = await apiClient.post(`/api/v1/bast/upload/${penerimaanId}`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+    // 3. Kirim request dengan FormData
+    // Catatan: Axios akan otomatis mendeteksi FormData dan mengatur header 
+    // 'Content-Type': 'multipart/form-data' dengan boundary yang benar.
+    const response = await apiClient.post(`api/v1/bast/upload/${id}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 
-        console.log("✅ Response dari BE:", response.data);
-        return response.data;
-    } catch (error) {
-        console.error("❌ Error mengupload bast:", error);
-        throw error;
-    }
-}
+    return response.data;
+};
 
 export const getRiwayatBASTFile = async (
     page: number = 1,

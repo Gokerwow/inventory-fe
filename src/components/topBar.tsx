@@ -30,7 +30,7 @@ export default function TopBar() {
                             <div className='bg-white rounded-full w-10 h-10 flex items-center justify-center overflow-hidden'>
                                 <img src={user?.photo ?? Avatar} alt="Profile Picture" className='w-full' />
                             </div>
-                            <span className='max-w-[150px] wrap-break-word leading-tight font-semibold text-sm'>{ROLE_DISPLAY_NAMES[user.role] || user.role}</span>
+                            <span className='max-w-[150px] wrap-break-word leading-tight font-semibold text-sm'>{user?.name}</span>
                         </div>
                     </div>
                 </NavLink>
