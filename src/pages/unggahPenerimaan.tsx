@@ -1,38 +1,39 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import UploadIcon from '../assets/svgs/uploadBAST.svg?react'
+import UploadIcon from '../assets/svgs/uploadBAST.svg?react';
 import { useToast } from '../hooks/useToast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
-import PDFIcon from '../assets/svgs/PDFICON.svg?react'
+import PDFIcon from '../assets/svgs/PDFICON.svg?react';
 import Pagination from '../components/pagination';
-import { getRiwayatBASTFile, uploadBAST } from '../services/bastService'; // Pastikan path import benar
+import { getRiwayatBASTFile, uploadBAST } from '../services/bastService';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { ROLES, type RIWAYATBASTFILEAPI } from '../constant/roles';
 import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
+import Loader from '../components/loader';
 
 const LihatPenerimaan = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { showToast } = useToast()
-    const navigate = useNavigate()
-    const location = useLocation()
+    const { showToast } = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // State Data & Loading
     const [isLoading, setIsLoading] = useState(false);
-    const [riwayatBastFile, setRiwayatBastFile] = useState<RIWAYATBASTFILEAPI[]>([])
+    const [riwayatBastFile, setRiwayatBastFile] = useState<RIWAYATBASTFILEAPI[]>([]);
 
     // State Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const itemsPerPage = 7; // Sesuaikan dengan keinginan
+    const itemsPerPage = 5; // Disesuaikan agar muat di layout kartu
 
     const [error, setError] = useState<string | null>(null);
-    const { data } = location.state || {}
+    const { data } = location.state || {};
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         uploaded_signed_file: null as File | null
-    })
+    });
     const [selectedFileName, setSelectedFileName] = useState<string>('');
 
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
@@ -47,29 +48,19 @@ const LihatPenerimaan = () => {
         const fetchAllData = async () => {
             setIsLoading(true);
             try {
-                console.log(`🔄 Fetching BAST FILE data page ${currentPage}...`);
-
-                // Panggil service dengan parameter page & perPage
                 const response = await getRiwayatBASTFile(currentPage, itemsPerPage);
-
-                // Set Data Array
                 setRiwayatBastFile(response.data || []);
-
-                // Set Total Items (Asumsi response API punya field 'total')
-                // Jika PaginationResponse punya field 'meta', sesuaikan (misal: response.meta.total)
-                // Jika response langsung object Laravel paginate, biasanya response.total
                 setTotalItems(response.total || 0);
-
             } catch (err) {
                 console.error("Error fetching history:", err);
                 setError("Gagal mengambil riwayat.");
             } finally {
                 setIsLoading(false);
             }
-        }
+        };
 
-        fetchAllData()
-    }, [user.role, currentPage]); // Tambahkan currentPage agar re-fetch saat ganti halaman
+        fetchAllData();
+    }, [user.role, currentPage]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -98,7 +89,8 @@ const LihatPenerimaan = () => {
                 uploaded_signed_file: file
             }));
             setSelectedFileName(file.name);
-            showToast('File berhasil dipilih!', 'success');
+            // Langsung buka modal konfirmasi setelah pilih file (opsional, sesuai UX tombol Unggah)
+            // handleOpenModal(); 
         }
     };
 
@@ -120,7 +112,6 @@ const LihatPenerimaan = () => {
             return;
         }
 
-        // Pastikan ada ID data dari location state
         if (!data?.id) {
             showToast('ID Penerimaan tidak ditemukan!', 'error');
             handleCloseModal();
@@ -128,7 +119,7 @@ const LihatPenerimaan = () => {
         }
 
         try {
-            const result = await uploadBAST(data.id, formData)
+            const result = await uploadBAST(data.id, formData);
             console.log("✅ Data BAST yang diupload:", result);
             showToast("Berhasil mengupload file BAST!", "success");
             navigate(PATHS.PENERIMAAN.INDEX);
@@ -146,7 +137,7 @@ const LihatPenerimaan = () => {
             showToast('Silakan pilih file terlebih dahulu!', 'error');
             return;
         }
-        handleOpenModal()
+        handleOpenModal();
     };
 
     const formatFileSize = (bytes: number) => {
@@ -158,129 +149,156 @@ const LihatPenerimaan = () => {
     };
 
     return (
-        <div className="min-h-full mx-auto p-8 bg-white rounded-lg">
-            {/* Header & Form Upload (Sama seperti sebelumnya) */}
-            <h1 className="text-xl font-bold text-gray-800 mb-2">
-                UPLOAD BERITA ACARA SERAH TERIMA
-            </h1>
-            <p className="text-gray-600 mb-6">
-                Dokumen yang diunggah di sini akan disimpan di drive cloud Anda
-            </p>
+        <div className="h-full rounded-lg flex flex-col overflow-hidden">
+            {/* Grid Layout: 2 Kolom pada layar besar */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
 
-            <input
-                className='hidden'
-                tabIndex={-1}
-                aria-label='file input'
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-            />
+                {/* --- KOLOM KIRI: Upload Section --- */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
+                    <h1 className="text-xl font-bold text-gray-800 mb-6">
+                        Unggah Dokumen BAST
+                    </h1>
 
-            <form onSubmit={handleSubmit} className="mb-8">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center gap-4">
-                    <UploadIcon
-                        onClick={handleUploadClick}
-                        className='hover:scale-110 active:scale-95 cursor-pointer transition-all duration-200'
+                    <input
+                        className='hidden'
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleFileChange}
                     />
-                    <div className='text-center'>
-                        <p className="text-gray-700 mb-2">
-                            <span className='text-[#057CFF] cursor-pointer' onClick={handleUploadClick}>
-                                Klik untuk mengunggah
-                            </span> atau seret dan lepas
-                        </p>
-                        <p className="text-gray-500 text-sm">PDF (max size 5MB)</p>
-                    </div>
 
-                    {selectedFileName && (
-                        <div className="w-full max-w-md mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center flex-1 min-w-0">
-                                    <div className="w-10 h-12 rounded flex items-center justify-center mr-3 shrink-0">
-                                        <PDFIcon />
+                    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                        {/* Area Dashed Border */}
+                        <div
+                            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-6 transition-colors min-h-[400px]
+                            ${formData.uploaded_signed_file ? 'border-blue-400 bg-blue-50' : 'border-gray-400 hover:border-blue-400'}`}
+                        >
+                            {/* Logic tampilan file terpilih vs belum terpilih */}
+                            {!formData.uploaded_signed_file ? (
+                                <>
+                                    <div className="p-4 bg-gray-50 rounded-full">
+                                        <UploadIcon className="w-12 h-12 text-gray-600" />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-gray-700 font-medium truncate">
-                                            {selectedFileName}
+
+                                    <div className="text-center space-y-2">
+                                        <p className="text-gray-800 font-medium text-lg">
+                                            Klik untuk mengunggah atau seret dan lepas
                                         </p>
-                                        {formData.uploaded_signed_file && (
-                                            <p className="text-gray-500 text-sm">
-                                                {formatFileSize(formData.uploaded_signed_file.size)}
-                                            </p>
-                                        )}
+                                        <p className="text-gray-500 text-sm">
+                                            Format: Pdf (Maks. 5MB)<br />
+                                            Dokumen BAST yang sudah ditandatangani secara basah
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleUploadClick}
+                                        className="bg-[#057CFF] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2 mt-4"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                        Pilih File
+                                    </button>
+                                </>
+                            ) : (
+                                // Tampilan saat file sudah dipilih
+                                <div className="flex flex-col items-center w-full max-w-xs animate-fadeIn">
+                                    <div className="w-16 h-20 mb-4 text-red-500">
+                                        <PDFIcon className="w-full h-full" />
+                                    </div>
+                                    <p className="text-gray-800 font-semibold text-center break-all">
+                                        {selectedFileName}
+                                    </p>
+                                    <p className="text-gray-500 text-sm mb-6">
+                                        {formatFileSize(formData.uploaded_signed_file.size)}
+                                    </p>
+
+                                    <div className="flex gap-3 w-full">
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveFile}
+                                            className="flex-1 px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-medium"
+                                        >
+                                            Hapus
+                                        </button>
+                                        {/* Tombol trigger upload sesungguhnya */}
+                                        <Button
+                                            className='flex-1'
+                                            variant='success'
+                                            onClick={handleSubmit}
+                                        >
+                                            Unggah
+                                        </Button>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={handleRemoveFile}
-                                    className="ml-4 text-red-500 hover:text-red-700 shrink-0 cursor-pointer"
-                                    aria-label="Hapus file"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
+                            )}
                         </div>
-                    )}
+                    </form>
                 </div>
-            </form>
 
-            {/* Riwayat Upload (DIPERBAIKI) */}
-            <div>
-                <h2 className="text-gray-700 font-medium mb-4">Riwayat Upload sebelumnya</h2>
+                {/* --- KOLOM KANAN: Riwayat Section --- */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col"> {/* TAMBAHKAN flex flex-col DISINI */}
 
-                {isLoading ? (
-                    <p className="text-center py-4 text-gray-500">Memuat data...</p>
-                ) : (
-                    <div className="space-y-4">
-                        {/* ✅ Gunakan riwayatBastFile dari API */}
-                        {riwayatBastFile.length > 0 ? (
-                            riwayatBastFile.map((item, index) => (
-                                <div key={index} className="flex items-center bg-white shadow-lg p-4 rounded-lg" >
-                                    <div className="w-8 h-10 rounded flex items-center justify-center mr-3">
-                                        <PDFIcon />
-                                    </div>
-                                    <div className='flex flex-col'>
-                                        {/* Sesuaikan field dengan response API */}
-                                        <span className="text-gray-700">{item.filename || item.penerimaan_no_surat}</span>
-                                        <span className="text-gray-500">{item.uploaded_at || '-'}</span>
-                                    </div>
+                    {/* Container Konten (Header + List) */}
+                    {/* flex-1 akan membuatnya mengisi sisa ruang, mendorong pagination ke bawah */}
+                    <div className='p-6 pb-4 flex flex-col flex-1'>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">
+                            Riwayat Upload Sebelumnya
+                        </h2>
+
+                        <div className="flex-1 overflow-y-auto"> {/* Tambahkan overflow-y-auto jika listnya panjang */}
+                            {isLoading ? (
+                                <Loader />
+                            ) : (
+                                <div className="space-y-4">
+                                    {riwayatBastFile.length > 0 ? (
+                                        riwayatBastFile.map((item, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center bg-white border border-gray-200 p-4 rounded-xl hover:shadow-md transition-shadow"
+                                            >
+                                                <div className="w-10 h-10 mr-4 shrink-0 text-red-500">
+                                                    <PDFIcon className="w-full h-full" />
+                                                </div>
+                                                <div className="flex flex-col flex-1 min-w-0">
+                                                    <span className="text-gray-800 font-semibold truncate text-sm md:text-base">
+                                                        {item.filename || item.penerimaan_no_surat || "BAST Tim_PPK.pdf"}
+                                                    </span>
+                                                    <span className="text-gray-500 text-xs mt-1">
+                                                        {item.uploaded_at || '12 Oktober 2025'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
+                                            <p>Belum ada riwayat upload.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-gray-500 italic">Belum ada riwayat upload.</p>
-                        )}
-
-                        {/* ✅ Pagination Dinamis */}
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalItems} // Gunakan total items dari API
-                            onPageChange={handlePageChange}
-                            itemsPerPage={itemsPerPage}
-                        />
+                            )}
+                        </div>
                     </div>
-                )}
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        onPageChange={handlePageChange}
+                        itemsPerPage={itemsPerPage}
+                    />
+                </div>
+
             </div>
 
-            {/* Footer & Modal (Sama seperti sebelumnya) */}
-            <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end">
-                <Button
-                    variant='success'
-                    onClick={handleSubmit}
-                >
-                    Unggah BAST
-
-                </Button>
-            </div>
-
+            {/* Modal Konfirmasi */}
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmSubmit}
-                text='Apakah Anda yakin ingin mengunggah file BAST ini?'
+                text={`Apakah Anda yakin ingin mengunggah file "${selectedFileName}"?`}
             />
-        </div >
+        </div>
     );
 };
 

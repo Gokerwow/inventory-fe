@@ -226,10 +226,6 @@ function StokBarang() {
             }
         },
         {
-            header: 'Stok Lama',
-            cell: (item) => <>{item.stok_lama}</>
-        },
-        {
             header: 'Total Stok',
             cell: (item) => <>{item.total_stok}</>
         },

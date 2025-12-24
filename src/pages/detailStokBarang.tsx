@@ -199,79 +199,81 @@ const DetailStokBarang = () => {
             </div>
 
             {/* --- Kartu Informasi Utama Barang --- */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex-1 flex flex-col">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-gray-100 pb-6">
-                    {/* Icon & Nama Barang */}
-                    <div className="flex items-start gap-5">
-                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-sm ${colorClass} bg-opacity-20`}>
-                            <IconComponent className={`w-10 h-10 ${colorClass.replace('bg-', 'text-').split(' ')[1]}`} />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-100 text-gray-500 border border-gray-200">
-                                    {data?.category_name}
-                                </span>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col">
+                <div className="bg-white shadow-sm rounded-t-xl p-6 flex-1 flex flex-col">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-gray-100 pb-6">
+                        {/* Icon & Nama Barang */}
+                        <div className="flex items-start gap-5">
+                            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-sm ${colorClass} bg-opacity-20`}>
+                                <IconComponent className={`w-10 h-10 ${colorClass.replace('bg-', 'text-').split(' ')[1]}`} />
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-800 leading-tight">{data.name}</h2>
-                            <p className="text-sm text-gray-400 mt-1">ID Barang: #{data.id}</p>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-100 text-gray-500 border border-gray-200">
+                                        {data?.category_name}
+                                    </span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800 leading-tight">{data.name}</h2>
+                                <p className="text-sm text-gray-400 mt-1">ID Barang: #{data.id}</p>
+                            </div>
+                        </div>
+                        {/* Statistik Mini */}
+                        <div className="flex gap-4 w-full md:w-auto">
+                            <div className="flex-1 md:flex-none px-6 py-4 bg-gray-50 rounded-xl border border-gray-100 text-center min-w-[120px]">
+                                <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Satuan</p>
+                                <p className="text-lg font-bold text-gray-700 capitalize">{data.satuan}</p>
+                            </div>
+                            <div className="flex-1 md:flex-none px-6 py-4 bg-green-50 rounded-xl border border-green-100 text-center min-w-[120px]">
+                                <p className="text-xs text-green-500 mb-1 uppercase tracking-wider font-semibold">Total Stok</p>
+                                <p className="text-lg font-bold text-green-600">{parseFloat(data.total_stok)}</p>
+                            </div>
+                            <div className="flex-1 md:flex-none px-6 py-4 bg-red-50 rounded-xl border border-red-100 text-center min-w-[120px]">
+                                <p className="text-xs text-red-500 mb-1 uppercase tracking-wider font-semibold">Min. Stok</p>
+                                <p className="text-lg font-bold text-red-600">{parseFloat(data.minimum_stok)}</p>
+                            </div>
                         </div>
                     </div>
-
-                    {/* Statistik Mini */}
-                    <div className="flex gap-4 w-full md:w-auto">
-                        <div className="flex-1 md:flex-none px-6 py-4 bg-gray-50 rounded-xl border border-gray-100 text-center min-w-[120px]">
-                            <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Satuan</p>
-                            <p className="text-lg font-bold text-gray-700 capitalize">{data.satuan}</p>
+                    {/* --- Section Riwayat Mutasi --- */}
+                    <div className="flex flex-col gap-4 flex-1">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                Riwayat Mutasi Barang
+                            </h3>
+                            <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                Page {data.mutasi.current_page}
+                            </span>
                         </div>
-                        <div className="flex-1 md:flex-none px-6 py-4 bg-red-50 rounded-xl border border-red-100 text-center min-w-[120px]">
-                            <p className="text-xs text-red-500 mb-1 uppercase tracking-wider font-semibold">Min. Stok</p>
-                            <p className="text-lg font-bold text-red-600">{parseFloat(data.minimum_stok)}</p>
-                        </div>
+                        {/* Jika data kosong */}
+                        {data.mutasi.data.length === 0 ?
+                            <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex-1 flex justify-center items-center">
+                                <p className="text-gray-500">Belum ada riwayat mutasi untuk barang ini.</p>
+                            </div>
+                            :
+                            isLoading ? <div className="flex-1 flex justify-center items-center">
+                                <Loader />
+                            </div> :
+                            <>
+                                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                    <ReusableTable
+                                        columns={columns}
+                                        currentItems={data.mutasi.data} // Menggunakan data mutasi dari JSON
+                                    />
+                                </div>
+                            </>
+                        }
                     </div>
                 </div>
-
-                {/* --- Section Riwayat Mutasi --- */}
-                <div className="flex flex-col gap-4 flex-1">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                            Riwayat Mutasi Barang
-                        </h3>
-                        <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                            Page {data.mutasi.current_page}
-                        </span>
-                    </div>
-
-
-                    {/* Jika data kosong */}
-                    {data.mutasi.data.length === 0 ?
-                        <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex-1 flex justify-center items-center">
-                            <p className="text-gray-500">Belum ada riwayat mutasi untuk barang ini.</p>
-                        </div>
-                        :
-                        isLoading ? <div className="flex-1 flex justify-center items-center">
-                            <Loader />
-                        </div> :
-                        <>
-                            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                                <ReusableTable
-                                    columns={columns}
-                                    currentItems={data.mutasi.data} // Menggunakan data mutasi dari JSON
-                                />
-                            </div>
-                            {/* FOOTER: Pagination */}
-                            <Pagination
-                                currentPage={currentPage}
-                                totalItems={totalItems}
-                                itemsPerPage={itemsPerPage}
-                                onPageChange={handlePageChange}
-                                totalPages={totalPages}
-                            />
-                        </>
-                    }
-                </div>
+                        {/* FOOTER: Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            totalPages={totalPages}
+                        />
             </div>
         </div>
     );

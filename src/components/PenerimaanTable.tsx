@@ -75,7 +75,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
             )
         }
 
-        if (userRole === ROLES.PPK && variant === 'history') {
+        if (variant === 'history') {
             return <ActionBtn icon={<EyeIcon className={iconSize} />} label="Lihat" onClick={() => handleAction(item.id, 'detail')} />;
 
         }

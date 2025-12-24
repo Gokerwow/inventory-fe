@@ -205,9 +205,7 @@ const PenerimaanPage = () => {
                                 onDelete={handleDeleteRequest}
                             />
                         </div>
-                        <div className="px-4 bg-white shrink-0">
-                            <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} totalPages={totalPages} />
-                        </div>
+                        <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} totalPages={totalPages} />
                     </>
                 )}
             </div>
