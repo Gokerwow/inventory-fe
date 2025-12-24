@@ -1,46 +1,43 @@
-import { useState, useMemo, useCallback } from 'react'; // <-- TAMBAHKAN useMemo dan useCallback
+import { useState, useMemo, useCallback, useEffect } from 'react'; // <-- TAMBAHKAN useMemo dan useCallback
 import { AuthContext } from './AuthContext.tsx'
 
 // 2. Buat Provider (Komponen Pembungkus)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState(null);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    // Ambil user dari localStorage saat pertama kali load
-    const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem('currentUser');
-        return storedUser ? JSON.parse(storedUser) : null;
-    });
-    // Ganti fungsi login yang lama dengan ini:
+    useEffect(() => {
+        const token = localStorage.getItem('access_token');
+        const storedUser = localStorage.getItem('user');
+
+        if (token && storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
     const login = useCallback(() => {
-        // Redirect browser ke Backend Inventory
         window.location.href = 'http://localhost:8001/api/sso/login';
     }, []);
 
-    // --- UBAHAN: Stabilkan 'logout' dengan useCallback ---
     const logout = useCallback(() => {
-        // 3. Set flag logout jadi TRUE
         setIsLoggingOut(true);
-
-        // Hapus data
-        localStorage.removeItem('token');
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
         setUser(null);
-
-        // Redirect
         window.location.href = 'http://localhost:8001/api/sso/logout';
     }, []);
 
-    // --- UBAHAN: Stabilkan 'value' dengan useMemo ---
-    // Nilai yang akan dibagikan ke semua komponen
     const value = useMemo(() => ({
-        user,   // Data user saat ini (null jika guest)
-        login,  // Fungsi untuk login
-        logout, // Fungsi untuk logout
-        isAuthenticated: !!user, // boolean (true/false)
+        user,
+        login,
+        logout,
+        isAuthenticated: !!localStorage.getItem('access_token'),
         isLoggingOut,
-    }), [user, login, logout, isLoggingOut]); // <-- Hanya buat objek 'value' baru jika user, login, atau logout berubah
+    }), [user, login, logout, isLoggingOut]);
 
-    return <AuthContext.Provider value={value}>
-        {children}
-    </AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
 }
