@@ -1,16 +1,20 @@
-// src/pages/Unauthorized.tsx
+// src/pages/unauthorized.tsx
 import { useNavigate } from 'react-router-dom';
-import { PATHS } from '../Routes/path';
+import { useAuth } from '../hooks/useAuth'; // Pastikan path import ini sesuai
+import Button from '../components/button';
 
 const Unauthorized = () => {
     const navigate = useNavigate();
+    const { logout, user } = useAuth(); // Ambil fungsi logout dan data user
 
     const goBack = () => {
         navigate(-1); // Kembali ke halaman sebelumnya
     };
 
-    const goHome = () => {
-        navigate(PATHS.DASHBOARD); // atau halaman default lainnya
+    const handleLogout = () => {
+        // Panggil fungsi logout dari AuthProvider yang sudah diperbaiki
+        // Ini akan membersihkan localStorage dan me-refresh halaman ke SSO
+        logout(); 
     };
 
     return (
@@ -42,30 +46,34 @@ const Unauthorized = () => {
                 <p className="text-gray-600 mb-2">
                     Maaf, Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
-                <p className="text-gray-500 text-sm mb-8">
-                    Silakan hubungi administrator jika Anda merasa ini adalah kesalahan.
-                </p>
+                
+                {/* User Info (Optional: membantu user sadar dia login sebagai siapa) */}
+                {user && (
+                    <p className="text-gray-500 text-sm mb-6 bg-gray-50 py-2 rounded">
+                        Login sebagai: <span className="font-semibold text-gray-700">{user.name || 'User'}</span>
+                    </p>
+                )}
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button
+                <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                    <Button
                         onClick={goBack}
-                        className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        variant='primary'
                     >
                         Kembali
-                    </button>
-                    <button
-                        onClick={goHome}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    </Button>
+                    <Button
+                        onClick={handleLogout}
+                        variant='danger'
                     >
-                        Ke Beranda
-                    </button>
+                        Ganti Akun / Logout
+                    </Button>
                 </div>
 
                 {/* Additional Info */}
-                <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                        <strong>Tips:</strong> Pastikan Anda login dengan akun yang memiliki hak akses yang sesuai.
+                <div className="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                    <p className="text-xs text-yellow-800">
+                        <strong>Tips:</strong> Jika Anda yakin seharusnya memiliki akses, silakan logout dan login kembali, atau hubungi administrator sistem.
                     </p>
                 </div>
             </div>

@@ -1,19 +1,19 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'; // <-- TAMBAHKAN useMemo dan useCallback
+import { useState, useMemo, useCallback } from 'react'; // Hapus useEffect yang tidak perlu
 import { AuthContext } from './AuthContext.tsx'
 
-// 2. Buat Provider (Komponen Pembungkus)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState(null);
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-    useEffect(() => {
-        const token = localStorage.getItem('access_token');
-        const storedUser = localStorage.getItem('user');
-
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
+    const [user, setUser] = useState(() => {
+        try {
+            const token = localStorage.getItem('access_token'); // Pastikan nama key SAMA dengan di api.ts
+            const storedUser = localStorage.getItem('user');
+            
+            return (token && storedUser) ? JSON.parse(storedUser) : null;
+        } catch (error) {
+            return null;
         }
-    }, []);
+    });
+
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const login = useCallback(() => {
         window.location.href = 'http://localhost:8001/api/sso/login';
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         login,
         logout,
-        isAuthenticated: !!localStorage.getItem('access_token'),
+        isAuthenticated: !!user, 
         isLoggingOut,
     }), [user, login, logout, isLoggingOut]);
 
