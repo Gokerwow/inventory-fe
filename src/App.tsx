@@ -27,50 +27,26 @@ import { useAuth } from './hooks/useAuth'
 import { menuItems } from './constant/roles'
 import NotifikasiPage from './pages/notification'
 
-// 1. Buat Komponen Kecil untuk Menangani Akar Aplikasi ("/")
 const RootHandler = () => {
   const { isAuthenticated, login, user, isLoggingOut } = useAuth();
 
-
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Jika user belum login dan tidak sedang logout, paksa login SSO
+    if (!isAuthenticated && !isLoggingOut) {
       login();
     }
-  }, [isAuthenticated, login]);
+  }, [isAuthenticated, isLoggingOut, login]);
 
-  // --- LOGIKA BARU ---
-  // Jika sedang logout, TAHAN! Jangan lakukan apa-apa, tampilkan loading saja.
-  if (isLoggingOut) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Sedang Logout...</p>
-      </div>
-    );
-  }
-  // -------------------
-
+  // Jika sudah login & data user ada -> Redirect ke halaman default role
   if (isAuthenticated && user) {
-    // --- LOGIKA BARU: Cari Halaman Rumah berdasarkan Role ---
-
-    // 1. Ambil role user saat ini
     const userRole = user.role;
-    console.log(user)
-
-    // 2. Cari menu pertama yang mengizinkan role ini
     const allowedMenu = menuItems.find(item => item.role.includes(userRole));
-
-    // 3. Tentukan tujuan: kalau ketemu pakai path-nya, kalau tidak lempar ke unauthorized
     const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
-
-    // 4. Redirect ke halaman yang sesuai
+    
     return <Navigate to={targetPath} replace />;
   }
 
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <p>Mengalihkan ke Login SSO...</p>
-    </div>
-  );
+  return null; 
 };
 
 function App() {
