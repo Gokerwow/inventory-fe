@@ -6,8 +6,7 @@ const SSOCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    // 1. Gunakan useRef untuk menandai apakah proses sudah berjalan
-    // Ini solusi ampuh untuk mencegah double-call di React.StrictMode
+    // mencegah double-call di React.StrictMode
     const isProcessing = useRef(false);
 
     useEffect(() => {
@@ -17,39 +16,29 @@ const SSOCallback = () => {
             // 2. Cek Guard: Jika tidak ada token atau SEDANG memproses, hentikan.
             if (!token || isProcessing.current) return;
 
-            // Tandai bahwa proses sedang berjalan
             isProcessing.current = true;
 
             try {
                 console.log("🔄 Memproses login SSO...");
 
-                // Simpan token sementara
                 localStorage.setItem('access_token', token);
 
-                // Fetch data user
                 const response = await apiClient.get('/api/me');
                 const userData = response.data;
 
                 console.log("✅ Data user didapat:", userData);
 
-                // Simpan data final
                 localStorage.setItem('user', JSON.stringify(userData));
                 localStorage.setItem('login_success', 'true');
 
-                // Redirect ke dashboard
-                // window.location.href lebih aman di sini untuk memastikan state aplikasi bersih
                 window.location.href = '/';
 
             } catch (err) {
                 console.error('❌ Gagal mengambil profil user:', err);
 
-                // Bersihkan sampah token jika gagal
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('user');
 
-                // PENTING: Jangan langsung redirect ke '/' jika gagal, 
-                // karena bisa memicu looping ke SSO lagi.
-                // Lebih baik arahkan ke halaman error atau Unauthorized.
                 navigate('/unauthorized', { replace: true });
             }
         };
@@ -57,8 +46,6 @@ const SSOCallback = () => {
         if (token) {
             processLogin();
         } else {
-            // Jika token kosong dari awal, jangan ke '/' (karena bakal dilempar ke SSO lagi)
-            // Arahkan ke Unauthorized atau Login manual
             navigate('/unauthorized', { replace: true });
         }
 
