@@ -261,7 +261,7 @@ export interface SelectedPihak {
 
 export interface LogItem {
     foto: string,
-    role: string,
+    user: string,
     waktu: string,
     tanggal: string,
     activity: string
@@ -411,6 +411,17 @@ export interface APIPegawaiBaru {
     jabatan_id: number,
     phone: string,
     status: string | undefined
+}
+
+export interface APINotifikasi {
+    id: number,
+    sender: string,
+    title: string,
+    message: string,
+    date: string,
+    isRead: boolean,
+    type: string,
+    url: string
 }
 
 export interface APIJabatan {

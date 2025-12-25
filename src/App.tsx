@@ -1,31 +1,31 @@
-import './App.css'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/layout'
-import Dashboard from './pages/dashboard'
-import StokBarang from './pages/stokBarang'
-import Penerimaan from './pages/penerimaan'
-import Pengeluaran from './pages/pengeluaran'
-import Profil from './pages/profil'
-import RolePick from './pages/rolePick'
-import FormPenerimaan from './pages/FormPenerimaan'
-import AkunPage from './pages/akun'
-import PegawaiPage from './pages/pegawai'
-import MonitoringPage from './pages/monitoring'
-import FormAkunPage from './pages/FormAkun'
-import { PATHS } from './Routes/path'
-import Unauthorized from './pages/unauthorized'
-import UnduhBast from './pages/unduhBAST'
-import LihatPenerimaan from './pages/unggahPenerimaan'
-import PemesananPage from './pages/pemesanan'
-import PenerimaanLayout from './components/PenerimaanLayout'
-import { FormPegawaiPage } from './pages/FormPegawai'
-import DetailStokBarang from './pages/detailStokBarang'
-import { DetailPengeluaranPage } from './pages/detailPengeluaran'
-import SSOCallback from './pages/SSOCallback'
-import { useEffect } from 'react'
-import { useAuth } from './hooks/useAuth'
-import { menuItems } from './constant/roles'
-import NotifikasiPage from './pages/notification'
+import './App.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/layout';
+import Dashboard from './pages/dashboard';
+import StokBarang from './pages/stokBarang';
+import Penerimaan from './pages/penerimaan';
+import Pengeluaran from './pages/pengeluaran';
+import Profil from './pages/profil';
+import RolePick from './pages/rolePick';
+import FormPenerimaan from './pages/FormPenerimaan';
+import AkunPage from './pages/akun';
+import PegawaiPage from './pages/pegawai';
+import MonitoringPage from './pages/monitoring';
+import FormAkunPage from './pages/FormAkun';
+import { PATHS } from './Routes/path';
+import Unauthorized from './pages/unauthorized';
+import UnduhBast from './pages/unduhBAST';
+import LihatPenerimaan from './pages/unggahPenerimaan';
+import PemesananPage from './pages/pemesanan';
+import PenerimaanLayout from './components/PenerimaanLayout';
+import { FormPegawaiPage } from './pages/FormPegawai';
+import DetailStokBarang from './pages/detailStokBarang';
+import { DetailPengeluaranPage } from './pages/detailPengeluaran';
+import SSOCallback from './pages/SSOCallback';
+import { useEffect } from 'react';
+import { useAuth } from './hooks/useAuth';
+import { menuItems } from './constant/roles';
+import NotifikasiPage from './pages/notifikasi';
 
 const RootHandler = () => {
   const { isAuthenticated, login, user, isLoggingOut } = useAuth();
@@ -124,7 +124,7 @@ function App() {
         <Route path={PATHS.NOTIFICATION} element={<NotifikasiPage />} />
       </Route>
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;
