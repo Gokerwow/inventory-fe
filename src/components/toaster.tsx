@@ -14,7 +14,7 @@ export const ToasterCustom = ({ message, type = 'success' }: ToasterCustomProps)
         <div className="relative w-full select-none pointer-events-none">
             
             {/* Kartu Utama */}
-            <div className="pointer-events-auto flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] overflow-hidden">
+            <div className="pointer-events-auto flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-r-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] overflow-hidden">
                 
                 {/* 1. GARIS AKSEN (Berubah Warna) */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isError ? 'bg-red-500' : 'bg-green-500'}`} />

@@ -48,7 +48,7 @@ const Pagination = ({
                         : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >
-                Previous
+                Sebelumnya
             </button>
         );
 
@@ -138,7 +138,7 @@ const Pagination = ({
                         : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >
-                Next
+                Selanjutnya
             </button>
         );
 
@@ -148,9 +148,9 @@ const Pagination = ({
     return (
             <div className="border-t border-gray-200 ">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-gray-500">
                         {/* PERUBAHAN: Tampilkan informasi yang lebih akurat */}
-                        Menampilkan {totalItems > 0 ? startIndex + 1 : 0} sampai {endIndex} dari {totalItems} entri
+                        Menampilkan {totalItems > 0 ? startIndex + 1 : 0} sampai {endIndex} dari {totalItems} hasil
                     </div>
                     <div className="flex items-center space-x-2">
                         {renderPaginationButtons()}

@@ -36,5 +36,6 @@ export const PATHS = {
         EDIT: '/pegawai/edit/:id'
     },
     MONITORING: '/monitoring',
-    PEMESANAN: '/pemesanan'
+    PEMESANAN: '/pemesanan',
+    NOTIFICATION: '/notifikasi'
 }

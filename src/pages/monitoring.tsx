@@ -107,7 +107,7 @@ export default function MonitoringPage() {
             <NavigationTabs tabs={LOGTabs} activeTab={activeTab} onTabClick={handleClick} />
 
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                <div className='p-6 pb-4 flex justify-between items-center'>
+                <div className='p-6 pb-4 flex gap-4 items-center'>
                     <h2 className="text-xl font-semibold">Log Monitoring</h2>
                     {/* Search Input */}
                     <SearchBar

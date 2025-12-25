@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuthorization } from "../hooks/useAuthorization";
-import { CATEGORY_DATA, ROLES } from "../constant/roles";
+import { CATEGORY_DATA, ROLES, type APIDetailBarang } from "../constant/roles";
 import { useAuth } from "../hooks/useAuth";
 import { getDetailStokBarang } from "../services/barangService";
 import { useParams } from "react-router-dom";
@@ -12,26 +12,7 @@ import Loader from "../components/loader";
 
 // --- Definisikan Type Sesuai JSON Backend ---
 // (Idealnya ini dipindah ke file types/interfaces terpisah)
-interface MutationItem {
-    tanggal: string;
-    tipe: 'masuk' | 'keluar';
-    no_surat: string;
-    quantity: number;
-    harga: string;
-    total_harga: string;
-}
 
-interface APIDetailBarang {
-    id: number;
-    name: string;
-    category_name: string;
-    satuan: string;
-    minimum_stok: string;
-    mutasi: {
-        current_page: number;
-        data: MutationItem[];
-    };
-}
 
 const DetailStokBarang = () => {
     const [data, setData] = useState<APIDetailBarang | null>(null);
@@ -56,6 +37,7 @@ const DetailStokBarang = () => {
             try {
                 // Pastikan service mengembalikan struktur data yang sesuai
                 const detailStok = await getDetailStokBarang(paramId ? parseInt(paramId) : 0, currentPage);
+                console.log(detailStok)
                 setData(detailStok);
                 setTotalItems(detailStok.mutasi?.total || 0)
                 setItemsPerPage(detailStok.mutasi?.per_page || 10);

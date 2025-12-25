@@ -493,7 +493,6 @@ export default function PemesananPage() {
                                     )}
                                 </tbody>
 
-                                {/* ✅ Bagian Total dipindah ke sini (tfoot) */}
                                 <tfoot>
                                     <tr className="border-y-2 border-gray-200">
                                         <td className="py-4 px-4 font-semibold text-gray-800">
@@ -503,7 +502,7 @@ export default function PemesananPage() {
                                             {/* pl-14 ditambahkan untuk menyesuaikan posisi dengan angka di atas yang tergeser oleh tombol minus */}
                                             {BarangPesanan.reduce((total, item) => total + item.quantity, 0)}
                                         </td>
-                                        <td></td> {/* Kolom kosong untuk 'Aksi' agar struktur tabel tetap terjaga */}
+                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>

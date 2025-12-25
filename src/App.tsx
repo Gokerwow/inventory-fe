@@ -25,6 +25,7 @@ import SSOCallback from './pages/SSOCallback'
 import { useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { menuItems } from './constant/roles'
+import NotifikasiPage from './pages/notification'
 
 // 1. Buat Komponen Kecil untuk Menangani Akar Aplikasi ("/")
 const RootHandler = () => {
@@ -142,6 +143,7 @@ function App() {
         </Route>
         <Route path={PATHS.MONITORING} element={<MonitoringPage />} />
         <Route path={PATHS.PEMESANAN} element={<PemesananPage />} />
+        <Route path={PATHS.NOTIFICATION} element={<NotifikasiPage />} />
       </Route>
     </Routes>
   )

@@ -289,6 +289,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.name && (
                                     <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                                 )}
+                                <span className="text-sm text-gray-500">Contoh: Rizky Pratama</span>
                             </div>
 
                             <div>
@@ -320,6 +321,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.nip && (
                                     <p className="text-red-500 text-xs mt-1">{errors.nip}</p>
                                 )}
+                                <span className="text-sm text-gray-500">Contoh: 197361736176903</span>
                             </div>
 
                             <div>
@@ -334,6 +336,8 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.phone && (
                                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                                 )}
+                                <span className="text-sm text-gray-500">Contoh: 08123456789</span>
+
                             </div>
 
                         </div>

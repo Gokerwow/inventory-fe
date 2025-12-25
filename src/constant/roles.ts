@@ -1,9 +1,10 @@
 import DashboardIcon from '../assets/svgs/DashboardIcon.svg?react';
-import ChartIcon from '../assets/svgs/Chart.svg?react';
-import PenerimaanIcon from '../assets/svgs/Penerimaan.svg?react';
-import PengeluaranIcon from '../assets/svgs/Pengeluaran.svg?react';
+import BarangIcon from '../assets/svgs/barangIcon.svg?react'
+import PenerimaanIcon from '../assets/svgs/penerimaanIcon.svg?react';
+import PengeluaranIcon from '../assets/svgs/pengeluaranIcon.svg?react';
 import PegawaiIcon from '../assets/svgs/people.svg?react'
 import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react'
+import PemesananIcon from '../assets/svgs/shopping-cart.svg?react'
 // import AkunIcon from '../assets/svgs/Akun Icon.svg?react'
 import CetakIcon from '../assets/svgs/CetakIcon.svg?react'
 import ListrikIcon from '../assets/svgs/ListrikIcon.svg?react'
@@ -381,14 +382,15 @@ export interface PaginationResponse<T> {
 
 export const menuItems = [
     // { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
+    { path: '/notifikasi', icon: '', label: 'Notifikasi', role: [], tag: 'Notifikasi' },
     { path: '/profil', icon: '', label: 'Pegawai', role: [], tag: 'Profil' },
     { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Pegawai' },
     { path: '/monitoring', icon: MonitoringIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Monitoring' },
     { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: [ROLES.ADMIN_GUDANG], tag: 'Dashboard' },
-    { path: '/stok-barang', icon: ChartIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Manajemen Barang' },
+    { path: '/stok-barang', icon: BarangIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Manajemen Barang' },
     { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], tag: 'Manajemen Penerimaan' },
     { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG], tag: 'Manajemen Pengeluaran' },
-    { path: '/pemesanan', icon: PengeluaranIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Manajemen Pemesanan' },
+    { path: '/pemesanan', icon: PemesananIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Manajemen Pemesanan' },
 ];
 
 export interface DaftarPegawai {
@@ -419,7 +421,7 @@ export interface APIJabatan {
 export interface APIStokUpdate {
     id?: number,
     name: string,
-    minimum_stok: number
+    minimum_stok: number | string
 }
 
 export interface APIConfirmKelayakan {
@@ -457,23 +459,26 @@ export interface APIBarangBaru {
     harga: number,
 }
 
+interface MutationItem {
+    tanggal: string;
+    tipe: 'masuk' | 'keluar';
+    no_surat: string;
+    quantity: number;
+    harga: string;
+    total_harga: string;
+}
+
 export interface APIDetailBarang {
-    id: number,
-    name: string,
-    category_name: string,
-    satuan: string,
-    minimum_stok: string,
-    riwayat_penerimaan: [
-        {
-            penerimaan_id: number,
-            no_surat: string,
-            quantity: number,
-            harga: string,
-            total_harga: string,
-            status: string,
-            created_at: string
-        }
-    ]
+    id: number;
+    name: string;
+    category_name: string;
+    satuan: string;
+    minimum_stok: string;
+    total_stok: string;
+    mutasi: {
+        current_page: number;
+        data: MutationItem[];
+    };
 }
 
 export interface APIDetailStokBAST {

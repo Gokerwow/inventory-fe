@@ -1,7 +1,7 @@
 import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
 import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles';
 import type { ColumnDefinition } from '../components/table';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { useAuth } from '../hooks/useAuth';
 import { getDetailStokBarang, getStokBarang, updateBarangStok } from '../services/barangService';
@@ -20,6 +20,7 @@ import { CategoryFilter } from '../components/categoryFilter';
 import { NavigationTabs } from '../components/navTabs';
 import Button from '../components/button';
 import SearchBar from '../components/searchBar';
+import { AlertTriangle } from 'lucide-react';
 
 const stokTabs = [
     {
@@ -43,7 +44,6 @@ function StokBarang() {
     const [totalPages, setTotalPages] = useState(1);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid' | ''>('');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isLoading, setIsLoading] = useState(true);
     const [isFormLoading, setIsFormLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,6 @@ function StokBarang() {
     const [formData, setFormData] = useState<APIStokUpdate>({ id: 0, name: '', minimum_stok: '' });
     const navigate = useNavigate();
 
-    // 3. Set default state year ke string tahun saat ini
     const [activeTab, setActiveTab] = useState('stokBarang');
 
     const { showToast } = useToast();
@@ -75,7 +74,6 @@ function StokBarang() {
             clearTimeout(handler);
         };
     }, [search]);
-    // --------------------------------
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -87,18 +85,32 @@ function StokBarang() {
             try {
                 if (activeTab === 'stokBarang') {
                     console.log('Fetching Stok Data....');
-                    // Pastikan parameter year dikirim jika API mendukung filter tahun
-                    // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch);
                     console.log("📦 Stok Response:", response);
                     setCurrentStokItems(response.data.flat());
                     setTotalItems(response.total || 0);
                     setItemsPerPage(response.per_page || 10);
                     setTotalPages(response.last_page || 1);
+                    const lowStockItems = response.data.flat().filter((item: any) => item.total_stok <= item.minimum_stok);
+
+                    if (lowStockItems.length > 0) {
+                        // Cukup satu toast yang memberitahu user untuk mengecek tabel
+                        showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'warning');
+                    }
+                    // const stokLessThanMinimum = currentStokItems.filter(item => item.total_stok <= item.minimum_stok)
+                    // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+                    // if (stokLessThanMinimum.length > 0) {
+                    //     for (const stok of stokLessThanMinimum) {
+                    //         if (stok.total_stok === stok.minimum_stok) {
+                    //             showToast(`${stok.name} sudah pada stok minimum`)
+                    //         } else {
+                    //             showToast(`${stok.name} kurang dari stok minimum`)
+                    //         }
+                    //         await delay(1000);
+                    //     }
+                    // }
                 } else {
                     console.log('Fetching BAST Data....');
-                    // Pastikan parameter year dikirim jika API mendukung filter tahun
-                    // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch);
                     console.log("📦 BAST Response:", response);
                     setCurrentBASTItems(response.data.flat());
@@ -149,7 +161,7 @@ function StokBarang() {
         }
     };
 
-const handleEditClick = async (id: number) => {
+    const handleEditClick = async (id: number) => {
         setIsFormLoading(true);
         setIsModalOpen(true);
         try {
@@ -159,7 +171,7 @@ const handleEditClick = async (id: number) => {
                 id: id,
                 name: detail.name,
                 // UBAH DISINI: Konversi ke String agar input bisa membaca desimal dengan aman
-                minimum_stok: String(detail.minimum_stok) 
+                minimum_stok: String(detail.minimum_stok)
             };
 
             setFormData(dataToSet);
@@ -226,7 +238,18 @@ const handleEditClick = async (id: number) => {
         },
         {
             header: 'Total Stok',
-            cell: (item) => <>{item.total_stok}</>
+            cell: (item) => {
+                const isCritical = item.total_stok <= item.minimum_stok;
+                return (
+                    <div className={`flex items-center gap-2 ${isCritical ? 'text-red-600 font-bold' : ''}`}>
+                        {item.total_stok}
+                        {isCritical && (
+                            // Ikon Warning jika stok sedikit
+                            <span title="Stok di bawah minimum!"><AlertTriangle size={16} /></span>
+                        )}
+                    </div>
+                )
+            }
         },
         {
             header: 'Minimum Stok',
@@ -413,17 +436,17 @@ const handleEditClick = async (id: number) => {
                         />
 
                         {/* Field 2: Minimum Stok */}
-<Input
+                        <Input
                             id='minimum_stok'
                             judul='Minimum Stok'
                             placeholder='Masukkan Minimum Stok'
                             name='minimum_stok'
                             type="number"
                             step="0.01" // Pastikan step ini tetap ada
-                            
+
                             // UBAH DISINI: Hapus String() karena state sudah string
                             value={isFormLoading ? 'Memuat Data...' : formData.minimum_stok}
-                            
+
                             // UBAH DISINI: JANGAN pakai parseFloat dulu. Simpan string mentah.
                             onChange={(e) => setFormData({ ...formData, minimum_stok: e.target.value })}
                         />

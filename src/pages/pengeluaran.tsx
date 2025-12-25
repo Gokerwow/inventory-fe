@@ -14,7 +14,7 @@ import Loader from '../components/loader';
 import SearchBar from '../components/searchBar';
 import { generatePath, useNavigate } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
-import { exportPengeluaran, exportPengeluaranExcel, getPengeluaranList } from '../services/pengeluaranService';
+import { exportPengeluaranExcel, getPengeluaranList } from '../services/pengeluaranService';
 
 // --- 1. IMPORT LIBARARY PENDUKUNG ---
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
