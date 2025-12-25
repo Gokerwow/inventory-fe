@@ -37,16 +37,18 @@ const RootHandler = () => {
     }
   }, [isAuthenticated, isLoggingOut, login]);
 
+  console.log("✅ Data user didapat:", user);
+
   // Jika sudah login & data user ada -> Redirect ke halaman default role
   if (isAuthenticated && user) {
     const userRole = user.role;
     const allowedMenu = menuItems.find(item => item.role.includes(userRole));
     const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
-    
+
     return <Navigate to={targetPath} replace />;
   }
 
-  return null; 
+  return null;
 };
 
 function App() {

@@ -87,7 +87,7 @@ export default function ProfilePage() {
                                 </div>
                                 <div className="flex border-b border-gray-200 pb-6">
                                     <div className="w-32 text-gray-600 font-medium">Role</div>
-                                    <div className="flex-1 text-gray-800">: {user?.role}</div>
+                                    <div className="flex-1 text-gray-800">: {ROLE_DISPLAY_NAMES[user?.role] || user?.role}</div>
                                 </div>
                                 <div className="flex pb-6">
                                     <div className="w-32 text-gray-600 font-medium">Email</div>
