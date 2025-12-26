@@ -132,9 +132,6 @@ export default function NotifikasiPage() {
             showToast("Terjadi kesalahan", "error");
         } finally {
             setIsSubmitting(false);
-            // Reset state modal
-            setSelectedDeleteId(null);
-            setModalAction(null);
         }
     };
 
