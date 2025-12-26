@@ -42,6 +42,7 @@ export default function PemesananPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const [BarangPesanan, setBarangPesanan] = useState<APIPemesananBaruItem[]>([])
     const [formData, setFormData] = useState<APIPemesananBaru>({
@@ -96,7 +97,7 @@ export default function PemesananPage() {
         }
 
         fetchData();
-    }, [activeTab, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, user?.role]);
+    }, [activeTab, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, user?.role, refreshKey]);
 
     // --- EFFECT DEBOUNCE ---
     useEffect(() => {
@@ -225,8 +226,9 @@ export default function PemesananPage() {
                 nama_pj_instalasi: '',
                 items: []
             });
+            setBarangPesanan([]);
             showToast('Anda berhasil membuat pesanan baru!', 'success')
-            window.location.reload();
+            setRefreshKey(prev => prev + 1);
         } catch (err) {
             console.error("❌ Error submitting form:", err);
             showToast('Gagal membuat pemesanan', 'error');
@@ -404,13 +406,13 @@ export default function PemesananPage() {
                         )}
                     </div>
 
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            totalPages={totalPages}
-                        />
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        totalPages={totalPages}
+                    />
                 </div>
             </div>
 

@@ -18,7 +18,7 @@ import { exportPengeluaranExcel, getPengeluaranList } from '../services/pengelua
 
 // --- 1. IMPORT LIBARARY PENDUKUNG ---
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Calendar as CalendarIcon, Check, ChevronDown, X } from 'lucide-react'; // Icon
+import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react'; // Icon
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'; // Logic Tanggal
 import { id as indonesia } from 'date-fns/locale'; // Format Bahasa Indonesia
 import CustomCalendar from '../components/calender';
@@ -299,9 +299,10 @@ function Pengeluaran() {
                                 <Button
                                     variant='primary'
                                     onClick={handleExportClick}
-                                    disabled={isExporting} // Tambahkan loading state visual jika mau
-                                    className="whitespace-nowrap" // Agar teks tidak turun
+                                    disabled={isExporting}
+                                    className="whitespace-nowrap flex items-center gap-2" 
                                 >
+                                    <Download size={20}/>
                                     {isExporting ? 'Exporting...' : 'Export Excel'}
                                 </Button>
                             </div>
@@ -309,7 +310,6 @@ function Pengeluaran() {
                     </div>
                 </div>
 
-                {/* ... Bagian Table dan Pagination Tetap Sama ... */}
                 {isLoading ? <Loader /> : currentActiveData.length === 0 ? (
                     <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
                         <span className='font-medium text-gray-500'>DATA KOSONG</span>

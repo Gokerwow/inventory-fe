@@ -255,28 +255,42 @@ export function DetailPengeluaranPage() {
         setIsSubmitting(true);
         try {
             if (user.role === ROLES.ADMIN_GUDANG) {
-                // 1. VALIDASI: Cek apakah semua item sudah dialokasikan sesuai jumlahnya
-                const incompleteItems = filteredItems.filter(item => {
-                    const allocationsMap = allAllocations[item.id] || {};
-                    const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
-                    // Pastikan total alokasi sama dengan quantity yang diminta (atau quantity_pj jika ada)
-                    const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
-                    return totalAllocated !== requiredQty;
+                // 1. VALIDASI: 
+                // Ubah logic: Hanya anggap "Gagal" jika Total Alokasi masih 0 (Belum diatur).
+                // Jika jumlah beda (misal req 2, dikasih 3), biarkan lolos.
+                const unallocatedItems = detailItems.filter(item => {
+                    const isModified = item.id in allAllocations;
+
+                    const totalAllocated = Number(
+                        isModified
+                            ? Object.values(allAllocations[item.id]).reduce((sum, qty) => sum + qty, 0)
+                            : (item.quantity_admin_gudang ?? 0)
+                    );
+
+                    // LOGIC BARU: Hanya return true (error) jika total alokasi 0
+                    return totalAllocated === 0;
                 });
 
-                if (incompleteItems.length > 0) {
-                    showToast(`Terdapat ${incompleteItems.length} item yang alokasinya belum sesuai. Mohon lengkapi data.`, 'error');
+                if (unallocatedItems.length > 0) {
+                    showToast(`Terdapat ${unallocatedItems.length} item yang belum diatur alokasinya (jumlah 0).`, 'error');
                     setIsSubmitting(false);
-                    setIsOpen(false); // Tutup confirm modal
+                    setIsOpen(false);
                     return;
                 }
 
                 // 2. BENTUK PAYLOAD
-                const payload = {
-                    detailPemesanan: filteredItems.map(item => {
-                        const allocationsMap = allAllocations[item.id] || {};
+                const itemsToSend = detailItems.filter(item => item.id in allAllocations);
 
-                        // HITUNG TOTAL ALOKASI REAL
+                if (itemsToSend.length === 0) {
+                    showToast('Data valid. Tidak ada perubahan baru yang perlu disimpan.', 'success');
+                    navigate(generatePath(PATHS.PENGELUARAN.INDEX));
+                    return;
+                }
+
+                const payload = {
+                    // KEMBALIKAN KE camelCase SESUAI REQUEST BACKEND
+                    detailPemesanan: itemsToSend.map(item => {
+                        const allocationsMap = allAllocations[item.id] || {};
                         const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
 
                         const allocationsArray = Object.entries(allocationsMap).map(([penerimaanId, qty]) => ({
@@ -286,14 +300,13 @@ export function DetailPengeluaranPage() {
 
                         return {
                             detail_id: item.id,
-                            // PERBAIKAN DI SINI:
-                            // Gunakan totalAllocated, bukan item.quantity
                             quantity_admin: totalAllocated,
                             allocations: allocationsArray
                         };
                     })
                 };
 
+                // Debug payload sebelum kirim
                 console.log("Payload to send:", JSON.stringify(payload, null, 2));
 
                 const response = await alokasiPengeluaran(parseInt(paramId!), payload);
@@ -301,20 +314,21 @@ export function DetailPengeluaranPage() {
                 navigate(generatePath(PATHS.PENGELUARAN.INDEX));
 
             } else {
+                // ... Logic PJ tetap sama
                 const payload: APIPatchQuantityPJ = {
-                    details: filteredItems.map(item => ({
+                    details: detailItems.map(item => ({
                         detail_id: item.id,
                         quantity_pj: item.quantity_pj !== null ? item.quantity_pj : item.quantity
                     }))
                 };
 
-                const response = await confirmPemesanan(parseInt(paramId!), payload);
-                console.log(response);
+                await confirmPemesanan(parseInt(paramId!), payload);
                 showToast('Berhasil mengkonfirmasi pengeluaran', 'success');
                 navigate(generatePath(PATHS.PENGELUARAN.INDEX));
             }
 
         } catch (error: any) {
+            console.error("Error submit:", error);
             const errorMsg = error.response?.data?.message || 'Gagal mengkonfirmasi pengeluaran';
             showToast(errorMsg, 'error');
         } finally {
@@ -344,10 +358,21 @@ export function DetailPengeluaranPage() {
             }
         });
 
+        // ✅ TAMBAHAN BARU - Hitung total current
+        const totalCurrent = Object.values(currentData).reduce((sum, qty) => sum + qty, 0);
+
+        // ✅ TAMBAHAN BARU - Cek apakah total current sama dengan accAmount
+        const targetAmount = typeof accAmount === 'number' ? accAmount : parseInt(accAmount as string) || 0;
+
+        // ✅ TAMBAHAN BARU - Validasi total vs target
+        if (targetAmount > 0 && totalCurrent !== targetAmount) {
+            return false;
+        }
+
         const savedKeys = Object.keys(savedData).sort();
         const currentKeys = Object.keys(currentData).sort();
 
-        if (savedKeys.length !== currentKeys.length) return false; // Jika jumlah item beda, berarti ada perubahan
+        if (savedKeys.length !== currentKeys.length) return false;
 
         for (const key of savedKeys) {
             if (currentData[parseInt(key)] !== savedData[parseInt(key)]) {
@@ -356,23 +381,26 @@ export function DetailPengeluaranPage() {
         }
 
         return true;
-    }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds]);
+    }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds, accAmount]); // ✅ TAMBAHAN: accAmount
 
     const isConfirmDisabled = useMemo(() => {
         if (user.role !== ROLES.ADMIN_GUDANG) return false;
 
+        // Cek apakah ada alokasi yang sudah disimpan
         const hasAllocations = Object.keys(allAllocations).length > 0;
 
         if (!hasAllocations) return true;
 
-        const allComplete = filteredItems.every(item => {
+        // Cek apakah semua item yang terfilter sudah memiliki alokasi
+        const allItemsHaveAllocations = filteredItems.every(item => {
             const allocationsMap = allAllocations[item.id] || {};
             const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
-            const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
-            return totalAllocated === requiredQty;
+
+            // Item dianggap complete jika sudah ada alokasi (total > 0)
+            return totalAllocated > 0;  // ✅ Diperbaiki
         });
 
-        return !allComplete;
+        return !allItemsHaveAllocations;
     }, [user.role, allAllocations, filteredItems]);
 
 
@@ -386,9 +414,9 @@ export function DetailPengeluaranPage() {
             header: 'JUMLAH PERMINTAAN', // Diubah sedikit header-nya agar jelas
             key: 'jumlahStok',
             cell: (item) => {
-                // Tentukan jumlah yang diminta (prioritas quantity_pj jika ada)
-                const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
-                return <span className="text-gray-900 font-bold">{requiredQty} Unit</span>;
+                // UBAH DISINI: Selalu tampilkan quantity asli (permintaan user)
+                // Jangan gunakan quantity_pj di sini agar user bisa membedakan antara yang diminta vs disetujui
+                return <span className="text-gray-900 font-bold">{item.quantity} Unit</span>;
             }
         },
         // --- KOLOM BARU UNTUK STATUS ALOKASI ---
@@ -400,8 +428,16 @@ export function DetailPengeluaranPage() {
                 const allocationsMap = allAllocations[item.id] || {};
                 const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
 
-                // 2. Tentukan target
-                const targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+                // 2. Tentukan target - PRIORITAS: jumlah dari alokasi yang sudah disimpan, baru quantity_pj, terakhir quantity
+                let targetQty: number;
+
+                // Jika sudah ada alokasi yang disimpan, gunakan total alokasi sebagai target
+                if (currentAllocated > 0) {
+                    targetQty = currentAllocated;
+                } else {
+                    // Jika belum ada alokasi, gunakan quantity_pj atau quantity
+                    targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+                }
 
                 // 3. Tentukan Status Visual
                 let statusColor = "bg-gray-100 text-gray-500 border-gray-200";
@@ -447,10 +483,19 @@ export function DetailPengeluaranPage() {
                 // --- LOGIKA UTAMA: TAMPILAN UNTUK ADMIN GUDANG ---
                 if (user?.role === ROLES.ADMIN_GUDANG) {
                     // Cek status untuk styling tombol
+                    // Cek status untuk styling tombol
                     const allocationsMap = allAllocations[item.id] || {};
                     const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
-                    const targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
-                    const isComplete = currentAllocated === targetQty && targetQty > 0;
+
+                    // PRIORITAS: Gunakan total alokasi jika sudah ada, baru quantity_pj/quantity
+                    let targetQty: number;
+                    if (currentAllocated > 0) {
+                        targetQty = currentAllocated;
+                    } else {
+                        targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+                    }
+
+                    const isComplete = currentAllocated > 0; // Sudah ada alokasi = complete
 
                     return (
                         <button
@@ -492,8 +537,8 @@ export function DetailPengeluaranPage() {
 
                 // ... (Kode untuk Role Penanggung Jawab tetap sama)
                 const displayValue = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
+
                 return (
-                    // ... kode counter +/- Penanggung Jawab ...
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => handleUpdateQuantity(item.id, -1)}
@@ -532,6 +577,7 @@ export function DetailPengeluaranPage() {
                         type="checkbox"
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         checked={checkedBastIds.includes(item.detail_penerimaan_id)}
+                        // ✅ PENTING: stopPropagation di sini juga agar klik checkbox tidak dianggap klik baris (double toggle)
                         onClick={(e) => e.stopPropagation()}
                         onChange={() => handleToggleCheckbox(item.detail_penerimaan_id)}
                     />
@@ -561,7 +607,6 @@ export function DetailPengeluaranPage() {
             key: 'ambil',
             align: 'center',
             cell: (item) => {
-                // Hanya muncul jika dicentang
                 if (checkedBastIds.includes(item.detail_penerimaan_id)) {
                     return (
                         <div className="flex justify-center">
@@ -569,9 +614,10 @@ export function DetailPengeluaranPage() {
                                 type="number"
                                 className="w-20 border border-gray-300 rounded px-2 py-1 text-center focus:ring-2 focus:ring-blue-500 outline-none"
                                 value={rowQuantities[item.detail_penerimaan_id] ?? ''}
+                                onClick={(e) => e.stopPropagation()}
                                 onChange={(e) => handleRowQuantityChange(item.detail_penerimaan_id, e.target.value)}
                                 min={1}
-                                max={item.quantity_remaining} // Validasi opsional
+                                max={item.quantity_remaining}
                             />
                         </div>
                     );
@@ -580,6 +626,18 @@ export function DetailPengeluaranPage() {
             }
         },
     ], [selectedItem, checkedBastIds, rowQuantities]); // Dependency updated
+
+    // 1. Tambahkan logic ini di bagian atas component (setelah hooks lain)
+    // untuk mendapatkan detail item yang sedang aktif (diklik)
+    const selectedDetail = useMemo(() =>
+        detailItems.find(item => item.id === activeDetailId),
+        [detailItems, activeDetailId]
+    );
+
+    // Ambil jumlah yang diminta (Prioritas: quantity_pj, lalu quantity)
+    const quantityRequested = selectedDetail
+        ? (accAmount ?? selectedDetail.quantity_pj ?? selectedDetail.quantity)
+        : 0;
 
     // Hitung total saat ini dari state rowQuantities
     const totalAmbil = Object.values(rowQuantities).reduce((a, b) => {
@@ -592,6 +650,7 @@ export function DetailPengeluaranPage() {
     if (isLoading) {
         return <Loader />;
     }
+
 
     return (
         <div className={`w-full flex flex-col gap-5 ${user?.role === ROLES.ADMIN_GUDANG ? 'h-fit' : 'min-h-full'}`}>
@@ -750,7 +809,7 @@ export function DetailPengeluaranPage() {
                                 <Info className="text-blue-600 shrink-0 mt-0.5" size={20} fill="#057CFF" color="white" />
                                 <div className="flex flex-col gap-1">
                                     <p className="text-sm text-gray-700">
-                                        Atur kuantitas barang yang akan diambil dari BAST Penerimaan yang tersedia, dengan kategori pesanan berupa <span className="font-bold">Bahan Komputer</span>, yaitu <span className="font-bold">monitor</span> sebanyak <span className="font-bold">8 unit</span>.
+                                        Atur kuantitas barang yang akan diambil dari BAST Penerimaan yang tersedia untuk barang <span className="font-bold">{selectedDetail?.stok_name ?? '-'}</span> sebanyak <span className="font-bold">{targetAmount > 0 ? targetAmount : quantityRequested} unit</span>.
                                     </p>
                                     {/* INFO DARI META DATA */}
                                     {metaStok && (
@@ -778,7 +837,21 @@ export function DetailPengeluaranPage() {
                                 value={accAmount}
                                 onChange={(e) => {
                                     const val = e.target.value;
-                                    setAccAmount(val === '' ? '' : parseInt(val));
+                                    const newValue = val === '' ? '' : parseInt(val);
+
+                                    // 1. Update nilai di input utama
+                                    setAccAmount(newValue);
+
+                                    // 2. Update otomatis semua baris yang sedang dicentang
+                                    if (checkedBastIds.length > 0) {
+                                        setRowQuantities(prev => {
+                                            const updated = { ...prev };
+                                            checkedBastIds.forEach(id => {
+                                                updated[id] = newValue;
+                                            });
+                                            return updated;
+                                        });
+                                    }
                                 }}
                                 className="border border-gray-300 rounded-md px-3 py-1.5 w-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />

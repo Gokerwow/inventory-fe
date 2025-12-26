@@ -304,7 +304,7 @@ function StokBarang() {
             cell: (item) => {
                 return <Status
                     label={item.status}
-                    value={item.status_code}
+                    value={item.status}
                 />;
             }
         },

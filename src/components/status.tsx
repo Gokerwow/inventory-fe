@@ -14,7 +14,6 @@ const VARIANT_MAP: Record<string, StatusVariant> = {
     warning: 'warning',
     danger: 'danger',
     neutral: 'neutral',
-    pending: 'pending',
 
     // Success group
     paid: 'success',
@@ -27,22 +26,24 @@ const VARIANT_MAP: Record<string, StatusVariant> = {
     'approved_pj': 'success',
     'lunas': 'success',
     'aktif': 'success',
-
+    'sudah dibayar': 'success',
+    
     // Warning group
-    checked: 'warning',
+    pending: 'warning',
     unsigned: 'warning',
     unpaid: 'warning',
     'belum ditandatangani': 'warning',
     'belum dibayar': 'warning',
     'non-aktif': 'warning',
-
+    
     // Danger group
     failed: 'danger',
     cancelled: 'danger',
     inactive: 'danger',
     rejected: 'danger',
-
+    
     // Pending group
+    checked: 'pending',
     process: 'pending',
     waiting: 'pending'
 };
