@@ -2,7 +2,12 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8001', // Sesuaikan dengan URL backend Anda jika perlu
+    baseURL: 'http://localhost:8001', 
+    withCredentials: true, 
+    headers: {
+        'Accept': 'application/json', 
+        'Content-Type': 'application/json'
+    }
 });
 
 // 1. Interceptor Request (Kirim Token)

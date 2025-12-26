@@ -6,7 +6,7 @@ import StokBarang from './pages/stokBarang';
 import Penerimaan from './pages/penerimaan';
 import Pengeluaran from './pages/pengeluaran';
 import Profil from './pages/profil';
-import RolePick from './pages/rolePick';
+// import RolePick from './pages/rolePick';
 import FormPenerimaan from './pages/FormPenerimaan';
 import AkunPage from './pages/akun';
 import PegawaiPage from './pages/pegawai';
@@ -56,7 +56,6 @@ function App() {
     <Routes>
       <Route path="/auth/sso-callback" element={<SSOCallback />} />
 
-      <Route path={PATHS.ROLE_PICK} element={<RolePick />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<Navigate to="/unauthorized" replace />} />
 
