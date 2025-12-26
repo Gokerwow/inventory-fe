@@ -26,30 +26,42 @@ import { useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { menuItems } from './constant/roles';
 import NotifikasiPage from './pages/notifikasi';
+import { debugLog } from './utils/debugLogger';
 
 const RootHandler = () => {
   const { isAuthenticated, login, user, isLoggingOut } = useAuth();
 
   useEffect(() => {
-    // Jika user belum login dan tidak sedang logout, paksa login SSO
+    debugLog('RootHandler: useEffect', {
+      isAuthenticated,
+      isLoggingOut,
+      loggingOutFlag: sessionStorage.getItem('logging_out'),
+      hasUser: !!user
+    });
+
+    if (sessionStorage.getItem('logging_out') === 'true') {
+      debugLog('RootHandler: Blocked - logging_out flag is true');
+      return;
+    }
+
     if (!isAuthenticated && !isLoggingOut) {
+      debugLog('RootHandler: Calling login()');
       login();
     }
   }, [isAuthenticated, isLoggingOut, login]);
 
-  console.log("✅ Data user didapat:", user);
-
-  // Jika sudah login & data user ada -> Redirect ke halaman default role
   if (isAuthenticated && user) {
     const userRole = user.role;
     const allowedMenu = menuItems.find(item => item.role.includes(userRole));
     const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
-
+    
+    debugLog('RootHandler: Redirecting to', targetPath);
     return <Navigate to={targetPath} replace />;
   }
 
   return null;
 };
+
 
 function App() {
   return (

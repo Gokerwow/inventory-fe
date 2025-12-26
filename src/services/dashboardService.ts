@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from '../utils/api';
 /**
  * Mengambil data statistik untuk card di dashboard.
  */

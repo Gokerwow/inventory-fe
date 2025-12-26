@@ -1,5 +1,5 @@
 import type { Kategori } from '../constant/roles';
-import apiClient from './api';
+import apiClient from '../utils/api';
 
 export const getKategoriList = async (): Promise<Kategori[]> => {
     console.log("SERVICE: Mengambil daftar kategori...");

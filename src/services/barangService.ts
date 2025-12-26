@@ -1,4 +1,4 @@
-import apiClient from "./api";
+import apiClient from "../utils/api";
 import { type APIDetailBarang, type APIDetailStokBAST, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {

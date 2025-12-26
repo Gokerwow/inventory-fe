@@ -1,5 +1,5 @@
 import type { APIJabatan } from "../constant/roles";
-import apiClient from "./api";
+import apiClient from "../utils/api";
 
 
 export const getJabatanSelect = async (): Promise<APIJabatan[]> => {

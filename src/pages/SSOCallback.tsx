@@ -1,3 +1,4 @@
+// src/pages/SSOCallback.tsx
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -11,9 +12,11 @@ const SSOCallback = () => {
 
         if (token && userString) {
             try {
-                localStorage.setItem('access_token', token); // Pastikan key sesuai dengan AuthProvider ('access_token')
+                // Clear logout flag SEBELUM set token baru
+                sessionStorage.removeItem('logging_out');
+                
+                localStorage.setItem('access_token', token);
                 localStorage.setItem('user', userString);
-
                 localStorage.setItem('login_success', 'true');
 
                 setTimeout(() => {
@@ -22,9 +25,11 @@ const SSOCallback = () => {
 
             } catch (err) {
                 console.error('Gagal memproses login SSO', err);
+                sessionStorage.removeItem('logging_out');
                 navigate('/', { replace: true });
             }
         } else {
+            sessionStorage.removeItem('logging_out');
             navigate('/', { replace: true });
         }
     }, [searchParams, navigate]);

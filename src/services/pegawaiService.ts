@@ -1,5 +1,5 @@
 import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
-import apiClient from './api';
+import apiClient from '../utils/api';
 import { simulateApiCall } from './utils';
 import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru, type PaginationResponse } from '../constant/roles';
 

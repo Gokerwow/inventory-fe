@@ -2,8 +2,15 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth'; // Pastikan path import ini sesuai
 import Button from '../components/button';
+import { useEffect } from 'react';
+import { DebugViewer } from '../components/debugViewer';
 
 const Unauthorized = () => {
+    useEffect(() => {
+        // Clear logout flag jika sampai di unauthorized
+        sessionStorage.removeItem('logging_out');
+    }, []);
+
     const navigate = useNavigate();
     const { logout, user } = useAuth(); // Ambil fungsi logout dan data user
 
@@ -14,7 +21,7 @@ const Unauthorized = () => {
     const handleLogout = () => {
         // Panggil fungsi logout dari AuthProvider yang sudah diperbaiki
         // Ini akan membersihkan localStorage dan me-refresh halaman ke SSO
-        logout(); 
+        logout();
     };
 
     return (
@@ -46,7 +53,7 @@ const Unauthorized = () => {
                 <p className="text-gray-600 mb-2">
                     Maaf, Anda tidak memiliki izin untuk mengakses halaman ini.
                 </p>
-                
+
                 {/* User Info (Optional: membantu user sadar dia login sebagai siapa) */}
                 {user && (
                     <p className="text-gray-500 text-sm mb-6 bg-gray-50 py-2 rounded">
@@ -77,6 +84,8 @@ const Unauthorized = () => {
                     </p>
                 </div>
             </div>
+
+            <DebugViewer />
         </div>
     );
 };

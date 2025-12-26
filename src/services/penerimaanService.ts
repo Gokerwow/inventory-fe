@@ -1,5 +1,5 @@
 import type { PenerimaanItem, RiwayatPenerimaanItem } from '../constant/roles';
-import apiClient from './api';
+import apiClient from '../utils/api';
 import axios from 'axios';
 import { ROLES, type APIDataPenerimaan, type APIDetailPenerimaan, type PaginationResponse } from '../constant/roles';
 /**

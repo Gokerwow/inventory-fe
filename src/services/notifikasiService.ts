@@ -1,4 +1,4 @@
-import apiClient from './api';
+import apiClient from '../utils/api';
 import { type APINotifikasi, type PaginationResponse } from '../constant/roles';
 
 /**

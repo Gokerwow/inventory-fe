@@ -1,5 +1,5 @@
 import type { BASTAPI, PaginationResponse, RIWAYATBASTFILEAPI } from "../constant/roles";
-import apiClient from "./api";
+import apiClient from "../utils/api";
 
 
 export const getBASTList = async (

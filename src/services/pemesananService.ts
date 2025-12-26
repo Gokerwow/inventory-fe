@@ -1,5 +1,5 @@
 import { ROLES, type APIPemesanan, type APIPemesananBaru, type APIStokPemesanan, type PaginationResponse } from "../constant/roles";
-import apiClient from "./api";
+import apiClient from "../utils/api";
 
 export const getStokPemesanan = async (
     page: number = 1,

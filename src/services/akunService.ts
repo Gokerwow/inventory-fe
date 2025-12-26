@@ -1,6 +1,6 @@
 import { User } from '../constant/roles';
 import { simulateApiCall } from './utils';
-import apiClient from './api';
+import apiClient from '../utils/api';
 
 /**
  * Mengambil semua data akun pengguna.

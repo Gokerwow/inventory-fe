@@ -7,7 +7,7 @@ import { useEffect } from "react"
 import { useAuth } from "../hooks/useAuth"
 import { useAuthorization } from "../hooks/useAuthorization"
 import { ROLES, type BASTAPI } from "../constant/roles"
-import apiClient from "../services/api"
+import apiClient from "../utils/api"
 import Button from "../components/button"
 import BackButton from "../components/backButton"
 
