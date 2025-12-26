@@ -8,8 +8,8 @@ import { createPemesanan, getPemesananList, getStokPemesanan } from "../services
 import Pagination from "../components/pagination";
 import ReusableTable, { type ColumnDefinition } from "../components/table";
 import Loader from "../components/loader";
-import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react'
-import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
+import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react';
+import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
 import Status from "../components/status";
 import ReceiptIcon from "../assets/svgs/receipt-item.svg?react";
 import Input from "../components/input";
@@ -28,7 +28,7 @@ const pemesananTabs = [
 
 
 export default function PemesananPage() {
-    const [activeTab, setActiveTab] = useState('pemesanan')
+    const [activeTab, setActiveTab] = useState('pemesanan');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -43,7 +43,7 @@ export default function PemesananPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(undefined);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [BarangPesanan, setBarangPesanan] = useState<APIPemesananBaruItem[]>([])
+    const [BarangPesanan, setBarangPesanan] = useState<APIPemesananBaruItem[]>([]);
     const [formData, setFormData] = useState<APIPemesananBaru>({
         ruangan: '',
         nama_pj_instalasi: '',
@@ -53,7 +53,7 @@ export default function PemesananPage() {
     const { checkAccess, hasAccess } = useAuthorization(ROLES.INSTALASI);
     const { user } = useAuth();
 
-    const { showToast } = useToast()
+    const { showToast } = useToast();
 
     const targetRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +67,7 @@ export default function PemesananPage() {
             setError(null);
             try {
                 if (activeTab === 'pemesanan') {
-                    console.log('Fetching Stok Data....')
+                    console.log('Fetching Stok Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getStokPemesanan(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch);
@@ -77,7 +77,7 @@ export default function PemesananPage() {
                     setItemsPerPage(response.per_page || 10);
                     setTotalPages(response.last_page || 1);
                 } else {
-                    console.log('Fetching BAST Data....')
+                    console.log('Fetching BAST Data....');
                     // Pastikan parameter year dikirim jika API mendukung filter tahun
                     // Contoh: getStokBarang(..., debouncedSearch, year)
                     const response = await getPemesananList(currentPage, itemsPerPage, debouncedSearch, user?.role);
@@ -93,7 +93,7 @@ export default function PemesananPage() {
             } finally {
                 setIsLoading(false);
             }
-        }
+        };
 
         fetchData();
     }, [activeTab, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, user?.role]);
@@ -118,7 +118,7 @@ export default function PemesananPage() {
             setSelectedCategoryId(id);
         }
         setCurrentPage(1);
-    }
+    };
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -136,7 +136,7 @@ export default function PemesananPage() {
         if (targetRef.current) {
             targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-    }
+    };
 
     const handlePesanClick = (item: APIStokPemesanan, action: true | false = true) => {
         handleScrollToTarget();
@@ -167,44 +167,47 @@ export default function PemesananPage() {
 
             return updated;
         });
-    }
+    };
 
     // Tambahkan fungsi baru
     const handleUpdateQuantity = (stokId: number, increment: boolean) => {
-        console.log("Updating quantity for stok ID:", stokId, "Increment:", increment);
         setBarangPesanan(prev => {
             const updated = [...prev];
             const existingIndex = updated.findIndex(p => p.stok_id === stokId);
+            const stokInfo = currentStokItems.find(s => s.id === stokId);
 
             if (existingIndex !== -1) {
                 if (increment) {
+                    if (stokInfo && updated[existingIndex].quantity >= stokInfo.total_stok) {
+                        showToast(`Stok ${stokInfo.name} tidak mencukupi (Maks: ${stokInfo.total_stok})`, 'error');
+                        return prev;
+                    }
                     updated[existingIndex].quantity += 1;
                 } else {
                     updated[existingIndex].quantity -= 1;
-
-                    // Hapus jika quantity jadi 0
                     if (updated[existingIndex].quantity === 0) {
                         updated.splice(existingIndex, 1);
                     }
                 }
             }
-
             return updated;
         });
-    }
+    };
 
     const handleRemoveItem = (stokId: number) => {
         setBarangPesanan(prev => prev.filter(item => item.stok_id !== stokId));
-    }
+    };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsModalOpen(true);
-    }
+    };
 
     const handleConfirmSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
+        setIsModalOpen(false);
+
         try {
             const dataFinal = {
                 ruangan: formData.ruangan,
@@ -213,27 +216,29 @@ export default function PemesananPage() {
                     stok_id: item.stok_id,
                     quantity: item.quantity
                 }))
-            }
+            };
 
-            const payload = await createPemesanan(dataFinal);
-            console.log("✅ Pemesanan created:", payload);
+            await createPemesanan(dataFinal);
+
             showToast('Pemesanan berhasil dibuat!', 'success');
-            setIsSubmitting(false);
-            setIsModalOpen(false);
-            setFormData({
-                ruangan: '',
-                nama_pj_instalasi: '',
-                items: []
-            });
-            showToast('Anda berhasil membuat pesanan baru!', 'success')
-            window.location.reload();
-        } catch (err) {
+
+            setFormData({ ruangan: '', nama_pj_instalasi: '', items: [] });
+            setBarangPesanan([]);
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+        } catch (err: any) {
             console.error("❌ Error submitting form:", err);
-            showToast('Gagal membuat pemesanan', 'error');
+
+            const errorMessage = err.response?.data?.message || 'Gagal membuat pemesanan';
+            showToast(errorMessage, 'error');
+
         } finally {
-            setIsSubmitting(false); // ✅ Pindahkan ke finally agar selalu dijalankan
+            setIsSubmitting(false);
         }
-    }
+    };
 
     const pemesananColumns: ColumnDefinition<APIPemesanan>[] = [
         { header: 'Nama Instalasi', cell: (item) => item.user_name },
@@ -246,7 +251,7 @@ export default function PemesananPage() {
                     code={item.status_code}
                     label={item.status}
                     value={item.status}
-                />
+                />;
             }
         },
     ];
@@ -271,7 +276,7 @@ export default function PemesananPage() {
                             {item.category_name}
                         </span>
                     </div>
-                )
+                );
             }
         },
         {
@@ -295,7 +300,7 @@ export default function PemesananPage() {
                         {/* 4. Ubah teks tombol */}
                         {isHabis ? 'Stok Habis' : 'Pesan'}
                     </button>
-                )
+                );
             }
         },
     ];
@@ -307,7 +312,7 @@ export default function PemesananPage() {
             <div className="w-full h-full flex justify-center items-center">
                 <p className="text-red-500">{error}</p>
             </div>
-        )
+        );
     }
 
     return (
@@ -404,13 +409,13 @@ export default function PemesananPage() {
                         )}
                     </div>
 
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            totalPages={totalPages}
-                        />
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        totalPages={totalPages}
+                    />
                 </div>
             </div>
 
@@ -547,5 +552,5 @@ export default function PemesananPage() {
                 text={"Apakah Anda yakin ingin dengan pesanan ini?"}
             />
         </div>
-    )
+    );
 }
