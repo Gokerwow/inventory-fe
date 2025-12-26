@@ -9,7 +9,7 @@ import SearchBar from '../components/searchBar';
 import ReusableTable, { type ColumnDefinition } from '../components/table';
 import Status from '../components/status';
 import { NavigationTabs } from '../components/navTabs';
-import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react'
+import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react';
 
 const LOGTabs = [
     {
@@ -33,7 +33,7 @@ export default function MonitoringPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
     const { checkAccess, hasAccess } = useAuthorization(ROLES.SUPER_ADMIN);
-    const { user } = useAuth()
+    const { user } = useAuth();
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -44,7 +44,7 @@ export default function MonitoringPage() {
                 setIsLoading(true);
                 // Fetch data tanpa sorting backend (atau sesuaikan jika backend support)
                 const response = await getLogAktivitas(currentPage, itemsPerPage, debouncedSearch);
-                setDataLog(response.data)
+                setDataLog(response.data);
                 setTotalItems(response.total || 0);
                 setItemsPerPage(response.per_page || 10);
                 setTotalPages(response.last_page || 1);
@@ -88,7 +88,7 @@ export default function MonitoringPage() {
     }
 
     const LOGColummns: ColumnDefinition<LogItem>[] = [
-        { header: 'ROLE', cell: (item) => item.role },
+        { header: 'NAME', cell: (item) => item.name },
         { header: 'WAKTU ', cell: (item) => item.waktu },
         { header: 'TANGGAL ', cell: (item) => item.waktu },
         {
@@ -141,5 +141,5 @@ export default function MonitoringPage() {
                 />
             </div>
         </div>
-    )
+    );
 }
