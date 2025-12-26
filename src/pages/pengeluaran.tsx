@@ -23,7 +23,6 @@ import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, star
 import { id as indonesia } from 'date-fns/locale'; // Format Bahasa Indonesia
 import CustomCalendar from '../components/calender';
 import Button from '../components/button';
-import { useToast } from '../hooks/useToast';
 
 const pengeluaranTabs = [
     { id: 'pengeluaran', label: 'Pengeluaran', icon: <ShoppingCartIcon className="-ml-0.5 mr-2 h-5 w-5" /> },
@@ -55,7 +54,6 @@ function Pengeluaran() {
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
     const { user } = useAuth();
 
-    const { showToast } = useToast()
 
     // --- LOGIC PRESET ---
     const handlePresetClick = (type: string) => {
@@ -203,6 +201,8 @@ function Pengeluaran() {
         ];
     }, [user?.role]);
 
+    const currentActiveData = activeTab === 'pengeluaran' ? pemesananItem : pengeluaranItem;
+
     return (
         <div className="w-full flex flex-col gap-5 h-full">
             <NavigationTabs
@@ -302,7 +302,11 @@ function Pengeluaran() {
                     </div>
                 </div>
 
-                {isLoading ? <Loader /> : (
+                {isLoading ? <Loader /> : currentActiveData.length === 0 ? (
+                    <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                        <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                    </div>
+                ) : (
                     <>
                         {activeTab === 'pengeluaran' ?
                             <div className="flex-1 overflow-auto min-h-0"><ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} /></div>

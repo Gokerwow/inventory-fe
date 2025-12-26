@@ -21,10 +21,10 @@ interface StatsData {
     total_stok_barang: number;
     stok_change_percent: number;   // <-- Tambahan
     stok_change_trend: 'up' | 'down'; // <-- Tambahan
-    
+
     bast_sudah_diterima: number;
-    
-    barang_belum_dibayar: number; 
+
+    barang_belum_dibayar: number;
     belum_dibayar_change_percent: number; // <-- Tambahan
     belum_dibayar_change_trend: 'up' | 'down'; // <-- Tambahan
 }
@@ -50,7 +50,7 @@ export default function Dashboard() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [chartMasuk, setChartMasuk] = useState<ChartData[]>([]);
     const [chartKeluar, setChartKeluar] = useState<ChartData[]>([]);
-    
+
     // Loading State
     const [isLoadingStats, setIsLoadingStats] = useState(true);
     // Kita bisa buat loading terpisah agar chart tidak blinking semua saat ganti tahun
@@ -117,12 +117,11 @@ export default function Dashboard() {
             }
         };
         fetchKeluar();
-    }, [yearKeluar, user, hasAccess]); // Dependency: yearKeluar
+    }, [yearKeluar, user, hasAccess]);
 
 
     if (!hasAccess(user?.role)) return null;
-    
-    // Global loader hanya muncul jika stats belum siap (layout awal)
+
     if (isLoadingStats) return <Loader />;
 
     return (
@@ -130,19 +129,19 @@ export default function Dashboard() {
 
             {/* --- SECTION 1: STATS CARDS --- */}
             <div className="grid grid-cols-3 gap-6">
-{/* CARD 1: Stok Barang */}
+                {/* CARD 1: Stok Barang */}
                 <Card title="Total Stok Barang">
                     <div className="flex flex-col justify-center mt-2">
                         <span className="text-3xl font-bold text-primary-text">
                             {stats?.total_stok_barang || 0}
                         </span>
-                        
+
                         {/* Panggil Helper Component */}
                         {stats && (
-                            <TrendIndicator 
-                                percent={stats.stok_change_percent} 
-                                trend={stats.stok_change_trend} 
-                                // Default: Naik = Hijau (Stok nambah itu biasanya oke/netral)
+                            <TrendIndicator
+                                percent={stats.stok_change_percent}
+                                trend={stats.stok_change_trend}
+                            // Default: Naik = Hijau (Stok nambah itu biasanya oke/netral)
                             />
                         )}
                     </div>
@@ -165,11 +164,9 @@ export default function Dashboard() {
                             {stats?.barang_belum_dibayar || 0}
                         </span>
 
-                        {/* Panggil Helper Component dengan INVERSE */}
-                        {/* Karena kalau hutang NAIK ('up'), itu BURUK (Merah). Kalau TURUN ('down'), itu BAGUS (Hijau) */}
                         {stats && (
-                            <TrendIndicator 
-                                percent={stats.belum_dibayar_change_percent} 
+                            <TrendIndicator
+                                percent={stats.belum_dibayar_change_percent}
                                 trend={stats.belum_dibayar_change_trend}
                                 inverse={true} // <--- Penting!
                             />
@@ -187,7 +184,7 @@ export default function Dashboard() {
                     <div className="flex justify-end mb-4">
                         <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
                             <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
-                            <select 
+                            <select
                                 value={yearMasuk}
                                 onChange={(e) => setYearMasuk(Number(e.target.value))}
                                 className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -198,7 +195,6 @@ export default function Dashboard() {
                     </div>
 
                     <div className="h-full w-full min-h-[300px]">
-                        {/* Loading lokal agar user tahu chart sedang update */}
                         {isLoadingMasuk ? (
                             <Loader />
                         ) : (
@@ -213,7 +209,7 @@ export default function Dashboard() {
                     <div className="flex justify-end mb-4">
                         <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
                             <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
-                            <select 
+                            <select
                                 value={yearKeluar}
                                 onChange={(e) => setYearKeluar(Number(e.target.value))}
                                 className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -224,7 +220,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="h-full w-full min-h-[300px]">
-                         {isLoadingKeluar ? (
+                        {isLoadingKeluar ? (
                             <Loader />
                         ) : (
                             <DiagramBatang type="keluar" data={chartKeluar} />

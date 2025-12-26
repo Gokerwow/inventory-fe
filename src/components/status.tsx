@@ -29,6 +29,7 @@ const VARIANT_MAP: Record<string, StatusVariant> = {
     'approved_admin_gudang': 'success',
     'approved_pj': 'success',
     'lunas': 'success',
+    'aktif': 'success',
 
     // Warning group
     checked: 'warning',
@@ -36,6 +37,7 @@ const VARIANT_MAP: Record<string, StatusVariant> = {
     unpaid: 'warning',
     'belum ditandatangani': 'warning',
     'belum dibayar': 'warning',
+    'non-aktif': 'warning',
 
     // Danger group
     failed: 'danger',

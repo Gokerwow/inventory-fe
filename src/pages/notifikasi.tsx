@@ -6,7 +6,7 @@ import {
     deleteNotifikasi,
     deleteAllNotifikasi
 } from "../services/notifikasiService";
-import type { APINotifikasi } from "../services/notifikasiService";
+import type { APINotifikasi } from "../constant/roles";
 import { useToast } from "../hooks/useToast";
 import type { ColumnDefinition } from "../components/table";
 import { NavigationTabs } from "../components/navTabs";
@@ -248,33 +248,33 @@ export default function NotifikasiPage() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto">
-                    {isLoading ? (
-                        <Loader />
-                    ) : error ? (
-                        <div className="flex-1 flex justify-center items-center py-10">
-                            <p className="text-red-500">{error}</p>
-                        </div>
-                    ) : currentItems.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300">
-                            <span className="font-medium text-gray-500 uppercase">Tidak Ada Notifikasi</span>
-                        </div>
-                    ) : (
+                {isLoading ? (
+                    <Loader />
+                ) : error ? (
+                    <div className="flex-1 flex justify-center items-center py-10">
+                        <p className="text-red-500">{error}</p>
+                    </div>
+                ) : currentItems.length === 0 ? (
+                    <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                        <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                    </div>
+                ) : (
+                    <>
                         <ReusableTable
                             columns={notifColumns}
                             currentItems={currentItems}
                             onRowClick={(item) => handleMarkAsRead(item)}
                         />
-                    )}
-                </div>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={(page) => setCurrentPage(page)}
+                            totalPages={totalPages}
+                        />
+                    </>
+                )}
 
-                <Pagination
-                    currentPage={currentPage}
-                    totalItems={totalItems}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={(page) => setCurrentPage(page)}
-                    totalPages={totalPages}
-                />
             </div>
 
             <ConfirmModal

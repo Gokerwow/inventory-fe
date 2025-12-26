@@ -67,8 +67,9 @@ export const deleteNotifikasi = async (notifikasiId: number): Promise<any> => {
     try {
         const response = await apiClient.delete(`/api/v1/notifikasi/${notifikasiId}`);
         return response.data;
-    } catch (error: any) {
-        throw error;
+    } catch (error: unknown) {
+        console.error("Gagal menghapus data notifikasi:", error);
+        throw new Error('Gagal menghapus data notifikasi');
     }
 };
 
@@ -77,6 +78,7 @@ export const deleteAllNotifikasi = async (): Promise<any> => {
         const response = await apiClient.delete(`/api/v1/notifikasi/delete-all`);
         return response.data;
     } catch (error: any) {
-        throw error;
+        console.error("Gagal menghapus data notifikasi:", error);
+        throw new Error('Gagal menghapus data notifikasi');
     }
 };

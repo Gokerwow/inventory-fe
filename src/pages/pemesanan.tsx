@@ -404,7 +404,6 @@ export default function PemesananPage() {
                         )}
                     </div>
 
-                    <div className="px-4 bg-white shrink-0 rounded-b-xl">
                         <Pagination
                             currentPage={currentPage}
                             totalItems={totalItems}
@@ -412,7 +411,6 @@ export default function PemesananPage() {
                             onPageChange={handlePageChange}
                             totalPages={totalPages}
                         />
-                    </div>
                 </div>
             </div>
 
