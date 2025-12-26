@@ -75,7 +75,7 @@ const BackButton = ({ to, className = "", variant = 'default' }: BackButtonProps
         <button
             type="button"
             onClick={handleClick}
-            className={`${variants[variant]} cursor-pointer ${className}`}
+            className={`cursor-pointer ${variants[variant]} ${className}`}
         >
             <ArrowLeftIcon className={`${iconStyles[variant]} duration-200`} />
             <span className="text-sm font-medium">Kembali</span>

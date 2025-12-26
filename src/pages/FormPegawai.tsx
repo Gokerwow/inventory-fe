@@ -17,35 +17,33 @@ import BackButton from "../components/backButton";
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    // 1. Perbaikan State Initialization sesuai Interface DaftarPegawai
     const [formData, setFormData] = useState<DaftarPegawai>({
         id: 0,
         name: '',
         nip: '',
         phone: '',
-        status: '',
+        status: 'active',
         jabatan_id: 0,
         created_at: '',
         updated_at: '',
-        jabatan: {
-            id: 0,
-            name: ''
-        }
-    })
+        jabatan: '' // Interface mengharuskan string, bukan object
+    });
 
-    const [jabatan, setJabatan] = useState<APIJabatan[]>([])
-    const [selectedJabatan, setSelectedJabatan] = useState<APIJabatan | null>(null)
+    const [jabatanOptions, setJabatanOptions] = useState<APIJabatan[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const { showToast } = useToast();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const location = useLocation()
-    const navigate = useNavigate()
+    const location = useLocation();
+    const navigate = useNavigate();
     const { checkAccess, hasAccess } = useAuthorization([ROLES.SUPER_ADMIN]);
     const { user } = useAuth();
 
-    const { data } = location.state || {}
+    const { data } = location.state || {};
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -55,19 +53,24 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
         const fetchData = async () => {
             try {
-                const response = await getJabatanSelect()
-                setJabatan(response)
-                if (isEdit) {
-                    setFormData(data)
+                const response = await getJabatanSelect();
+                setJabatanOptions(response);
+                
+                if (isEdit && data) {
+                    // Pastikan data yang masuk sesuai struktur
+                    setFormData(data);
                 }
             } catch (err) {
                 console.error("Gagal mengambil data jabatan:", err);
                 showToast('Gagal mengambil data jabatan.', 'error');
+                setError("Gagal memuat data.");
+            } finally {
+                setIsLoading(false);
             }
-        }
+        };
 
-        fetchData()
-    }, [user?.role, isEdit, data])
+        fetchData();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -81,17 +84,17 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         }
     };
 
-    const handleJabatanChange = (option: APIJabatan | null) => {
-        setSelectedJabatan(option);
-        if (option) {
+    // 2. Perbaikan Handler Jabatan
+    // Menerima input dari DropdownInput (bisa object APIJabatan atau string)
+    const handleJabatanChange = (option: APIJabatan | string) => {
+        if (typeof option === 'object' && option !== null) {
             setFormData(prev => ({
                 ...prev,
-                jabatan: {
-                    id: option.id,
-                    name: option.name
-                },
+                jabatan: option.name, // Simpan nama untuk display (string)
+                jabatan_id: option.id // Simpan ID untuk payload API (number)
             }));
-            // Clear error ketika user memilih jabatan
+            
+            // Clear error
             if (errors.jabatan) {
                 setErrors(prev => ({ ...prev, jabatan: '' }));
             }
@@ -100,8 +103,6 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
     const handleNIPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-
-        // ✅ Hanya izinkan angka (0-9)
         const onlyNumbers = value.replace(/[^0-9]/g, '');
 
         setFormData(prevState => ({
@@ -109,7 +110,6 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             [name]: onlyNumbers
         }));
 
-        // Clear error ketika user mulai mengetik
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -125,14 +125,13 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         if (!formData.nip.trim()) {
             newErrors.nip = 'NIP wajib diisi';
         } else if (!/^\d+$/.test(formData.nip)) {
-            // ✅ Validasi bahwa NIP hanya berisi angka
             newErrors.nip = 'NIP hanya boleh berisi angka';
         } else if (formData.nip.length < 5) {
-            // ✅ Optional: tambahkan validasi panjang minimum
             newErrors.nip = 'NIP minimal 5 digit';
         }
 
-        if (!formData.jabatan.id || formData.jabatan.id === 0) {
+        // 3. Perbaikan Validasi Jabatan (Cek jabatan_id)
+        if (!isEdit && (!formData.jabatan_id || formData.jabatan_id === 0)) {
             newErrors.jabatan = 'Jabatan wajib dipilih';
         }
 
@@ -143,6 +142,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
@@ -151,49 +151,40 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         setIsSubmitting(true);
 
         try {
+            // Payload untuk API
             const pegawaiData: APIPegawaiBaru = {
                 name: formData.name,
                 nip: formData.nip,
-                jabatan_id: formData.jabatan.id,
+                jabatan_id: formData.jabatan_id, // Gunakan ID yang tersimpan
                 phone: formData.phone,
                 status: formData.status || 'active'
             };
 
             if (!isEdit) {
                 console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
-
-                const response = await createPegawai(pegawaiData)
-                console.log(response)
-
+                await createPegawai(pegawaiData);
                 showToast('Anda berhasil membuat daftar pegawai baru', 'success');
             } else {
-                console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
-
-                const response = await updatePegawai(formData.id, pegawaiData)
-                console.log(response)
-
-                showToast('Anda berhasil mengubah daftar pegawai baru', 'success');
+                console.log('✅ Pegawai yang akan diupdate:', pegawaiData);
+                await updatePegawai(formData.id, pegawaiData);
+                showToast('Anda berhasil mengubah data pegawai', 'success');
             }
 
             navigate(PATHS.PEGAWAI.INDEX);
             handleCloseModal();
 
         } catch (err: any) {
-            console.error("Gagal menambah pegawai:", err);
+            console.error("Gagal menyimpan pegawai:", err);
+            handleCloseModal();
 
-            // ✅ Tampilkan pesan error dari backend
             if (err.response?.data?.message) {
                 showToast(err.response.data.message, 'error');
             } else if (err.response?.data?.errors) {
-                // Jika backend mengirim detail errors per field
                 const errorMessages = Object.values(err.response.data.errors).flat().join(', ');
                 showToast(errorMessages, 'error');
             } else {
                 showToast('Gagal menyimpan data pegawai.', 'error');
             }
-
-            // ✅ Log lengkap untuk debugging
-            console.log('Response error:', err.response?.data);
         } finally {
             setIsSubmitting(false);
         }
@@ -207,13 +198,12 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             return;
         }
 
+        // Debug log
         console.log('Data pegawai siap submit:', {
             name: formData.name,
             nip: formData.nip,
-            jabatan: {
-                id: formData.jabatan.id,
-                name: formData.jabatan.name
-            },
+            jabatan_id: formData.jabatan_id,
+            jabatan_name: formData.jabatan,
             phone: formData.phone,
             status: formData.status
         });
@@ -222,11 +212,11 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     };
 
     if (isLoading) {
-        <Loader />
+        return <Loader />;
     }
 
     return (
-        <div className={`w-full h-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
+        <div className={`w-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
             {/* HEADER HALAMAN (Biru) */}
             <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
                 <BackButton className="absolute left-6 top-1/2 -translate-y-1/2" />
@@ -234,11 +224,14 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                     <h1 className="text-2xl font-bold uppercase tracking-wide">
                         {!isEdit ? 'Tambah Pegawai Baru' : 'Form Manajemen Pegawai'}
                     </h1>
-                    <p className="text-blue-100 text-sm mt-1 opacity-90">{!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}</p>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                        {!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}
+                    </p>
                 </div>
             </div>
+            
             <div className={`w-full rounded-xl shadow-lg flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col`}>
-                {!isEdit &&
+                {!isEdit && (
                     <div className="bg-blue-600 p-6 rounded-t-xl md:p-8 flex justify-between items-start text-white">
                         <div className="flex gap-4 items-center">
                             <div className="bg-white p-2 rounded-lg shrink-0">
@@ -255,10 +248,9 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                             Wajib Diisi
                         </span>
                     </div>
-                }
+                )}
 
                 <div className="p-6 flex flex-col flex-1">
-
                     <div className="bg-indigo-50 border-l-4 border-blue-600 p-4 rounded-r-md flex gap-4 items-start mb-8">
                         <div className="bg-blue-100 p-1 rounded-full text-blue-600 mt-0.5">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -293,14 +285,14 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                             </div>
 
                             <div>
+                                {/* 4. Perbaikan Props Dropdown */}
                                 <DropdownInput
                                     judul="Jabatan"
-                                    options={jabatan}
+                                    options={jabatanOptions}
                                     placeholder='Pilih Jabatan'
                                     onChange={handleJabatanChange}
                                     name='jabatan'
-                                    type='button'
-                                    value={formData.jabatan.name || ''}
+                                    value={formData.jabatan || ''} // Kirim string name
                                     disabled={isEdit}
                                 />
                                 {errors.jabatan && (
@@ -337,9 +329,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                                 )}
                                 <span className="text-sm text-gray-500">Contoh: 08123456789</span>
-
                             </div>
-
                         </div>
 
                         <div className="flex justify-end mt-auto pt-6">
@@ -352,10 +342,9 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                             </Button>
                         </div>
                     </form>
-
                 </div>
             </div>
-            {/* MODAL / POPUP */}
+            
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
@@ -363,5 +352,5 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                 text='Apa anda yakin data yang dibuat sudah benar?'
             />
         </div>
-    )
+    );
 }
