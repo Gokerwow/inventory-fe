@@ -1,5 +1,5 @@
 import apiClient from "../utils/api";
-import { type APIDetailBarang, type APIDetailStokBAST, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
+import { type APIDetailBarang, type APIDetailStokBAST, type APIResponseBASTAvailable, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {
     console.log("SERVICE: Mengabil barang stok...");
@@ -102,17 +102,14 @@ export const getStokByAvailableBAST = async (
     id: number,
     page: number = 1,
     perPage?: number,
-): Promise<PaginationResponse<APIDetailStokBAST[]>> => {
-    console.log(`SERVICE: Mengambil stok untuk stok ID: ${id}... dengan ${page}....`);
+): Promise<APIResponseBASTAvailable> => { // GANTI DISINI
     try {
-        // Buat params untuk query string
         const params: Record<string, number | string> = { page };
         if (perPage) {
             params.per_page = perPage;
         }
-        const response = await apiClient.get(`/api/v1/stok/${id}/bast-available`)
-        console.log('response BE', response.data)
-        return response.data as PaginationResponse<APIDetailStokBAST[]>
+        const response = await apiClient.get(`/api/v1/stok/${id}/bast-available`, { params });
+        return response.data; 
     } catch (error) {
         console.error(`Gagal mengambil detail stok barang dengan ID ${id}:`, error);
         throw new Error('Gagal mengambil detail stok barang.');

@@ -494,12 +494,31 @@ export interface APIDetailBarang {
 
 export interface APIDetailStokBAST {
     detail_penerimaan_id: number;
-    bast_id: number;
+    bast_id: string; 
     tanggal_bast: string;
     quantity_total: number;
     quantity_used: number;
     quantity_remaining: number;
     harga: string;
+}
+
+export interface APIResponseBASTAvailable {
+    success: boolean;
+    message: string;
+    data: {
+        meta: {
+            total_stok: number;
+            minimum_stok: number;
+            available_for_allocation: number;
+        };
+        batches: {
+            current_page: number;
+            data: APIDetailStokBAST[];
+            total: number;
+            per_page: number;
+            last_page: number;
+        };
+    };
 }
 
 export interface APIDataPenerimaan {

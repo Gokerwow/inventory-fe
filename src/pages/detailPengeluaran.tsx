@@ -1,28 +1,33 @@
-import { useEffect, useMemo, useState } from "react"
-import { ROLES, type APIDetailItemPemesanan, type APIDetailPemesanan, type APIDetailStokBAST, type APIPatchQuantityPJ } from "../constant/roles"
-import { getDetailPemesanan } from "../services/pemesananService"
-import { generatePath, useNavigate, useParams } from "react-router-dom"
-import Loader from "../components/loader"
-import SearchBar from "../components/searchBar"
-import { useAuth } from "../hooks/useAuth"
-import ReusableTable, { type ColumnDefinition } from "../components/table"
-import Input from "../components/input"
-import BackButton from "../components/backButton"
-import Button from "../components/button"
-import ConfirmModal from "../components/confirmModal"
-import { alokasiPengeluaran, confirmPemesanan } from "../services/pengeluaranService"
-import { PATHS } from "../Routes/path"
-import { useToast } from "../hooks/useToast"
-import Pagination from "../components/pagination"
-import { useAuthorization } from "../hooks/useAuthorization"
+import { useEffect, useMemo, useState } from "react";
+import { ROLES, type APIDetailItemPemesanan, type APIDetailPemesanan, type APIDetailStokBAST, type APIPatchQuantityPJ } from "../constant/roles";
+import { getDetailPemesanan } from "../services/pemesananService";
+import { generatePath, useNavigate, useParams } from "react-router-dom";
+import Loader from "../components/loader";
+import SearchBar from "../components/searchBar";
+import { useAuth } from "../hooks/useAuth";
+import ReusableTable, { type ColumnDefinition } from "../components/table";
+import Input from "../components/input";
+import BackButton from "../components/backButton";
+import Button from "../components/button";
+import ConfirmModal from "../components/confirmModal";
+import { alokasiPengeluaran, confirmPemesanan } from "../services/pengeluaranService";
+import { PATHS } from "../Routes/path";
+import { useToast } from "../hooks/useToast";
+import Pagination from "../components/pagination";
+import { useAuthorization } from "../hooks/useAuthorization";
 import { X, Info, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import Modal from "../components/modal"
-import { getStokByAvailableBAST } from "../services/barangService"
+import Modal from "../components/modal";
+import { getStokByAvailableBAST } from "../services/barangService";
 
 export function DetailPengeluaranPage() {
-    const [pemesananItem, setPemesananItem] = useState<APIDetailPemesanan | null>(null)
+    const [metaStok, setMetaStok] = useState<{
+        total_stok: number;
+        minimum_stok: number;
+        available_for_allocation: number;
+    } | null>(null);
+    const [pemesananItem, setPemesananItem] = useState<APIDetailPemesanan | null>(null);
     const detailItems = pemesananItem?.detail_items?.data ?? [];
-    const [selectedItem, setSelectedItem] = useState<APIDetailStokBAST[]>([])
+    const [selectedItem, setSelectedItem] = useState<APIDetailStokBAST[]>([]);
     // State untuk Checkbox & Input dalam Tabel    
     const [checkedBastIds, setCheckedBastIds] = useState<number[]>([]);
     const [rowQuantities, setRowQuantities] = useState<Record<number, number | string>>({});
@@ -30,11 +35,11 @@ export function DetailPengeluaranPage() {
     // State untuk Global "Jumlah di ACC"
     const [accAmount, setAccAmount] = useState<number | string>('');
 
-    const [isLoading, setIsLoading] = useState(true)
-    const [search, setSearch] = useState('')
-    const [debouncedSearch, setDebouncedSearch] = useState('')
-    const [isOpen, setIsOpen] = useState(false)
-    const [isModalInputOpen, setIsModalInputOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
+    const [isModalInputOpen, setIsModalInputOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [allAllocations, setAllAllocations] = useState<Record<number, Record<number, number>>>({});
     const [activeDetailId, setActiveDetailId] = useState<number | null>(null);
@@ -53,22 +58,22 @@ export function DetailPengeluaranPage() {
     const [activeStokId, setActiveStokId] = useState<number | null>(null); // Menyimpan ID Stok yang sedang dibuka
     const [isModalLoading, setIsModalLoading] = useState(false); // Loading khusus modal
 
-    const { id: paramId } = useParams()
+    const { id: paramId } = useParams();
     const requiredRoles = useMemo(() =>
         [ROLES.ADMIN_GUDANG, ROLES.PENANGGUNG_JAWAB],
         []
     );
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
     const { user } = useAuth();
-    const navigate = useNavigate()
-    const { showToast } = useToast()
+    const navigate = useNavigate();
+    const { showToast } = useToast();
 
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
 
         const fetchData = async () => {
-            setIsLoading(true)
+            setIsLoading(true);
             if (paramId) {
                 try {
                     const detailPemesanan = await getDetailPemesanan(
@@ -76,28 +81,28 @@ export function DetailPengeluaranPage() {
                         currentPage,
                         itemsPerPage,
                         debouncedSearch
-                    )
-                    setPemesananItem(detailPemesanan.data as APIDetailPemesanan)
-                    setTotalItems(detailPemesanan.data?.detail_items?.total || 0)
+                    );
+                    setPemesananItem(detailPemesanan.data as APIDetailPemesanan);
+                    setTotalItems(detailPemesanan.data?.detail_items?.total || 0);
                     setItemsPerPage(detailPemesanan.data?.detail_items?.per_page || 10);
                     setTotalPages(detailPemesanan.data?.detail_items?.last_page || 1);
-                    setIsLoading(false)
+                    setIsLoading(false);
                 } catch (error) {
-                    console.error("Gagal mengambil data", error)
+                    console.error("Gagal mengambil data", error);
                 }
             }
-        }
-        fetchData()
-    }, [user?.role, paramId])
+        };
+        fetchData();
+    }, [user?.role, paramId]);
 
     useEffect(() => {
         const handler = setTimeout(() => {
-            setDebouncedSearch(search)
-        }, 500)
+            setDebouncedSearch(search);
+        }, 500);
         return () => {
             clearTimeout(handler);
         };
-    }, [search])
+    }, [search]);
 
     // --- FUNGSI BARU: Fetch Data Modal ---
     const fetchModalData = async (stokId: number, page: number) => {
@@ -105,18 +110,18 @@ export function DetailPengeluaranPage() {
         try {
             const response = await getStokByAvailableBAST(stokId, page, modalItemsPerPage);
 
-            // SESUAIKAN DENGAN STRUKTUR JSON BARU:
-            // response       = { data: { current_page: 1, data: [...] } }
-            // paginationData = response.data
-            const paginationData = response.data;
+            const rootData = response.data;
+            const batchesData = rootData.batches;
+            const metaData = rootData.meta;
 
-            setSelectedItem(paginationData.data); // Array data item
+            setSelectedItem(batchesData.data);
 
-            // Set State Pagination
-            setModalCurrentPage(paginationData.current_page);
-            setModalTotalItems(paginationData.total);
-            setModalItemsPerPage(paginationData.per_page);
-            setModalTotalPages(paginationData.last_page);
+            setMetaStok(metaData);
+
+            setModalCurrentPage(batchesData.current_page);
+            setModalTotalItems(batchesData.total);
+            setModalItemsPerPage(batchesData.per_page);
+            setModalTotalPages(batchesData.last_page);
 
         } catch (error) {
             console.error("Error fetching modal data", error);
@@ -243,11 +248,11 @@ export function DetailPengeluaranPage() {
 
 
     const handleConfirmClick = () => {
-        setIsOpen(true)
-    }
+        setIsOpen(true);
+    };
 
     const handleConfirmSubmit = async () => {
-        setIsSubmitting(true)
+        setIsSubmitting(true);
         try {
             if (user.role === ROLES.ADMIN_GUDANG) {
                 // 1. VALIDASI: Cek apakah semua item sudah dialokasikan sesuai jumlahnya
@@ -291,9 +296,9 @@ export function DetailPengeluaranPage() {
 
                 console.log("Payload to send:", JSON.stringify(payload, null, 2));
 
-                const response = await alokasiPengeluaran(parseInt(paramId!), payload)
-                showToast('Berhasil mengalokasi pengeluaran', 'success')
-                navigate(generatePath(PATHS.PENGELUARAN.INDEX))
+                const response = await alokasiPengeluaran(parseInt(paramId!), payload);
+                showToast('Berhasil mengalokasi pengeluaran', 'success');
+                navigate(generatePath(PATHS.PENGELUARAN.INDEX));
 
             } else {
                 const payload: APIPatchQuantityPJ = {
@@ -301,22 +306,22 @@ export function DetailPengeluaranPage() {
                         detail_id: item.id,
                         quantity_pj: item.quantity_pj !== null ? item.quantity_pj : item.quantity
                     }))
-                }
+                };
 
-                const response = await confirmPemesanan(parseInt(paramId!), payload)
-                console.log(response)
-                showToast('Berhasil mengkonfirmasi pengeluaran', 'success')
-                navigate(generatePath(PATHS.PENGELUARAN.INDEX))
+                const response = await confirmPemesanan(parseInt(paramId!), payload);
+                console.log(response);
+                showToast('Berhasil mengkonfirmasi pengeluaran', 'success');
+                navigate(generatePath(PATHS.PENGELUARAN.INDEX));
             }
 
-        } catch (error) {
-            showToast('Error dalam mengkonfirmasi pengeluaran')
-            console.error(error)
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || 'Gagal mengkonfirmasi pengeluaran';
+            showToast(errorMsg, 'error');
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
             setIsOpen(false);
         }
-    }
+    };
 
     const filteredItems = useMemo(() => {
         return detailItems.filter((item) =>
@@ -350,7 +355,7 @@ export function DetailPengeluaranPage() {
             }
         }
 
-        return true; 
+        return true;
     }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds]);
 
     const isConfirmDisabled = useMemo(() => {
@@ -383,7 +388,7 @@ export function DetailPengeluaranPage() {
             cell: (item) => {
                 // Tentukan jumlah yang diminta (prioritas quantity_pj jika ada)
                 const requiredQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
-                return <span className="text-gray-900 font-bold">{requiredQty} Unit</span>
+                return <span className="text-gray-900 font-bold">{requiredQty} Unit</span>;
             }
         },
         // --- KOLOM BARU UNTUK STATUS ALOKASI ---
@@ -510,7 +515,7 @@ export function DetailPengeluaranPage() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                         </button>
                     </div>
-                )
+                );
             }
         },
     ], [pemesananItem, user?.role, allAllocations]); // Pastikan allAllocations masuk dependency array
@@ -585,7 +590,7 @@ export function DetailPengeluaranPage() {
     // Pastikan accAmount dibaca sebagai angka (karena bisa string kosong)
     const targetAmount = typeof accAmount === 'number' ? accAmount : 0;
     if (isLoading) {
-        return <Loader />
+        return <Loader />;
     }
 
     return (
@@ -740,11 +745,29 @@ export function DetailPengeluaranPage() {
                     <div className="p-6 space-y-6 text-gray-800">
 
                         {/* Info Alert Box */}
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start gap-3">
-                            <Info className="text-blue-600 shrink-0 mt-0.5" size={20} fill="#057CFF" color="white" />
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                                Atur kuantitas barang yang akan diambil dari BAST Penerimaan yang tersedia, dengan kategori pesanan berupa <span className="font-bold">Bahan Komputer</span>, yaitu <span className="font-bold">monitor</span> sebanyak <span className="font-bold">8 unit</span>.
-                            </p>
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                                <Info className="text-blue-600 shrink-0 mt-0.5" size={20} fill="#057CFF" color="white" />
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-sm text-gray-700">
+                                        Atur kuantitas barang yang akan diambil dari BAST Penerimaan yang tersedia, dengan kategori pesanan berupa <span className="font-bold">Bahan Komputer</span>, yaitu <span className="font-bold">monitor</span> sebanyak <span className="font-bold">8 unit</span>.
+                                    </p>
+                                    {/* INFO DARI META DATA */}
+                                    {metaStok && (
+                                        <div className="flex gap-4 mt-2">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase text-gray-500 font-bold">Total Stok Gudang</span>
+                                                <span className="text-sm font-bold text-blue-700">{metaStok.total_stok} Unit</span>
+                                            </div>
+                                            <div className="border-l border-gray-200 h-8"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase text-gray-500 font-bold">Minimum Stok</span>
+                                                <span className="text-sm font-bold text-orange-600">{metaStok.minimum_stok} Unit</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Input Section */}
@@ -853,5 +876,5 @@ export function DetailPengeluaranPage() {
                 </div>
             </Modal>
         </div>
-    )
+    );
 }
