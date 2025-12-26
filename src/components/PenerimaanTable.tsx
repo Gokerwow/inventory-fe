@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import PencilIcon from '../assets/svgs/pencilIcon2.svg?react';
 import { PATHS } from '../Routes/path';
 import EyeIcon from '../assets/svgs/eye.svg?react';
-import { ROLES, type BASTAPI, type PenerimaanItem, type RiwayatPenerimaanItem } from '../constant/roles';
+import { ROLE_DISPLAY_NAMES, ROLES, type BASTAPI, type PenerimaanItem, type RiwayatPenerimaanItem } from '../constant/roles';
 import DownloadIcon from '../assets/svgs/download.svg?react';
 import UploadIcon from '../assets/svgs/UnduhICON.svg?react';
 import DeleteIcon from '../assets/svgs/IconHapus.svg?react';
@@ -89,7 +89,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
 
     const columns: ColumnDefinition<DataItem>[] = [
         { header: 'No Surat', cell: (item) => item.no_surat },
-        { header: 'Role', cell: (item) => item.role_user },
+        { header: 'Role', cell: (item) => ROLE_DISPLAY_NAMES[item.role_user]},
         { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
             header: 'Kategori',

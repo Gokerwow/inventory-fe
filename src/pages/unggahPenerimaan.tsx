@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import UploadIcon from '../assets/svgs/uploadBAST.svg?react';
 import { useToast } from '../hooks/useToast';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom'; // 1. Ganti useLocation dengan useParams
 import { PATHS } from '../Routes/path';
 import PDFIcon from '../assets/svgs/PDFICON.svg?react';
 import Pagination from '../components/pagination';
@@ -13,13 +13,14 @@ import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
 import Loader from '../components/loader';
 import BackButton from '../components/backButton';
-import { UploadCloud } from 'lucide-react';
 
 const LihatPenerimaan = () => {
+    // 2. Ambil ID dari URL Parameter (Misal route: /penerimaan/:id/upload)
+    const { id } = useParams<{ id: string }>(); 
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { showToast } = useToast();
     const navigate = useNavigate();
-    const location = useLocation();
 
     // State Data & Loading
     const [isLoading, setIsLoading] = useState(false);
@@ -33,8 +34,6 @@ const LihatPenerimaan = () => {
     const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 5;
 
-    const [error, setError] = useState<string | null>(null);
-    const { data } = location.state || {};
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         uploaded_signed_file: null as File | null
@@ -50,22 +49,32 @@ const LihatPenerimaan = () => {
             return;
         }
 
+        // Validasi ID URL
+        if (!id) {
+            showToast("ID Penerimaan tidak valid", "error");
+            navigate(PATHS.PENERIMAAN.INDEX);
+            return;
+        }
+
         const fetchAllData = async () => {
             setIsLoading(true);
             try {
+                // Catatan: Jika getRiwayatBASTFile butuh ID spesifik, tambahkan parameter id disini
+                // Contoh: await getRiwayatBASTFile(id, currentPage, itemsPerPage);
                 const response = await getRiwayatBASTFile(currentPage, itemsPerPage);
                 setRiwayatBastFile(response.data || []);
                 setTotalItems(response.total || 0);
             } catch (err) {
                 console.error("Error fetching history:", err);
-                setError("Gagal mengambil riwayat.");
+                showToast("Gagal mengambil riwayat.", "error");
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchAllData();
-    }, [user.role, currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user.role, currentPage, id]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -90,7 +99,7 @@ const LihatPenerimaan = () => {
             showToast('Harap pilih file PDF saja!', 'error');
             return;
         }
-        if (file.size > 50 * 1024 * 1024) { // 100MB sesuai UI
+        if (file.size > 100 * 1024 * 1024) { // 100MB
             showToast('Ukuran file maksimal 100MB', 'error');
             return;
         }
@@ -145,15 +154,15 @@ const LihatPenerimaan = () => {
             return;
         }
 
-        if (!data?.id) {
-            showToast('ID Penerimaan tidak ditemukan!', 'error');
+        // 3. Validasi menggunakan ID dari params
+        if (!id) {
+            showToast('ID Penerimaan tidak ditemukan di URL!', 'error');
             handleCloseModal();
             return;
         }
 
         try {
             setIsUploading(true);
-            // Simulasi progress upload
             const interval = setInterval(() => {
                 setUploadProgress(prev => {
                     if (prev >= 90) {
@@ -164,7 +173,9 @@ const LihatPenerimaan = () => {
                 });
             }, 200);
 
-            const result = await uploadBAST(data.id, formData);
+            // 4. Gunakan ID dari params untuk upload
+            const result = await uploadBAST(id, formData);
+            
             clearInterval(interval);
             setUploadProgress(100);
 
@@ -212,8 +223,9 @@ const LihatPenerimaan = () => {
                     <h1 className="text-2xl font-bold uppercase tracking-wide">
                         DOKUMEN BERITA ACARA SERAH TERIMA (BAST)
                     </h1>
+                    {/* 5. Hapus No Surat karena data tidak tersedia dari URL */}
                     <p className="text-blue-100 text-sm mt-1 opacity-90">
-                        Nomor: {data.no_surat}
+                        Upload dokumen untuk ID Penerimaan: #{id}
                     </p>
                 </div>
             </div>
@@ -244,7 +256,7 @@ const LihatPenerimaan = () => {
             ${isDragging
                                     ? 'border-blue-500 bg-blue-50'
                                     : formData.uploaded_signed_file
-                                        ? 'border-blue-200 bg-blue-50/30' // Sedikit indikasi visual jika file sudah ada
+                                        ? 'border-blue-200 bg-blue-50/30'
                                         : 'border-gray-300 bg-white'
                                 }`}
                         >
@@ -257,7 +269,7 @@ const LihatPenerimaan = () => {
                                     {formData.uploaded_signed_file ? "File siap diunggah" : "Klik untuk mengunggah atau seret dan lepas"}
                                 </p>
                                 <p className="text-gray-500 text-sm mb-4">
-                                    Format: Pdf (Maks. 50Mb)
+                                    Format: Pdf (Maks. 100Mb)
                                 </p>
                                 <p className="text-gray-400 text-xs">
                                     Dokumen BAST yang sudah ditandatangani secara basah
@@ -266,7 +278,7 @@ const LihatPenerimaan = () => {
                                 <Button
                                     type="button"
                                     onClick={handleUploadClick}
-                                    variant='primary' // Pastikan varian ini ada di komponen Button Anda, atau ganti ke className manual
+                                    variant='primary'
                                     className='mt-6'
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2">
@@ -277,12 +289,11 @@ const LihatPenerimaan = () => {
                             </div>
                         </div>
 
-                        {/* File Preview & Actions - Selalu Tampil dengan Placeholder */}
+                        {/* File Preview & Actions */}
                         <div className="flex flex-col gap-4">
                             {/* File Info Card */}
                             <div className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${formData.uploaded_signed_file ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
                                 <div className="w-10 h-10 shrink-0">
-                                    {/* Icon berwarna merah jika ada file, abu-abu jika belum */}
                                     <PDFIcon className={`w-full h-full ${formData.uploaded_signed_file ? 'text-red-500' : 'text-gray-300'}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -294,7 +305,6 @@ const LihatPenerimaan = () => {
                                     </p>
                                 </div>
 
-                                {/* Tombol Hapus hanya aktif/terlihat jika ada file */}
                                 <button
                                     type="button"
                                     onClick={handleRemoveFile}
@@ -310,7 +320,7 @@ const LihatPenerimaan = () => {
                                 </button>
                             </div>
 
-                            {/* Progress Bar - Hanya tampil saat uploading */}
+                            {/* Progress Bar */}
                             {isUploading && (
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-xs text-gray-600">
@@ -329,7 +339,6 @@ const LihatPenerimaan = () => {
                             {/* Upload Button */}
                             <button
                                 type="submit"
-                                // Disable jika uploading ATAU file belum dipilih
                                 disabled={isUploading || !formData.uploaded_signed_file}
                                 className="w-full bg-linear-to-br from-[#057CFF] to-[#003F93] text-white py-3 rounded-lg font-medium hover:from-[#0164ce] hover:to-[#003273] transition-all duration-200 cursor-pointer shadow-sm disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >

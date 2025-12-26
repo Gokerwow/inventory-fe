@@ -10,6 +10,7 @@ import ReusableTable, { type ColumnDefinition } from '../components/table';
 import Status from '../components/status';
 import { NavigationTabs } from '../components/navTabs';
 import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react';
+import { formatDate, formatTime } from '../services/utils';
 
 const LOGTabs = [
     {
@@ -89,8 +90,8 @@ export default function MonitoringPage() {
 
     const LOGColummns: ColumnDefinition<LogItem>[] = [
         { header: 'NAME', cell: (item) => item.name },
-        { header: 'WAKTU ', cell: (item) => item.waktu },
-        { header: 'TANGGAL ', cell: (item) => item.waktu },
+        { header: 'WAKTU ', cell: (item) => `${item.waktu.substring(0, 5)} WIB` },
+        { header: 'TANGGAL ', cell: (item) => formatDate(item.tanggal) },
         {
             header: 'AKTIVITAS',
             cell: (item) => {

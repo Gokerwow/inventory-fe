@@ -23,6 +23,7 @@ import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, star
 import { id as indonesia } from 'date-fns/locale'; // Format Bahasa Indonesia
 import CustomCalendar from '../components/calender';
 import Button from '../components/button';
+import { formatDate } from '../services/utils';
 
 const pengeluaranTabs = [
     { id: 'pengeluaran', label: 'Pengeluaran', icon: <ShoppingCartIcon className="-ml-0.5 mr-2 h-5 w-5" /> },
@@ -177,7 +178,7 @@ function Pengeluaran() {
     const pengeluaranColumns: ColumnDefinition<APIPemesanan>[] = useMemo(() => [
         { header: 'INSTALASI', key: 'instalasi', cell: (item) => <span className="text-gray-900">{item.user_name}</span> },
         { header: 'RUANGAN', key: 'ruangan', cell: (item) => <span className="text-gray-900">{item.ruangan}</span> },
-        { header: 'TANGGAL', key: 'tanggal', cell: (item) => <span className="text-gray-900">{item.tanggal_pemesanan}</span> },
+        { header: 'TANGGAL', key: 'tanggal', cell: (item) => <span className="text-gray-900">{formatDate(item.tanggal_pemesanan)}</span> },
         { header: 'STATUS', key: 'status', align: 'center', cell: (item) => <Status code={item.status_code} label={item.status} value={item.status} /> },
         { header: 'AKSI', key: 'aksi', align: 'center', cell: (item) => (<button className="w-full flex items-center justify-center gap-2 text-black cursor-pointer hover:scale-110 transition-all duration-200" onClick={() => handleLihatClick(item.id)}><div className="bg-white/20 rounded-full p-0.5"><EyeIcon className='w-5 h-5' /></div>Lihat</button>) }
     ], []);
@@ -190,13 +191,13 @@ function Pengeluaran() {
                 { header: 'NAMA BARANG', key: 'stok_name', cell: (item) => <span className="text-gray-900">{item.stok_name}</span> },
                 { header: 'KATEGORI', key: 'category_name', cell: (item) => <span className="text-gray-500 text-sm">{item.category_name}</span> },
                 { header: 'JUMLAH', key: 'quantity', width: '80px', align: 'center', cell: (item) => <span className="text-gray-900 font-bold">{item.quantity}</span> },
-                { header: 'TANGGAL KELUAR', key: 'tanggal_pengeluaran', cell: (item) => <span className="text-gray-900 text-xs">{item.tanggal_pengeluaran}</span> }
+                { header: 'TANGGAL KELUAR', key: 'tanggal_pengeluaran', cell: (item) => <span className="text-gray-900 text-xs">{formatDate(item.tanggal_pengeluaran)}</span> }
             ];
         }
         return [
             { header: 'INSTALASI', key: 'user_name', cell: (item) => <span className="text-gray-900 font-medium">{item.user_name}</span> },
             { header: 'RUANGAN', key: 'ruangan', cell: (item) => <span className="text-gray-900">{item.ruangan}</span> },
-            { header: 'TANGGAL', key: 'tanggal_pemesanan', cell: (item) => <span className="text-gray-900">{item.tanggal_pemesanan}</span> },
+            { header: 'TANGGAL', key: 'tanggal_pemesanan', cell: (item) => <span className="text-gray-900">{formatDate(item.tanggal_pemesanan)}</span> },
             { header: 'STATUS', key: 'status', align: 'center', cell: (item) => <Status code={item.status_code} label={item.status} value={item.status} /> },
         ];
     }, [user?.role]);
@@ -213,22 +214,30 @@ function Pengeluaran() {
 
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 shrink-0">
+                    {/* PARENT CONTAINER:
+                    Menggunakan 'justify-between' untuk memisahkan anak kiri dan kanan 
+                */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+                        {/* --- SISI KIRI (Judul & Search) --- */}
                         <div className='flex items-center gap-3 w-full sm:w-auto'>
                             <h1 className="text-xl font-bold text-[#002B5B] whitespace-nowrap">
                                 {activeTab === 'pengeluaran' ? 'Daftar Pengeluaran' : 'Riwayat Pengeluaran'}
                             </h1>
                             <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                        </div>
 
+                        {/* --- SISI KANAN (Date Picker & Export) --- */}
+                        {/* Kode ini dikeluarkan dari div Sisi Kiri di atas */}
+                        {activeTab === 'riwayatPengeluaran' && user?.role === ROLES.ADMIN_GUDANG && (
+                            <div className='flex items-center gap-3'> {/* Tambahkan items-center & gap-3 agar rapi */}
 
-
-                            {/* --- POP UP CALENDAR & PRESETS --- */}
-                            {activeTab === 'riwayatPengeluaran' && (
+                                {/* POP UP CALENDAR & PRESETS */}
                                 <Popover className="relative">
                                     {({ open, close }) => (
                                         <>
                                             <PopoverButton className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border outline-none cursor-pointer
-                                                ${open || (startDate && endDate) ? 'bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-100/50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                        ${open || (startDate && endDate) ? 'bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-100/50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                                                 <CalendarIcon size={18} className={startDate ? "text-blue-600" : "text-gray-500"} />
                                                 <div className="flex flex-col items-start leading-tight">
                                                     <span className="text-[10px] uppercase text-gray-400 font-bold tracking-wider">Periode</span>
@@ -241,8 +250,8 @@ function Pengeluaran() {
                                                 <ChevronDown size={16} className={`ml-2 opacity-50 transition-transform ${open ? 'rotate-180' : ''}`} />
                                             </PopoverButton>
 
+                                            {/* POPOVER PANEL (Isi Calendar) - Kode tetap sama, hanya merapikan indentasi */}
                                             <PopoverPanel className="absolute right-0 z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden ring-1 ring-black ring-opacity-5 origin-top-right flex flex-row min-h-[350px] w-[600px]">
-                                                {/* SIDEBAR PRESETS */}
                                                 <div className="w-40 bg-gray-50 border-r border-gray-100 p-2 flex flex-col gap-1 shrink-0">
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 px-2 mt-2">Pilih Cepat</p>
                                                     {[
@@ -266,19 +275,15 @@ function Pengeluaran() {
                                                     )}
                                                 </div>
 
-                                                {/* KALENDER AREA */}
                                                 <div className="flex-1 w-full p-4 bg-white flex flex-col items-center">
                                                     <p className="text-xs text-gray-500 mb-2 w-full text-center px-2">
                                                         {startDate && !endDate ? "Pilih tanggal akhir..." : "Pilih rentang tanggal"}
                                                     </p>
-
                                                     <CustomCalendar
                                                         startDate={startDate}
                                                         endDate={endDate}
                                                         onChange={handleCalendarChange}
                                                     />
-
-                                                    {/* TOMBOL TERAPKAN (Opsional, karena auto-update) */}
                                                     <div className="w-full px-2 mt-2 pt-3 border-t border-gray-100 flex justify-end">
                                                         <button onClick={() => close()} className="bg-[#002B5B] hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-lg font-bold shadow-md transition-all">
                                                             Selesai
@@ -289,19 +294,22 @@ function Pengeluaran() {
                                         </>
                                     )}
                                 </Popover>
-                            )}
-                        </div>
 
-                        <Button
-                            variant='primary'
-                            onClick={handleExportClick}
-                        >
-                            Export Excel
-                        </Button>
-
+                                {/* TOMBOL EXPORT */}
+                                <Button
+                                    variant='primary'
+                                    onClick={handleExportClick}
+                                    disabled={isExporting} // Tambahkan loading state visual jika mau
+                                    className="whitespace-nowrap" // Agar teks tidak turun
+                                >
+                                    {isExporting ? 'Exporting...' : 'Export Excel'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
+                {/* ... Bagian Table dan Pagination Tetap Sama ... */}
                 {isLoading ? <Loader /> : currentActiveData.length === 0 ? (
                     <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
                         <span className='font-medium text-gray-500'>DATA KOSONG</span>

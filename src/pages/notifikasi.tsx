@@ -38,11 +38,13 @@ export default function NotifikasiPage() {
     const [unreadCount, setUnreadCount] = useState(0);
     const { showToast } = useToast();
 
-    // Modal States
+    // --- MODAL STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
-    const [isDeleteAllMode, setIsDeleteAllMode] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State untuk membedakan jenis aksi modal
+    const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
+    const [modalAction, setModalAction] = useState<'delete_single' | 'delete_all' | 'mark_all_read' | null>(null);
 
     const handleTabClick = (tabId: string) => {
         setActiveTab(tabId);
@@ -88,49 +90,65 @@ export default function NotifikasiPage() {
         }
     };
 
-    const handleMarkAllRead = async () => {
-        if (window.confirm('Tandai semua notifikasi sebagai dibaca?')) {
-            try {
-                await markAllNotifikasi();
-                showToast("Semua notifikasi ditandai sebagai dibaca", "success");
-                fetchData();
-            } catch (err) {
-                console.error("Gagal menandai semua:", err);
-            }
-        }
+    // --- HANDLERS UNTUK MEMBUKA MODAL ---
+
+    const handleMarkAllReadClick = () => {
+        setModalAction('mark_all_read');
+        setIsModalOpen(true);
     };
 
     const handleDeleteClick = (id: number) => {
-        setIsDeleteAllMode(false);
         setSelectedDeleteId(id);
+        setModalAction('delete_single');
         setIsModalOpen(true);
     };
 
     const handleDeleteAllClick = () => {
-        setIsDeleteAllMode(true);
-        setSelectedDeleteId(null);
+        setModalAction('delete_all');
         setIsModalOpen(true);
     };
 
-    const handleConfirmDelete = async () => {
+    // --- LOGIKA UTAMA KONFIRMASI MODAL ---
+    const handleConfirmAction = async () => {
         setIsSubmitting(true);
         try {
-            if (isDeleteAllMode) {
+            if (modalAction === 'mark_all_read') {
+                await markAllNotifikasi();
+                showToast("Semua notifikasi ditandai sebagai dibaca", "success");
+            } 
+            else if (modalAction === 'delete_all') {
                 await deleteAllNotifikasi();
                 showToast("Semua notifikasi berhasil dikosongkan", "success");
-            } else if (selectedDeleteId) {
+            } 
+            else if (modalAction === 'delete_single' && selectedDeleteId) {
                 await deleteNotifikasi(selectedDeleteId);
                 showToast("Notifikasi berhasil dihapus", "success");
             }
+
             await fetchData();
             setIsModalOpen(false);
         } catch (err) {
-            console.error("Gagal menghapus:", err);
-            showToast("Terjadi kesalahan saat menghapus", "error");
+            console.error("Gagal melakukan aksi:", err);
+            showToast("Terjadi kesalahan", "error");
         } finally {
             setIsSubmitting(false);
+            // Reset state modal
             setSelectedDeleteId(null);
-            setIsDeleteAllMode(false);
+            setModalAction(null);
+        }
+    };
+
+    // Helper untuk teks modal dinamis
+    const getModalText = () => {
+        switch (modalAction) {
+            case 'mark_all_read':
+                return "Apakah Anda yakin ingin menandai SEMUA notifikasi sebagai sudah dibaca?";
+            case 'delete_all':
+                return "Apakah Anda yakin ingin menghapus SEMUA notifikasi? Tindakan ini tidak dapat dibatalkan.";
+            case 'delete_single':
+                return "Apakah Anda yakin ingin menghapus notifikasi ini?";
+            default:
+                return "";
         }
     };
 
@@ -202,7 +220,7 @@ export default function NotifikasiPage() {
                         className="text-red-500 hover:text-red-700 p-1"
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteClick(item.id); // Fixed typo handleDelet -> handleDeleteClick
+                            handleDeleteClick(item.id);
                         }}
                         title="Hapus Notifikasi"
                     >
@@ -228,7 +246,7 @@ export default function NotifikasiPage() {
                     </h2>
                     <div className='flex gap-2'>
                         <Button
-                            onClick={handleMarkAllRead}
+                            onClick={handleMarkAllReadClick}
                             variant='primary'
                             disabled={unreadCount === 0 || isLoading || isSubmitting}
                             className='flex items-center justify-center gap-2'
@@ -237,7 +255,7 @@ export default function NotifikasiPage() {
                             Tandai Semua Dibaca
                         </Button>
                         <Button
-                            onClick={handleDeleteAllClick} // Sekarang pakai Modal
+                            onClick={handleDeleteAllClick}
                             variant='danger'
                             disabled={currentItems.length === 0 || isLoading || isSubmitting}
                             className='flex items-center justify-center gap-2'
@@ -280,9 +298,9 @@ export default function NotifikasiPage() {
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={() => !isSubmitting && setIsModalOpen(false)}
-                onConfirm={handleConfirmDelete}
+                onConfirm={handleConfirmAction}
                 isLoading={isSubmitting}
-                text={isDeleteAllMode ? "Apakah Anda yakin ingin menghapus SEMUA notifikasi?" : "Apakah Anda yakin ingin menghapus notifikasi ini?"}
+                text={getModalText()}
             />
         </div>
     );
