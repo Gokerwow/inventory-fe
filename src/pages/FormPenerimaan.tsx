@@ -654,7 +654,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                     isPreviewMode ? "DETAIL PENERIMAAN" :
                                         "FORM DATA BARANG BELANJA"}
                     </h1>
-                    <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSUD Balung</p>
+                    <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSD Balung</p>
                 </div>
             </div>
 

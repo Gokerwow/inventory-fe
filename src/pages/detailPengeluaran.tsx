@@ -254,7 +254,7 @@ export function DetailPengeluaranPage() {
     const handleConfirmSubmit = async () => {
         setIsSubmitting(true);
         try {
-            if (user.role === ROLES.ADMIN_GUDANG) {
+            if (user?.role === ROLES.ADMIN_GUDANG) {
                 // 1. VALIDASI: 
                 // Ubah logic: Hanya anggap "Gagal" jika Total Alokasi masih 0 (Belum diatur).
                 // Jika jumlah beda (misal req 2, dikasih 3), biarkan lolos.
@@ -306,15 +306,13 @@ export function DetailPengeluaranPage() {
                     })
                 };
 
-                // Debug payload sebelum kirim
                 console.log("Payload to send:", JSON.stringify(payload, null, 2));
 
-                const response = await alokasiPengeluaran(parseInt(paramId!), payload);
+                await alokasiPengeluaran(parseInt(paramId!), payload);
                 showToast('Berhasil mengalokasi pengeluaran', 'success');
                 navigate(generatePath(PATHS.PENGELUARAN.INDEX));
 
             } else {
-                // ... Logic PJ tetap sama
                 const payload: APIPatchQuantityPJ = {
                     details: detailItems.map(item => ({
                         detail_id: item.id,
@@ -358,13 +356,10 @@ export function DetailPengeluaranPage() {
             }
         });
 
-        // ✅ TAMBAHAN BARU - Hitung total current
         const totalCurrent = Object.values(currentData).reduce((sum, qty) => sum + qty, 0);
 
-        // ✅ TAMBAHAN BARU - Cek apakah total current sama dengan accAmount
         const targetAmount = typeof accAmount === 'number' ? accAmount : parseInt(accAmount as string) || 0;
 
-        // ✅ TAMBAHAN BARU - Validasi total vs target
         if (targetAmount > 0 && totalCurrent !== targetAmount) {
             return false;
         }
@@ -384,7 +379,7 @@ export function DetailPengeluaranPage() {
     }, [allAllocations, activeDetailId, rowQuantities, checkedBastIds, accAmount]); // ✅ TAMBAHAN: accAmount
 
     const isConfirmDisabled = useMemo(() => {
-        if (user.role !== ROLES.ADMIN_GUDANG) return false;
+        if (user?.role !== ROLES.ADMIN_GUDANG) return false;
 
         // Cek apakah ada alokasi yang sudah disimpan
         const hasAllocations = Object.keys(allAllocations).length > 0;
@@ -397,11 +392,11 @@ export function DetailPengeluaranPage() {
             const totalAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
 
             // Item dianggap complete jika sudah ada alokasi (total > 0)
-            return totalAllocated > 0;  // ✅ Diperbaiki
+            return totalAllocated > 0;  
         });
 
         return !allItemsHaveAllocations;
-    }, [user.role, allAllocations, filteredItems]);
+    }, [user?.role, allAllocations, filteredItems]);
 
 
     const pengeluaranColumns: ColumnDefinition<APIDetailItemPemesanan>[] = useMemo(() => [
@@ -411,31 +406,24 @@ export function DetailPengeluaranPage() {
             cell: (item) => <span className="text-gray-900 font-medium">{item.stok_name}</span>
         },
         {
-            header: 'JUMLAH PERMINTAAN', // Diubah sedikit header-nya agar jelas
+            header: 'JUMLAH PERMINTAAN',
             key: 'jumlahStok',
             cell: (item) => {
-                // UBAH DISINI: Selalu tampilkan quantity asli (permintaan user)
-                // Jangan gunakan quantity_pj di sini agar user bisa membedakan antara yang diminta vs disetujui
-                return <span className="text-gray-900 font-bold">{item.quantity} Unit</span>;
+                return <span className="text-gray-900 font-bold">{item.quantity_pj} Unit</span>;
             }
         },
-        // --- KOLOM BARU UNTUK STATUS ALOKASI ---
         {
             header: 'STATUS ALOKASI',
             key: 'status_alokasi',
             cell: (item) => {
-                // 1. Hitung jumlah yang sudah dialokasikan di state
                 const allocationsMap = allAllocations[item.id] || {};
                 const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
 
-                // 2. Tentukan target - PRIORITAS: jumlah dari alokasi yang sudah disimpan, baru quantity_pj, terakhir quantity
                 let targetQty: number;
 
-                // Jika sudah ada alokasi yang disimpan, gunakan total alokasi sebagai target
                 if (currentAllocated > 0) {
                     targetQty = currentAllocated;
                 } else {
-                    // Jika belum ada alokasi, gunakan quantity_pj atau quantity
                     targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
                 }
 
@@ -480,14 +468,10 @@ export function DetailPengeluaranPage() {
             header: user?.role === ROLES.ADMIN_GUDANG ? 'AKSI' : 'JML DISETUJUI (PJ)',
             key: 'aksi',
             cell: (item) => {
-                // --- LOGIKA UTAMA: TAMPILAN UNTUK ADMIN GUDANG ---
                 if (user?.role === ROLES.ADMIN_GUDANG) {
-                    // Cek status untuk styling tombol
-                    // Cek status untuk styling tombol
                     const allocationsMap = allAllocations[item.id] || {};
                     const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
 
-                    // PRIORITAS: Gunakan total alokasi jika sudah ada, baru quantity_pj/quantity
                     let targetQty: number;
                     if (currentAllocated > 0) {
                         targetQty = currentAllocated;
@@ -495,7 +479,7 @@ export function DetailPengeluaranPage() {
                         targetQty = item.quantity_pj !== null ? item.quantity_pj : item.quantity;
                     }
 
-                    const isComplete = currentAllocated > 0; // Sudah ada alokasi = complete
+                    const isComplete = currentAllocated > 0;
 
                     return (
                         <button
@@ -667,7 +651,7 @@ export function DetailPengeluaranPage() {
                         DETAIL PENGELUARAN
                     </h1>
                     <p className="text-blue-100 text-sm mt-1 opacity-90">
-                        Dokumen Resmi RSUD Balung
+                        Detail Pengeluaran Barang
                     </p>
                 </div>
             </div>
