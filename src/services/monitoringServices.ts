@@ -1,5 +1,5 @@
 import apiClient from '../utils/api';
-import { type LogItem } from '../constant/roles';
+import { type LogItem, type PaginationResponse } from '../constant/roles';
 
 /**
  * Mengambil log aktivitas per halaman.
@@ -7,38 +7,32 @@ import { type LogItem } from '../constant/roles';
  * * @param page - Nomor halaman (default: 1)
  * @param perPage - Jumlah item per halaman (default: 7 sesuai UI)
  */
+
 export const getLogAktivitas = async (
     page: number = 1,
     perPage?: number,
-    search?: string
-): Promise<{ data: LogItem[], total: number }> => {
-    
+    search?: number,
+): Promise<PaginationResponse<LogItem>> => {
     console.log(`SERVICE: Mengambil log aktivitas page ${page}...`);
-    
+
     try {
-        
-        const params: Record<string, number | string> = { page };
+        const params: Record<string, number> = { page };
         if (perPage) {
-            params.per_page = perPage
+            params.per_page = perPage;
         }
         if (search) {
-            params.search = search
+            params.search = search;
         }
-        
-        // Hanya mengirim parameter pagination, tanpa sort_by
-        const response = await apiClient.get('/api/v1/monitoring', {params});
 
-        // Mengambil data dari struktur response Laravel (Resource/Paginate)
-        // response.data.data biasanya berisi object pagination (data, total, current_page, dll)
-        const result = response.data.data;
+        const response = await apiClient.get('/api/v1/monitoring', { params });
 
-        console.log("Data log aktivitas diterima:", result.data);
-
-        return {
-            data: result.data as LogItem[], // Data untuk halaman ini
-            total: result.total || 0        // Total seluruh data (untuk menghitung jumlah halaman)
-        };
-
+        if (response.data && response.data.data) {
+            console.log("Data log aktivitas diterima:", response.data.data);
+            return response.data.data as PaginationResponse<LogItem>;
+        } else {
+            console.error("Struktur data tidak terduga:", response.data);
+            throw new Error('Struktur data tidak sesuai');
+        }
     } catch (error) {
         console.error("Gagal mengambil data log aktivitas:", error);
         throw new Error('Gagal mengambil data log aktivitas.');

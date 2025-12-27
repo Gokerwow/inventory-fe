@@ -10,7 +10,7 @@ import ReusableTable, { type ColumnDefinition } from '../components/table';
 import Status from '../components/status';
 import { NavigationTabs } from '../components/navTabs';
 import MonitoringIcon from '../assets/svgs/monitoringIcon.svg?react';
-import { formatDate, formatTime } from '../services/utils';
+import { formatDate } from '../services/utils';
 
 const LOGTabs = [
     {
@@ -45,6 +45,7 @@ export default function MonitoringPage() {
                 setIsLoading(true);
                 // Fetch data tanpa sorting backend (atau sesuaikan jika backend support)
                 const response = await getLogAktivitas(currentPage, itemsPerPage, debouncedSearch);
+                console.log(response, 'INI WOE')
                 setDataLog(response.data);
                 setTotalItems(response.total || 0);
                 setItemsPerPage(response.per_page || 10);
