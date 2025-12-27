@@ -65,6 +65,9 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [pendingCategory, setPendingCategory] = useState<Kategori | null>(null);
+    const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+
     // Modal Confirm Submit
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -307,29 +310,40 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         const newCategoryId = option?.id ?? 0;
         const oldCategoryId = formDataPenerimaan.category_id;
 
+        // Jika kategori yang dipilih sama, tidak perlu lakukan apa-apa
         if (newCategoryId === oldCategoryId) return;
 
         if (barang.length > 0) {
-            const isConfirmed = window.confirm(
-                "Mengganti kategori akan MENGHAPUS semua barang di keranjang belanja Anda. Lanjutkan?"
-            );
-
-            if (isConfirmed) {
-                setBarang([]);
-                setFormDataPenerimaan(prevState => ({
-                    ...prevState,
-                    category_id: newCategoryId,
-                    category_name: option?.name ?? ''
-                }));
-                showToast('Keranjang belanja telah dikosongkan.', 'success');
-            }
+            // 1. Simpan kategori yang INGIN dipilih ke state sementara
+            setPendingCategory(option);
+            // 2. Buka Modal Konfirmasi
+            setIsResetModalOpen(true);
         } else {
-            setFormDataPenerimaan(prevState => ({
-                ...prevState,
-                category_id: newCategoryId,
-                category_name: option?.name ?? ''
-            }));
+            // 3. Jika keranjang kosong, langsung ganti kategori tanpa modal
+            updateCategoryData(option);
         }
+    };
+
+    const handleConfirmReset = () => {
+        // 1. Kosongkan keranjang
+        setBarang([]);
+
+        // 2. Update kategori menggunakan data yang disimpan di state sementara
+        updateCategoryData(pendingCategory);
+
+        // 3. Tampilkan notifikasi dan tutup modal
+        showToast('Keranjang belanja telah dikosongkan karena pergantian kategori.', 'success');
+        setIsResetModalOpen(false);
+        setPendingCategory(null);
+    };
+
+    // Helper function agar tidak menulis ulang logika update state form
+    const updateCategoryData = (option: Kategori | null) => {
+        setFormDataPenerimaan(prevState => ({
+            ...prevState,
+            category_id: option?.id ?? 0,
+            category_name: option?.name ?? ''
+        }));
     };
 
     const handleAlamatSatkerPertamaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -998,7 +1012,21 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
                 isLoading={isSubmitting}
-                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : "Apa anda yakin ingin menyimpan perubahan ini?"}
+                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : "Apa anda yakin untuk membuat penerimaan?"}
+            />
+
+            <ConfirmModal
+                isOpen={isResetModalOpen}
+                onClose={() => {
+                    setIsResetModalOpen(false);
+                    setPendingCategory(null); // Reset pending jika user batal
+                }}
+                onConfirm={handleConfirmReset}
+                title="Ganti Kategori?"
+                text="Mengganti kategori akan MENGHAPUS semua barang yang sudah ada di keranjang belanja Anda. Apakah Anda yakin ingin melanjutkan?"
+                confirmText="Ya, Ganti & Hapus Barang"
+                cancelText="Batal"
+                isLoading={false} // Atau sesuaikan jika ada proses loading
             />
 
             <ConfirmModal
