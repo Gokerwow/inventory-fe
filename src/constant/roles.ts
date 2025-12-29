@@ -405,6 +405,13 @@ export interface DaftarPegawai {
     jabatan: string
 }
 
+export interface APIProfilePegawai {
+    initial: string,
+    name: string,
+    jabatan: string,
+    status: string
+}
+
 export interface APIPegawaiBaru {
     name: string,
     nip: string,
