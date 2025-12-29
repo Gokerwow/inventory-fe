@@ -19,14 +19,12 @@ interface ChartData {
 
 interface StatsData {
     total_stok_barang: number;
-    stok_change_percent: number;   // <-- Tambahan
-    stok_change_trend: 'up' | 'down'; // <-- Tambahan
-
+    stok_change_percent: number;
+    stok_change_trend: 'up' | 'down';
     bast_sudah_diterima: number;
-
     barang_belum_dibayar: number;
-    belum_dibayar_change_percent: number; // <-- Tambahan
-    belum_dibayar_change_trend: 'up' | 'down'; // <-- Tambahan
+    belum_dibayar_change_percent: number;
+    belum_dibayar_change_trend: 'up' | 'down';
 }
 
 const monthNames = [
@@ -38,26 +36,18 @@ export default function Dashboard() {
     const { checkAccess, hasAccess } = useAuthorization(ROLES.ADMIN_GUDANG);
     const { user } = useAuth();
 
-    // 1. SETUP TAHUN & STATE TERPISAH
     const currentYear = new Date().getFullYear();
     const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-    // State Tahun Terpisah
     const [yearMasuk, setYearMasuk] = useState<number>(currentYear);
     const [yearKeluar, setYearKeluar] = useState<number>(currentYear);
-
-    // State Data
     const [stats, setStats] = useState<StatsData | null>(null);
     const [chartMasuk, setChartMasuk] = useState<ChartData[]>([]);
     const [chartKeluar, setChartKeluar] = useState<ChartData[]>([]);
-
-    // Loading State
     const [isLoadingStats, setIsLoadingStats] = useState(true);
-    // Kita bisa buat loading terpisah agar chart tidak blinking semua saat ganti tahun
     const [isLoadingMasuk, setIsLoadingMasuk] = useState(true);
     const [isLoadingKeluar, setIsLoadingKeluar] = useState(true);
 
-    // Helper transform data
     const transformChartData = (data: any[]) => {
         return data.map((item) => ({
             bulan: monthNames[item.month - 1],
@@ -65,7 +55,6 @@ export default function Dashboard() {
         }));
     };
 
-    // 2. EFFECT 1: Fetch Stats (Hanya sekali saat mount)
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
@@ -83,14 +72,13 @@ export default function Dashboard() {
         fetchStats();
     }, [user, checkAccess, hasAccess]);
 
-    // 3. EFFECT 2: Fetch Chart Masuk (Jalan saat yearMasuk berubah)
     useEffect(() => {
         if (!hasAccess(user?.role)) return;
 
         const fetchMasuk = async () => {
             setIsLoadingMasuk(true);
             try {
-                const { data } = await getChartBarangMasuk(yearMasuk); // Pakai yearMasuk
+                const { data } = await getChartBarangMasuk(yearMasuk);
                 setChartMasuk(transformChartData(data));
             } catch (err) {
                 console.error("Gagal load chart masuk:", err);
@@ -99,16 +87,15 @@ export default function Dashboard() {
             }
         };
         fetchMasuk();
-    }, [yearMasuk, user, hasAccess]); // Dependency: yearMasuk
+    }, [yearMasuk, user, hasAccess]);
 
-    // 4. EFFECT 3: Fetch Chart Keluar (Jalan saat yearKeluar berubah)
     useEffect(() => {
         if (!hasAccess(user?.role)) return;
 
         const fetchKeluar = async () => {
             setIsLoadingKeluar(true);
             try {
-                const { data } = await getChartBarangKeluar(yearKeluar); // Pakai yearKeluar
+                const { data } = await getChartBarangKeluar(yearKeluar);
                 setChartKeluar(transformChartData(data));
             } catch (err) {
                 console.error("Gagal load chart keluar:", err);
@@ -121,33 +108,31 @@ export default function Dashboard() {
 
 
     if (!hasAccess(user?.role)) return null;
-
     if (isLoadingStats) return <Loader />;
 
     return (
-        <div className='flex flex-col gap-6 h-full'>
-
+        <div className='flex flex-col gap-6 min-h-full'>
+            
             {/* --- SECTION 1: STATS CARDS --- */}
-            <div className="grid grid-cols-3 gap-6">
+            {/* Layout: 1 kolom (Mobile) -> 2 kolom (Tablet) -> 3 kolom (Desktop) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                
                 {/* CARD 1: Stok Barang */}
                 <Card title="Total Stok Barang">
                     <div className="flex flex-col justify-center mt-2">
                         <span className="text-3xl font-bold text-primary-text">
                             {stats?.total_stok_barang || 0}
                         </span>
-
-                        {/* Panggil Helper Component */}
                         {stats && (
                             <TrendIndicator
                                 percent={stats.stok_change_percent}
                                 trend={stats.stok_change_trend}
-                            // Default: Naik = Hijau (Stok nambah itu biasanya oke/netral)
                             />
                         )}
                     </div>
                 </Card>
 
-                {/* CARD 2: BAST (Biasanya tidak ada trend di API kamu, jadi statis/kosong) */}
+                {/* CARD 2: BAST */}
                 <Card title="BAST yang sudah diterima">
                     <div className="flex flex-col justify-center mt-2">
                         <span className="text-3xl font-bold text-primary-text">
@@ -158,72 +143,83 @@ export default function Dashboard() {
                 </Card>
 
                 {/* CARD 3: Barang Belum Dibayar */}
-                <Card title="Barang yang belum dibayar">
-                    <div className="flex flex-col justify-center mt-2">
-                        <span className="text-3xl font-bold text-primary-text">
-                            {stats?.barang_belum_dibayar || 0}
-                        </span>
-
-                        {stats && (
-                            <TrendIndicator
-                                percent={stats.belum_dibayar_change_percent}
-                                trend={stats.belum_dibayar_change_trend}
-                                inverse={true} // <--- Penting!
-                            />
-                        )}
-                    </div>
-                </Card>
+                {/* Di Tablet (2 kolom), card ini akan full width di baris kedua agar rapi */}
+                <div className="col-span-1 sm:col-span-2 md:col-span-1">
+                    <Card title="Barang yang belum dibayar">
+                        <div className="flex flex-col justify-center mt-2">
+                            <span className="text-3xl font-bold text-primary-text">
+                                {stats?.barang_belum_dibayar || 0}
+                            </span>
+                            {stats && (
+                                <TrendIndicator
+                                    percent={stats.belum_dibayar_change_percent}
+                                    trend={stats.belum_dibayar_change_trend}
+                                    inverse={true}
+                                />
+                            )}
+                        </div>
+                    </Card>
+                </div>
             </div>
 
-            {/* --- SECTION 2: CHARTS DENGAN FILTER MASING-MASING --- */}
-            <div className="grid grid-cols-2 gap-6 h-full">
+            {/* --- SECTION 2: CHARTS --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
 
                 {/* === CARD 1: BARANG MASUK === */}
-                <Card className="h-full" title="Penerimaan Barang">
-                    {/* Filter Area di dalam Card */}
-                    <div className="flex justify-end mb-4">
-                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
-                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
+                <Card className="h-full flex flex-col">
+                    {/* Header Card */}
+                    <div className="flex justify-between items-start sm:items-center mb-6">
+                        <h2 className="text-lg font-bold text-gray-800">Penerimaan Barang</h2>
+                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200 shadow-sm shrink-0 ml-2">
+                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide hidden sm:inline">Tahun</span>
                             <select
                                 value={yearMasuk}
                                 onChange={(e) => setYearMasuk(Number(e.target.value))}
-                                className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+                                className="bg-transparent text-xs md:text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
                             >
                                 {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
                             </select>
                         </div>
                     </div>
 
-                    <div className="h-full w-full min-h-[300px]">
+                    {/* Chart Container */}
+                    <div className="flex-1 w-full min-h-[250px] md:min-h-[300px] flex items-center justify-center">
                         {isLoadingMasuk ? (
                             <Loader />
                         ) : (
-                            <DiagramBatang type="masuk" data={chartMasuk} />
+                            <div className="w-full h-full">
+                                <DiagramBatang type="masuk" data={chartMasuk} />
+                            </div>
                         )}
                     </div>
                 </Card>
 
                 {/* === CARD 2: BARANG KELUAR === */}
-                <Card className="h-full" title="Pengeluaran Barang">
-                    {/* Filter Area di dalam Card */}
-                    <div className="flex justify-end mb-4">
-                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200">
-                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide">Tahun</span>
+                <Card className="h-full flex flex-col">
+                    {/* Header Card */}
+                    <div className="flex justify-between items-start sm:items-center mb-6">
+                        <h2 className="text-lg font-bold text-gray-800">Pengeluaran Barang</h2>
+                        <div className="flex items-center bg-gray-50 rounded-lg px-2 py-1 border border-gray-200 shadow-sm shrink-0 ml-2">
+                            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wide hidden sm:inline">Tahun</span>
                             <select
                                 value={yearKeluar}
                                 onChange={(e) => setYearKeluar(Number(e.target.value))}
-                                className="bg-transparent text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
+                                className="bg-transparent text-xs md:text-sm font-bold text-gray-700 focus:outline-none cursor-pointer"
                             >
                                 {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
                             </select>
                         </div>
                     </div>
 
-                    <div className="h-full w-full min-h-[300px]">
+                    {/* Chart Container */}
+                    {/* UBAH DI SINI: Tambahkan 'flex items-center justify-center' */}
+                    <div className="flex-1 w-full min-h-[250px] md:min-h-[300px] flex items-center justify-center">
                         {isLoadingKeluar ? (
                             <Loader />
                         ) : (
-                            <DiagramBatang type="keluar" data={chartKeluar} />
+                            <div className="w-full h-full">
+                                <DiagramBatang type="keluar" data={chartKeluar} />
+                            </div>
                         )}
                     </div>
                 </Card>

@@ -7,34 +7,31 @@ import Avatar from '../assets/svgs/Avatar.svg'
 import { ROLES } from '../constant/roles';
 import { PATHS } from '../Routes/path';
 import { getDaftarNotifikasi } from '../services/notifikasiService';
+import { Menu } from 'lucide-react'; // Import Icon Menu
 
-export default function TopBar() {
+// Definisi Props
+interface TopBarProps {
+    onMenuClick: () => void;
+}
+
+export default function TopBar({ onMenuClick }: TopBarProps) {
     const { user } = useAuth()
     const { tag } = useTag()
-    
     const [hasUnread, setHasUnread] = useState(false);
+    const requiredRoles = [ROLES.ADMIN_GUDANG, ROLES.TEKNIS, ROLES.PENANGGUNG_JAWAB]
 
     useEffect(() => {
         if (!user) return;
-
         const checkUnread = async () => {
             try {
                 const response = await getDaftarNotifikasi(1, 10, '');
-                console.log(response.unread_count, 'WOI INI')
-                
-                // CARA 1: Paling Mudah & Akurat (Gunakan unread_count dari backend)
-                // Jika unread_count > 0, berarti ada pesan belum dibaca.
                 if (response.data && typeof response.unread_count === 'number') {
                     setHasUnread(response.unread_count > 0);
-                } 
-                // CARA 2: Manual Check Array (Backup jika cara 1 gagal)
-                else {
-                    // Akses array yang benar: response.data.list.data
+                } else {
                     const notifList = response.list?.data || [];
                     const unread = notifList.some((n: any) => n.isRead === false);
                     setHasUnread(unread);
                 }
-
             } catch (error) {
                 console.error("Gagal mengecek notifikasi", error);
             }
@@ -47,23 +44,32 @@ export default function TopBar() {
         }
     }, [user]);
 
-    if (!user) {
-        return false
-    }
-
-    const requiredRoles = [ROLES.ADMIN_GUDANG, ROLES.TEKNIS, ROLES.PENANGGUNG_JAWAB]
+    if (!user) return false;
 
     return (
-        <div className="w-full flex items-center justify-between bg-white shadow-lg z-50 h-20 px-8">
-            <div className='overflow-hidden flex h-full items-stretch flex-1 justify-between'>
-                <div className='text-2xl font-bold h-full flex flex-col justify-center'>
-                    <h1 className=' text-3xl'>{tag}</h1>
+        <div className="w-full flex items-center justify-between bg-white shadow-lg z-30 h-16 md:h-20 px-4 md:px-8 sticky top-0">
+            <div className='overflow-hidden flex h-full items-center flex-1 justify-between gap-4'>
+                
+                {/* Bagian Kiri: Tombol Menu & Judul */}
+                <div className='flex items-center gap-4 h-full'>
+                    {/* Tombol Hamburger (Hanya muncul di Mobile 'lg:hidden') */}
+                    <button 
+                        onClick={onMenuClick}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-lg lg:hidden text-gray-600"
+                    >
+                        <Menu size={24} />
+                    </button>
+
+                    <div className='text-xl md:text-2xl font-bold flex flex-col justify-center'>
+                        <h1 className='text-lg md:text-3xl truncate max-w-[200px] md:max-w-none'>{tag}</h1>
+                    </div>
                 </div>
-                <div className='flex items-center justify-center gap-4 h-full'>
+
+                {/* Bagian Kanan: Notif & Profil */}
+                <div className='flex items-center justify-end gap-2 md:gap-4 h-full'>
                     {requiredRoles.includes(user.role) &&
-                        <NavLink to={PATHS.NOTIFICATION} className='bg-white hover:bg-gray-200 rounded-full w-9 h-9 flex items-center justify-center transition-all duration-200 relative'>
-                            <img src={NotifIcon} alt="Notification Icon" className='h-6' />
-                            
+                        <NavLink to={PATHS.NOTIFICATION} className='bg-white hover:bg-gray-200 rounded-full w-8 h-8 md:w-9 md:h-9 flex items-center justify-center transition-all duration-200 relative shrink-0'>
+                            <img src={NotifIcon} alt="Notification Icon" className='h-5 md:h-6' />
                             {hasUnread && (
                                 <span className="absolute top-1.5 right-2 flex h-2.5 w-2.5">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -72,11 +78,15 @@ export default function TopBar() {
                             )}
                         </NavLink>
                     }
-                    <NavLink to={PATHS.PROFIL.INDEX} className='flex items-center gap-4 cursor-pointer w-60 px-4 py-4.5 hover:bg-gray-200 transition-all duration-200 h-full'>
-                        <div className='bg-white rounded-full w-10 h-10 flex items-center justify-center overflow-hidden'>
-                            <img src={user?.photo ?? Avatar} alt="Profile Picture" className='w-full' />
+                    
+                    <NavLink to={PATHS.PROFIL.INDEX} className='flex items-center gap-2 md:gap-4 cursor-pointer lg:w-60 px-4 py-4.5 hover:bg-gray-200 transition-all duration-200 h-auto md:h-full'>
+                        <div className='bg-gray-100 rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center overflow-hidden shrink-0'>
+                            <img src={user?.photo ?? Avatar} alt="Profile Picture" className='w-full h-full object-cover' />
                         </div>
-                        <span className='max-w-[150px] wrap-break-word leading-tight font-semibold text-sm'>{user?.name}</span>
+                        {/* Sembunyikan nama di layar sangat kecil jika perlu, atau biarkan truncate */}
+                        <span className='hidden sm:block max-w-[100px] md:max-w-[150px] truncate leading-tight font-semibold text-xs md:text-sm'>
+                            {user?.name}
+                        </span>
                     </NavLink>
                 </div>
             </div>

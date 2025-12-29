@@ -624,47 +624,53 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         );
     }
 
+    const totalSemua = barang
+        .filter(item => 'stok_name' in item)
+        .reduce((acc, item) => acc + ((item as Detail_Barang).total_harga ?? 0), 0);
+
     const SectionHeader = ({ number, title, children }: { number: string, title: string, children?: React.ReactNode }) => (
-        <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 pb-2 border-b border-gray-100 w-full">
             <div className="flex items-center gap-3 flex-1">
                 <div className="w-8 h-8 rounded-full bg-[#005DB9] text-white flex items-center justify-center font-bold text-sm shrink-0">
                     {number}
                 </div>
                 <h2 className="text-lg font-bold text-gray-800">{title}</h2>
             </div>
-            {children}
+            {/* Children (Tombol) akan turun ke bawah di mobile jika perlu */}
+            <div className="mt-2 sm:mt-0 self-end sm:self-auto">
+                {children}
+            </div>
         </div>
     );
 
-    const totalSemua = barang
-        .filter(item => 'stok_name' in item)
-        .reduce((acc, item) => acc + ((item as Detail_Barang).total_harga ?? 0), 0);
-
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
 
-            {/* HEADER HALAMAN (Biru) */}
-            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
-                <BackButton className="absolute left-6 top-1/2 -translate-y-1/2" />
-                <div className='text-center'>
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+            {/* HEADER HALAMAN (Update dari langkah sebelumnya) */}
+            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative flex flex-col items-center justify-center min-h-[120px]">
+                <div className="hidden md:block absolute left-6 top-1/2 -translate-y-1/2">
+                    <BackButton />
+                </div>
+                <div className='text-center w-full px-4'>
+                    <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide">
                         {isEditMode ? "EDIT DATA PENERIMAAN" :
                             isFinanceMode ? "DETAIL PEMBAYARAN" :
                                 isInspectMode ? "PEMERIKSAAN BARANG" :
                                     isPreviewMode ? "DETAIL PENERIMAAN" :
                                         "FORM DATA BARANG BELANJA"}
                     </h1>
-                    <p className="text-blue-100 text-sm mt-1 opacity-90">Dokumen Resmi RSD Balung</p>
+                    <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90 hidden sm:block">Dokumen Resmi RSD Balung</p>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
                 {/* SECTION 1: INFORMASI PIHAK TERKAIT */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                {/* UBAH p-6 jadi p-4 md:p-6 */}
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                     <SectionHeader number="1" title="Informasi Pihak Terkait" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                         {/* Kiri: Pihak Pertama */}
                         <div className="flex flex-col gap-4">
                             <h3 className="font-semibold text-gray-700 mb-2 border-b w-fit pb-1">Pihak Pertama</h3>
@@ -754,9 +760,9 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 </div>
 
                 {/* ROW UNTUK NO SURAT & KATEGORI */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                     {/* SECTION 2: NOMOR SURAT */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                         <SectionHeader number="2" title="Nomor Surat" />
                         <Input
                             id="no_surat"
@@ -773,7 +779,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                     </div>
 
                     {/* SECTION 3: KATEGORI BARANG */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                         <SectionHeader number="3" title="Kategori Barang" />
                         <DropdownInput<Kategori>
                             placeholder="Pilih Kategori Barang"
@@ -789,7 +795,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 </div>
 
                 {/* SECTION 4: DESKRIPSI */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                     <SectionHeader number="4" title="Deskripsi Barang" />
                     <div className="relative w-full">
                         <textarea
@@ -804,154 +810,141 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                     </div>
                 </div>
 
-                {/* SECTION 5: DATA BARANG BELANJA (TABLE) */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                {/* SECTION 5: DATA BARANG BELANJA (TABLE vs CARD) */}
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
                     <SectionHeader number="5" title="Data Barang Belanja">
-                        {/* Tombol Tambah Barang hanya untuk PPK & Mode Edit/Create */}
+                        {/* Tombol Tambah Barang */}
                         {user?.role === ROLES.PPK && canEditInputs && (
                             <Button
                                 variant="primary"
                                 onClick={handleAddClick}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 text-sm py-2 px-3 w-full"
                                 type='button'
                             >
                                 <Plus className="w-4 h-4" />
-                                Tambah Barang
+                                <span className="hidden sm:inline">Tambah Barang</span>
+                                <span className="sm:hidden">Tambah</span>
                             </Button>
                         )}
                     </SectionHeader>
 
-                    {/* Tabel Content */}
                     <div className="mt-4">
                         {!barang || barang.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
                                 <ShopCartIcon className="w-16 h-16 text-gray-300 mb-3 opacity-50" />
-                                <p className="text-gray-500 font-medium">Belum ada barang belanja</p>
-                                <p className="text-gray-400 text-xs mt-1">Klik "Tambah Barang" untuk menambahkan barang</p>
+                                <p className="text-gray-500 font-medium text-center">Belum ada barang belanja</p>
+                                <p className="text-gray-400 text-xs mt-1 text-center px-4">Klik "Tambah" untuk memasukkan item</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                                <table className="min-w-full text-left table-fixed">
-                                    <thead className="bg-gray-50 border-b border-gray-200">
-                                        <tr>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600">Nama Barang</th>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-24">Satuan</th>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-24">Jumlah</th>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center">Harga</th>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center">Total Harga</th>
-                                            <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-32">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {barang
-                                            .filter(item => 'stok_name' in item)
-                                            .map((item, index) => {
-                                                const detailItem = item as Detail_Barang;
-                                                return (
-                                                    <tr key={detailItem.stok_id || index} className="hover:bg-blue-50 transition-colors">
-                                                        <td className="py-3 px-4 text-gray-700 font-medium">{detailItem.stok_name}</td>
-                                                        <td className="py-3 px-4 text-gray-600 text-center">{detailItem.satuan_name}</td>
-                                                        <td className="py-3 px-4 text-gray-600 text-center">{detailItem.quantity}</td>
-                                                        <td className="py-3 px-4 text-gray-600 text-center">
-                                                            Rp {new Intl.NumberFormat('id-ID').format(detailItem.price ?? 0)}
-                                                        </td>
-                                                        <td className="py-3 px-4 text-gray-600 text-center font-medium">
+                            <>
+                                {/* === TAMPILAN DESKTOP (TABLE) === */}
+                                <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
+                                    <table className="min-w-full text-left table-fixed">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600">Nama Barang</th>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-24">Satuan</th>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-24">Jumlah</th>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center">Harga</th>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center">Total Harga</th>
+                                                <th className="py-3 px-4 text-sm font-semibold text-gray-600 text-center w-32">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {barang
+                                                .filter(item => 'stok_name' in item)
+                                                .map((item, index) => {
+                                                    const detailItem = item as Detail_Barang;
+                                                    return (
+                                                        <tr key={detailItem.stok_id || index} className="hover:bg-blue-50 transition-colors">
+                                                            <td className="py-3 px-4 text-gray-700 font-medium truncate">{detailItem.stok_name}</td>
+                                                            <td className="py-3 px-4 text-gray-600 text-center">{detailItem.satuan_name}</td>
+                                                            <td className="py-3 px-4 text-gray-600 text-center">{detailItem.quantity}</td>
+                                                            <td className="py-3 px-4 text-gray-600 text-center">
+                                                                Rp {new Intl.NumberFormat('id-ID').format(detailItem.price ?? 0)}
+                                                            </td>
+                                                            <td className="py-3 px-4 text-gray-600 text-center font-medium">
+                                                                Rp {new Intl.NumberFormat('id-ID').format(detailItem.total_harga ?? 0)}
+                                                            </td>
+                                                            <td className="py-3 px-4 text-center">
+                                                                {/* Render Action Buttons (Logic dipisah biar rapi) */}
+                                                                <RenderActions
+                                                                    item={detailItem}
+                                                                    mode={{ isFinanceMode, isInspectMode, isPreviewMode, isEditMode }}
+                                                                    actions={{ handlePayClick, handleSetStatus, handleDeleteBarang }}
+                                                                    loadingState={{ payingItemId }}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                        </tbody>
+                                        <tfoot className="bg-blue-50 border-t-2 border-blue-100 font-bold text-gray-700">
+                                            <tr>
+                                                <td colSpan={4} className="py-4 px-4 text-left">Total Semua</td>
+                                                <td className="py-4 px-4 text-center text-blue-600">
+                                                    Rp {new Intl.NumberFormat('id-ID').format(totalSemua)}
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                {/* === TAMPILAN MOBILE (CARD LIST) === */}
+                                <div className="md:hidden space-y-4">
+                                    {barang
+                                        .filter(item => 'stok_name' in item)
+                                        .map((item, index) => {
+                                            const detailItem = item as Detail_Barang;
+                                            return (
+                                                <div key={detailItem.stok_id || index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
+                                                    {/* Header Card: Nama & Total */}
+                                                    <div className="flex justify-between items-start gap-4">
+                                                        <h4 className="font-bold text-gray-800 text-sm line-clamp-2">{detailItem.stok_name}</h4>
+                                                        <span className="font-bold text-blue-600 text-sm whitespace-nowrap">
                                                             Rp {new Intl.NumberFormat('id-ID').format(detailItem.total_harga ?? 0)}
-                                                        </td>
+                                                        </span>
+                                                    </div>
 
-                                                        <td className="py-3 px-4 text-center">
-                                                            {isFinanceMode ? (
-                                                                // --- MODE 1: FINANCE (Pembayaran) ---
-                                                                detailItem.is_paid ? (
-                                                                    <Status label="Lunas" value='success' />
-                                                                ) : (
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="primary"
-                                                                        type='button'
-                                                                        onClick={() => handlePayClick(detailItem.id as number)}
-                                                                        isLoading={payingItemId === detailItem.id}
-                                                                    >
-                                                                        Bayar
-                                                                    </Button>
-                                                                )
-                                                            ) : isInspectMode ? (
-                                                                // --- MODE 2: INSPECT (Penerimaan) ---
-                                                                <div className="flex items-center justify-center gap-2">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="success"
-                                                                        type="button"
-                                                                        onClick={() => handleSetStatus(detailItem.id, true)}
-                                                                        isLoading={detailItem.is_updating}
-                                                                        disabled={detailItem.is_layak === true}
-                                                                        className={`font-bold transition-all ${detailItem.is_layak === true
-                                                                            ? "bg-green-700! ring-4 ring-green-300 shadow-lg scale-110 disabled:text-white"
-                                                                            : ""
-                                                                            }`}
-                                                                    >
-                                                                        {detailItem.is_layak === true ? "✓ LAYAK" : "✓ Layak"}
-                                                                    </Button>
+                                                    {/* Detail Info Grid */}
+                                                    <div className="grid grid-cols-2 gap-y-1 text-md text-gray-600 border-t border-gray-200 pt-2">
+                                                        <div>Satuan: <span className="font-medium text-gray-800">{detailItem.satuan_name}</span></div>
+                                                        <div className="text-right">Jml: <span className="font-medium text-gray-800">{detailItem.quantity}</span></div>
+                                                        <div className="col-span-2">Harga: <span className="font-medium text-gray-800">Rp {new Intl.NumberFormat('id-ID').format(detailItem.price ?? 0)}</span></div>
+                                                    </div>
 
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="danger"
-                                                                        type="button"
-                                                                        onClick={() => handleSetStatus(detailItem.id, false)}
-                                                                        isLoading={detailItem.is_updating}
-                                                                        disabled={detailItem.is_layak === true}
-                                                                        className={`font-bold transition-all ${detailItem.is_layak === false
-                                                                            ? "bg-red-700! ring-4 ring-red-300 shadow-lg scale-110 disabled:text-white"
-                                                                            : ""
-                                                                            }`}
-                                                                    >
-                                                                        {detailItem.is_layak === false ? "✕ TIDAK" : "✕ Tidak"}
-                                                                    </Button>
-                                                                </div>
-                                                            ) : isPreviewMode ? (
-                                                                // --- MODE 3: PREVIEW (View Only) ---
-                                                                <span className="text-gray-400">-</span>
-                                                            ) : (
-                                                                // --- MODE 4: EDIT/CREATE (Default) ---
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    onClick={() => handleDeleteBarang(detailItem.stok_id)}
-                                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center gap-2"
-                                                                >
-                                                                    <TrashIcon className='w-5 h-5' />
-                                                                    Hapus
-                                                                </Button>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                    </tbody>
-                                    {/* --- BAGIAN TOTAL (TFOOT) --- */}
-                                    <tfoot className="bg-blue-50 border-t-2 border-blue-100 font-bold text-gray-700">
-                                        <tr>
-                                            <td colSpan={4} className="py-4 px-4">
-                                                Total Semua
-                                            </td>
-                                            <td className="py-4 px-4 text-center text-blue-600">
-                                                Rp {new Intl.NumberFormat('id-ID').format(totalSemua)}
-                                            </td>
-                                            <td className="py-4 px-4"></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                                                    {/* Actions Row */}
+                                                    <div className="mt-1 pt-2 border-t border-gray-200 flex justify-end gap-2">
+                                                        <RenderActions
+                                                            item={detailItem}
+                                                            mode={{ isFinanceMode, isInspectMode, isPreviewMode, isEditMode }}
+                                                            actions={{ handlePayClick, handleSetStatus, handleDeleteBarang }}
+                                                            loadingState={{ payingItemId }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                    {/* Mobile Total */}
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center font-bold text-gray-700 shadow-sm">
+                                        <span>Total Semua</span>
+                                        <span className="text-blue-600 text-lg">Rp {new Intl.NumberFormat('id-ID').format(totalSemua)}</span>
+                                    </div>
+                                </div>
+                            </>
                         )}
 
                         {/* FOOTER ACTIONS */}
-                        <div className='flex justify-end gap-4 mt-4'>
+                        <div className='flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6'>
                             {/* Tombol Hapus (Hanya Edit & PPK) */}
                             {isEditMode && user?.role === ROLES.PPK && paramId && (
                                 <Button
                                     variant='danger'
                                     onClick={handleDeleteClick}
                                     type='button'
+                                    className="w-full sm:w-auto"
                                 >
                                     Hapus Data
                                 </Button>
@@ -964,20 +957,15 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                     size="lg"
                                     onClick={handleSaveInspection}
                                     isLoading={isSubmitting}
-                                    className="shadow-lg font-bold min-w-[120px]"
+                                    className="shadow-lg font-bold w-full sm:w-auto"
                                 >
-                                    Simpan
+                                    Simpan Progress
                                 </Button>
                             )}
 
-                            {/* Tombol Utama (Selesai/Submit) - Hidden on Preview */}
+                            {/* Tombol Utama (Selesai/Submit) */}
                             {(() => {
-                                // Hitung status lunas secara realtime
                                 const isAllPaid = barang.length > 0 && barang.every((item: any) => item.is_paid);
-
-                                // Kondisi untuk menyembunyikan tombol:
-                                // 1. Jika mode Preview (Hidden)
-                                // 2. ATAU Jika mode Finance DAN semua sudah lunas (Hidden)
                                 const shouldHideButton = isPreviewMode || (isFinanceMode && isAllPaid);
 
                                 if (!shouldHideButton) {
@@ -985,11 +973,9 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                         <Button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                            className={`bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-3 px-8 rounded-lg shadow-lg w-full sm:w-auto flex justify-center items-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                                         >
-                                            {isSubmitting ? (
-                                                <>Memproses...</>
-                                            ) : (
+                                            {isSubmitting ? "Memproses..." : (
                                                 isFinanceMode ? "Simpan" :
                                                     isInspectMode ? "Konfirmasi Selesai" :
                                                         isEditMode ? "Simpan Perubahan" :
@@ -1003,49 +989,41 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                         </div>
                     </div>
                 </div>
-
             </form>
 
-            {/* --- MODAL COMPONENTS --- */}
-            <ConfirmModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
-                isLoading={isSubmitting}
-                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : "Apa anda yakin untuk membuat penerimaan?"}
-            />
-
-            <ConfirmModal
-                isOpen={isResetModalOpen}
-                onClose={() => {
-                    setIsResetModalOpen(false);
-                    setPendingCategory(null); // Reset pending jika user batal
-                }}
-                onConfirm={handleConfirmReset}
-                title="Ganti Kategori?"
-                text="Mengganti kategori akan MENGHAPUS semua barang yang sudah ada di keranjang belanja Anda. Apakah Anda yakin ingin melanjutkan?"
-                confirmText="Ya, Ganti & Hapus Barang"
-                cancelText="Batal"
-                isLoading={false} // Atau sesuaikan jika ada proses loading
-            />
-
-            <ConfirmModal
-                isOpen={isPayModalOpen}
-                onClose={() => {
-                    setIsPayModalOpen(false);
-                    setItemToPay(null);
-                }}
-                onConfirm={handleConfirmPay}
-                isLoading={isSubmitting}
-                text="Apakah Anda yakin ingin menandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan."
-            />
-
-            <ModalTambahBarang
-                isOpen={isAddBarangModalOpen}
-                onClose={() => setIsAddBarangModalOpen(false)}
-                onSave={handleSaveNewItem}
-                categoryId={formDataPenerimaan.category_id}
-            />
+            <ConfirmModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit} isLoading={isSubmitting} text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : "Apa anda yakin untuk membuat penerimaan?"} />
+            <ConfirmModal isOpen={isResetModalOpen} onClose={() => { setIsResetModalOpen(false); setPendingCategory(null); }} onConfirm={handleConfirmReset} title="Ganti Kategori?" text="Mengganti kategori akan MENGHAPUS semua barang di keranjang. Lanjutkan?" confirmText="Ya, Ganti" cancelText="Batal" />
+            <ConfirmModal isOpen={isPayModalOpen} onClose={() => { setIsPayModalOpen(false); setItemToPay(null); }} onConfirm={handleConfirmPay} isLoading={isSubmitting} text="Tandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan." />
+            <ModalTambahBarang isOpen={isAddBarangModalOpen} onClose={() => setIsAddBarangModalOpen(false)} onSave={handleSaveNewItem} categoryId={formDataPenerimaan.category_id} />
         </div >
     );
 }
+
+// --- Helper Component untuk Render Tombol Aksi (Agar tidak duplikasi kode Desktop & Mobile) ---
+const RenderActions = ({ item, mode, actions, loadingState }: any) => {
+    const { isFinanceMode, isInspectMode, isPreviewMode, isEditMode } = mode;
+    const { handlePayClick, handleSetStatus, handleDeleteBarang } = actions;
+    const { payingItemId } = loadingState;
+
+    if (isFinanceMode) {
+        return item.is_paid ? <Status label="Lunas" value='success' /> : (
+            <Button size="sm" variant="primary" type='button' onClick={() => handlePayClick(item.id)} isLoading={payingItemId === item.id}>Bayar</Button>
+        );
+    }
+    if (isInspectMode) {
+        return (
+            <div className="flex items-center justify-center gap-2">
+                <Button size="sm" variant="success" type="button" onClick={() => handleSetStatus(item.id, true)} isLoading={item.is_updating} disabled={item.is_layak === true} className={item.is_layak === true ? "bg-green-700! ring-4 ring-green-300 shadow-lg scale-110 disabled:text-white" : "opacity-80 hover:opacity-100"}>✓</Button>
+                <Button size="sm" variant="danger" type="button" onClick={() => handleSetStatus(item.id, false)} isLoading={item.is_updating} disabled={item.is_layak === true} className={item.is_layak === false ? "bg-red-700! ring-2 ring-red-300 shadow-lg scale-110 disabled:text-white" : "opacity-80 hover:opacity-100"}>✕</Button>
+            </div>
+        );
+    }
+    if (isPreviewMode) return <span className="text-gray-400">-</span>;
+
+    // Default: Edit/Create Mode
+    return (
+        <Button size="sm" variant="ghost" onClick={() => handleDeleteBarang(item.stok_id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center gap-1">
+            <TrashIcon className='w-4 h-4' /> <span className="hidden sm:inline">Hapus</span>
+        </Button>
+    );
+};

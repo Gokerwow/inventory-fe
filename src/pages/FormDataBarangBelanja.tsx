@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "../hooks/useToast";
 import CurrencyInput from "../components/currencyInput";
 import { type TIPE_BARANG_STOK } from "../constant/roles";
-import DropdownInput from "../components/dropdownInput"; // Gunakan yang baru
+import DropdownInput from "../components/dropdownInput"; 
 import { getBarangBelanja } from "../services/barangService";
 import Input from "../components/input";
 import Modal from "../components/modal";
@@ -79,9 +79,8 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
             // User membuat barang BARU (Creatable)
             setIsNewItem(true);
             setSelectedBarangObj({ name: val, id: 0 }); // ID 0/null menandakan baru
-            setManualSatuan(""); // Reset satuan agar user mengisi
+            setManualSatuan(""); 
             
-            // Auto focus ke input satuan untuk UX yang lebih cepat
             setTimeout(() => {
                 if (satuanInputRef.current) {
                     satuanInputRef.current.focus();
@@ -92,7 +91,7 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
             // User memilih barang LAMA (Object)
             setIsNewItem(false);
             setSelectedBarangObj(val);
-            setManualSatuan(""); // Tidak pakai manual satuan
+            setManualSatuan("");
         }
     };
 
@@ -120,7 +119,7 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
         }
 
         const newItem = {
-            stok_id: isNewItem ? 0 : selectedBarangObj.id, // 0 jika baru
+            stok_id: isNewItem ? 0 : selectedBarangObj.id,
             stok_name: selectedBarangObj.name,
             satuan_name: currentSatuan,
             quantity: qty,
@@ -140,30 +139,29 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
             maxWidth="max-w-2xl"
             isForm={true}
         >
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-0">
                 
-                {/* HEADER */}
-                <div className="bg-[#005DB9] p-6 flex justify-between items-start">
-                    <div className="text-white">
-                        <h2 className="text-2xl font-bold">Tambah Data Barang Belanja</h2>
-                        <p className="text-blue-100 text-sm mt-1">Cari barang atau ketik nama baru untuk menambahkan</p>
+                {/* HEADER - Responsive Padding & Font */}
+                <div className="bg-[#005DB9] p-4 md:p-6 flex justify-between items-start">
+                    <div className="text-white pr-4">
+                        <h2 className="text-lg md:text-2xl font-bold">Tambah Barang</h2>
+                        <p className="text-blue-100 text-xs md:text-sm mt-1">Cari atau ketik nama baru untuk menambahkan</p>
                     </div>
-                    <button onClick={onClose} className="bg-gray-200 hover:bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer">
+                    <button onClick={onClose} className="bg-gray-200 hover:bg-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors cursor-pointer shrink-0">
                         <CloseIcon />
                     </button>
                 </div>
 
-                {/* BODY */}
-                <div className="flex flex-col gap-5 p-6">
+                {/* BODY - Responsive Padding & Gap */}
+                <div className="flex flex-col gap-4 md:gap-5 p-4 md:p-6">
                     
-                    {/* Baris 1: Creatable Dropdown */}
+                    {/* Baris 1: Creatable Dropdown (Full Width) */}
                     <div>
                         <DropdownInput<TIPE_BARANG_STOK>
                             options={stokOptions}
-                            isCreatable={true} // AKTIFKAN MODE CREATABLE
+                            isCreatable={true} 
                             placeholder={categoryId > 0 ? "Cari atau tambah barang baru..." : "Pilih Kategori Dulu"}
                             judul="Nama Barang"
-                            // Value diambil dari state object
                             value={selectedBarangObj?.name || ''} 
                             onChange={handleDropdownChange}
                             name="namaBarang"
@@ -176,14 +174,10 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                         )}
                     </div>
 
-                    {/* Baris 2: Satuan & Jumlah */}
-                    <div className="grid grid-cols-2 gap-6">
+                    {/* Baris 2: Satuan & Jumlah - Stack di Mobile, Side-by-side di Desktop */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                         <div className="flex flex-col gap-2">
-                            {/* Input Satuan (Manual jika baru, Readonly jika lama) */}
                             <Input
-                                // Ref dipasang di sini tapi perlu memastikan komponen Input support ref forwarding
-                                // Jika komponen Input Anda belum support ref, bungkus div luarnya atau tambahkan ref di Input component
-                                // Untuk amannya saya pakai autoFocus prop HTML standard jika Input support props passing
                                 id="satuan"
                                 placeholder={isNewItem ? "Masukkan Satuan" : "Satuan Otomatis"}
                                 judul="Satuan"
@@ -191,24 +185,25 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                                 value={isNewItem ? manualSatuan : (selectedBarangObj?.satuan_name || '')}
                                 readOnly={!isNewItem}
                                 onChange={(e) => isNewItem ? setManualSatuan(e.target.value) : {}}
-                                // Trik sederhana untuk ref jika Input component anda meneruskan props
-                                {...({ ref: satuanInputRef } as any)} 
+                                // @ts-ignore
+                                ref={satuanInputRef}
                             />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-gray-600">Jumlah</label>
+                        <div className="flex flex-col gap-1.5 md:gap-2">
+                            {/* Manual Styling Input agar match dengan Component Input */}
+                            <label className="text-sm md:text-base font-semibold text-gray-700">Jumlah</label>
                             <input 
                                 type="number" 
                                 placeholder="0"
-                                className="w-full border border-gray-400 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 text-gray-700"
+                                className="w-full border-2 border-[#CDCDCD] rounded-lg px-4 py-2 md:px-5 md:py-2.5 focus:outline-none focus:border-blue-500 text-gray-700 text-sm md:text-base transition-colors duration-200"
                                 value={jumlah}
                                 onChange={(e) => setJumlah(e.target.value === '' ? '' : Number(e.target.value))}
                             />
                         </div>
                     </div>
 
-                    {/* Baris 3: Harga */}
-                    <div className="grid grid-cols-2 gap-6">
+                    {/* Baris 3: Harga - Stack di Mobile */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                         <CurrencyInput
                             id="harga"
                             placeholder="Rp"
@@ -229,11 +224,11 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                         />
                     </div>
 
-                    {/* FOOTER */}
-                    <div className="pt-4 flex justify-end">
+                    {/* FOOTER - Button Full Width di Mobile */}
+                    <div className="pt-2 md:pt-4 flex justify-end">
                         <button
                             onClick={handleSave}
-                            className="bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-2.5 px-8 rounded-lg transition-all duration-200 active:scale-95 shadow-md"
+                            className="bg-[#41C654] hover:bg-[#36a847] text-white font-bold py-2.5 px-8 rounded-lg transition-all duration-200 active:scale-95 shadow-md w-full sm:w-auto"
                         >
                             Selesai
                         </button>

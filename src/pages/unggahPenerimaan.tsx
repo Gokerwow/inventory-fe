@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import UploadIcon from '../assets/svgs/uploadBAST.svg?react';
 import { useToast } from '../hooks/useToast';
-import { useNavigate, useParams } from 'react-router-dom'; // 1. Ganti useLocation dengan useParams
+import { useNavigate, useParams } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
 import PDFIcon from '../assets/svgs/PDFICON.svg?react';
 import Pagination from '../components/pagination';
@@ -13,9 +13,9 @@ import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
 import Loader from '../components/loader';
 import BackButton from '../components/backButton';
+import { Upload, X, Trash2 } from 'lucide-react';
 
 const LihatPenerimaan = () => {
-    // 2. Ambil ID dari URL Parameter (Misal route: /penerimaan/:id/upload)
     const { id } = useParams<{ id: string }>(); 
     
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +49,6 @@ const LihatPenerimaan = () => {
             return;
         }
 
-        // Validasi ID URL
         if (!id) {
             showToast("ID Penerimaan tidak valid", "error");
             navigate(PATHS.PENERIMAAN.INDEX);
@@ -59,8 +58,7 @@ const LihatPenerimaan = () => {
         const fetchAllData = async () => {
             setIsLoading(true);
             try {
-                // Catatan: Jika getRiwayatBASTFile butuh ID spesifik, tambahkan parameter id disini
-                // Contoh: await getRiwayatBASTFile(id, currentPage, itemsPerPage);
+                // Asumsi getRiwayatBASTFile support filter by ID penerimaan jika diperlukan backend
                 const response = await getRiwayatBASTFile(currentPage, itemsPerPage);
                 setRiwayatBastFile(response.data || []);
                 setTotalItems(response.total || 0);
@@ -154,7 +152,6 @@ const LihatPenerimaan = () => {
             return;
         }
 
-        // 3. Validasi menggunakan ID dari params
         if (!id) {
             showToast('ID Penerimaan tidak ditemukan di URL!', 'error');
             handleCloseModal();
@@ -173,7 +170,6 @@ const LihatPenerimaan = () => {
                 });
             }, 200);
 
-            // 4. Gunakan ID dari params untuk upload
             const result = await uploadBAST(id, formData);
             
             clearInterval(interval);
@@ -214,27 +210,32 @@ const LihatPenerimaan = () => {
     };
 
     return (
-        <div className="w-full flex-1 rounded-lg flex flex-col gap-5 overflow-hidden">
-            <div className="bg-[#005DB9] rounded-xl p-6 text-white shadow-md relative">
-                <BackButton
-                    className="absolute left-6 top-1/2 -translate-y-1/2"
-                />
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+        <div className="w-full flex-1 rounded-lg flex flex-col gap-5 overflow-hidden pb-10">
+            
+            {/* === HEADER HALAMAN === */}
+            <div className="bg-[#005DB9] rounded-xl p-6 text-white shadow-md relative flex flex-col items-center justify-center min-h-[120px]">
+                {/* Back Button: Hidden di Mobile */}
+                <div className="hidden md:block absolute left-6 top-1/2 -translate-y-1/2">
+                    <BackButton />
+                </div>
+                
+                <div className="text-center w-full px-4">
+                    <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide">
                         DOKUMEN BERITA ACARA SERAH TERIMA (BAST)
                     </h1>
-                    {/* 5. Hapus No Surat karena data tidak tersedia dari URL */}
-                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                    <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90">
                         Upload dokumen untuk ID Penerimaan: #{id}
                     </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full min-h-0">
+            {/* === CONTENT GRID === */}
+            {/* Ubah grid-cols-2 menjadi responsive (1 kolom di mobile, 2 di large desktop) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 h-full min-h-0">
 
                 {/* --- KOLOM KIRI: Upload Section --- */}
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-                    <h1 className="text-xl font-bold text-[#1e3a5f] mb-6 flex-none">
+                <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-h-[500px]">
+                    <h1 className="text-lg md:text-xl font-bold text-[#1e3a5f] mb-6 flex-none">
                         Unggah Dokumen BAST
                     </h1>
 
@@ -247,31 +248,31 @@ const LihatPenerimaan = () => {
                     />
 
                     <form onSubmit={handleSubmit} className="flex flex-col flex-1 h-full gap-6">
-                        {/* Area Dashed Border - Support Drag & Drop */}
+                        {/* Area Dashed Border */}
                         <div
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            className={`flex-1 border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-4 transition-all duration-300 relative overflow-hidden
-            ${isDragging
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : formData.uploaded_signed_file
-                                        ? 'border-blue-200 bg-blue-50/30'
-                                        : 'border-gray-300 bg-white'
-                                }`}
+                            className={`flex-1 border-2 border-dashed rounded-xl p-6 md:p-8 flex flex-col items-center justify-center gap-4 transition-all duration-300 relative overflow-hidden text-center
+                            ${isDragging
+                                ? 'border-blue-500 bg-blue-50'
+                                : formData.uploaded_signed_file
+                                    ? 'border-blue-200 bg-blue-50/30'
+                                    : 'border-gray-300 bg-white'
+                            }`}
                         >
-                            <div className="flex flex-col items-center w-full text-center">
-                                <div className={`w-20 h-20 mb-4 transition-colors ${formData.uploaded_signed_file ? 'text-blue-500' : 'text-gray-400'}`}>
+                            <div className="flex flex-col items-center w-full">
+                                <div className={`w-16 h-16 md:w-20 md:h-20 mb-4 transition-colors ${formData.uploaded_signed_file ? 'text-blue-500' : 'text-gray-400'}`}>
                                     <UploadIcon className="w-full h-full" />
                                 </div>
 
-                                <p className="text-gray-900 font-semibold text-base mb-2">
+                                <p className="text-gray-900 font-semibold text-sm md:text-base mb-2">
                                     {formData.uploaded_signed_file ? "File siap diunggah" : "Klik untuk mengunggah atau seret dan lepas"}
                                 </p>
-                                <p className="text-gray-500 text-sm mb-4">
+                                <p className="text-gray-500 text-xs md:text-sm mb-4">
                                     Format: Pdf (Maks. 100Mb)
                                 </p>
-                                <p className="text-gray-400 text-xs">
+                                <p className="text-gray-400 text-[10px] md:text-xs max-w-xs">
                                     Dokumen BAST yang sudah ditandatangani secara basah
                                 </p>
 
@@ -279,11 +280,9 @@ const LihatPenerimaan = () => {
                                     type="button"
                                     onClick={handleUploadClick}
                                     variant='primary'
-                                    className='mt-6'
+                                    className='mt-6 px-6'
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                    </svg>
+                                    <Upload className="w-4 h-4 mr-2" />
                                     {formData.uploaded_signed_file ? "Ganti File" : "Pilih File"}
                                 </Button>
                             </div>
@@ -292,15 +291,15 @@ const LihatPenerimaan = () => {
                         {/* File Preview & Actions */}
                         <div className="flex flex-col gap-4">
                             {/* File Info Card */}
-                            <div className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${formData.uploaded_signed_file ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
-                                <div className="w-10 h-10 shrink-0">
+                            <div className={`flex items-center gap-3 p-3 md:p-4 rounded-lg border transition-colors ${formData.uploaded_signed_file ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100 opacity-70'}`}>
+                                <div className="w-8 h-8 md:w-10 md:h-10 shrink-0">
                                     <PDFIcon className={`w-full h-full ${formData.uploaded_signed_file ? 'text-red-500' : 'text-gray-300'}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className={`font-medium text-sm truncate ${formData.uploaded_signed_file ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                                    <p className={`font-medium text-xs md:text-sm truncate ${formData.uploaded_signed_file ? 'text-gray-900' : 'text-gray-400 italic'}`}>
                                         {formData.uploaded_signed_file ? selectedFileName : "Belum ada file dipilih"}
                                     </p>
-                                    <p className="text-gray-500 text-xs mt-0.5">
+                                    <p className="text-gray-500 text-[10px] md:text-xs mt-0.5">
                                         {formData.uploaded_signed_file ? formatFileSize(formData.uploaded_signed_file.size) : "-"}
                                     </p>
                                 </div>
@@ -310,16 +309,13 @@ const LihatPenerimaan = () => {
                                     onClick={handleRemoveFile}
                                     disabled={!formData.uploaded_signed_file}
                                     className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors 
-                    ${formData.uploaded_signed_file
-                                            ? 'hover:bg-gray-200 cursor-pointer text-gray-600'
-                                            : 'cursor-default text-gray-300'}`}
+                                    ${formData.uploaded_signed_file ? 'hover:bg-gray-200 cursor-pointer text-gray-600' : 'cursor-default text-gray-300'}`}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
 
+                            {/* Progress Bar */}
                             {/* Progress Bar */}
                             {isUploading && (
                                 <div className="space-y-2">
@@ -352,51 +348,55 @@ const LihatPenerimaan = () => {
                 </div>
 
                 {/* --- KOLOM KANAN: Riwayat Section --- */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-h-0">
-                    <div className='p-6 pb-2 flex-none'>
-                        <h2 className="text-xl font-bold text-gray-800">
-                            Riwayat Upload Sebelumnya
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-h-[400px]">
+                    <div className='p-6 pb-2 flex-none border-b border-gray-100'>
+                        <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                            Riwayat Upload
                         </h2>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 pt-2 min-h-0">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
                         {isLoading ? (
                             <Loader />
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {riwayatBastFile.length > 0 ? (
                                     riwayatBastFile.map((item, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center bg-white border border-gray-200 p-4 rounded-xl hover:shadow-md transition-shadow"
+                                            className="flex items-center bg-white border border-gray-200 p-3 md:p-4 rounded-xl hover:shadow-md transition-shadow gap-3"
                                         >
-                                            <div className="w-10 h-10 mr-4 shrink-0 text-red-500">
+                                            <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 text-red-500">
                                                 <PDFIcon className="w-full h-full" />
                                             </div>
                                             <div className="flex flex-col flex-1 min-w-0">
-                                                <span className="text-gray-800 font-semibold truncate text-sm md:text-base">
+                                                <span className="text-gray-800 font-semibold truncate text-xs md:text-sm" title={item.filename}>
                                                     {item.filename || item.penerimaan_no_surat || "BAST Tim_PPK.pdf"}
                                                 </span>
-                                                <span className="text-gray-500 text-xs mt-1">
-                                                    {item.uploaded_at || '12 Oktober 2025'}
+                                                <span className="text-gray-500 text-[10px] md:text-xs mt-0.5">
+                                                    {item.uploaded_at || 'Tanggal tidak tersedia'}
                                                 </span>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-                                        <p>Belum ada riwayat upload.</p>
+                                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl h-full">
+                                        <UploadIcon className="w-10 h-10 mb-2 opacity-50" />
+                                        <p className="text-sm">Belum ada riwayat upload.</p>
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalItems={totalItems}
-                        onPageChange={handlePageChange}
-                        itemsPerPage={itemsPerPage}
-                    />
+                    
+                    <div className="border-t border-gray-100 p-2">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            onPageChange={handlePageChange}
+                            itemsPerPage={itemsPerPage}
+                        />
+                    </div>
                 </div>
 
             </div>

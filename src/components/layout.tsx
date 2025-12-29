@@ -3,7 +3,7 @@ import SideBar from '../components/sidebar';
 import TopBar from '../components/topBar';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ToasterCustom } from '../components/toaster';
 import { useAuth } from '../hooks/useAuth';
 import { debugLog } from '../utils/debugLogger';
@@ -13,48 +13,46 @@ function Layout() {
     const navigate = useNavigate();
     const { isAuthenticated, isLoggingOut, login } = useAuth();
 
-    // Effect pertama: Clear flag jika tidak ada token (logout selesai)
+    // State untuk Mobile Sidebar
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // --- 1. LOGIKA AUTHENTICATION (DIKEMBALIKAN DARI KODE LAMA) ---
+    
+    // Effect: Clear flag logout jika token sudah hilang
     useEffect(() => {
         const loggingOutFlag = sessionStorage.getItem('logging_out') === 'true';
         const hasToken = !!localStorage.getItem('access_token');
 
-        debugLog('Layout: Checking logout state', {
-            loggingOutFlag,
-            hasToken,
-            isAuthenticated,
-            isLoggingOut
-        });
-
-        // Jika flag logout masih ada TAPI tidak ada token, berarti logout sudah selesai
         if (loggingOutFlag && !hasToken) {
             debugLog('Layout: Logout completed, clearing flag');
             sessionStorage.removeItem('logging_out');
         }
     }, [isAuthenticated, isLoggingOut]);
 
-    // Effect kedua: Auto-login
+    // Effect: Auto-login check (PENTING AGAR TIDAK STUCK LOADING)
     useEffect(() => {
-        debugLog('Layout: useEffect triggered', {
-            isAuthenticated,
-            isLoggingOut,
-            loggingOutFlag: sessionStorage.getItem('logging_out'),
-            pathname: location.pathname
-        });
-
         if (sessionStorage.getItem('logging_out') === 'true') {
-            debugLog('Layout: Blocked auto-login - logging_out flag is true');
             return;
         }
 
         if (!isAuthenticated && !isLoggingOut) {
-            debugLog('Layout: Calling login()');
+            debugLog('Layout: Calling login() for auto-auth');
             login();
         }
     }, [isAuthenticated, isLoggingOut, login, location.pathname]);
 
-    // Effect ketiga: Toast notifications
+    // --- 2. LOGIKA UI & UX ---
+
+    // Effect: Tutup sidebar saat pindah halaman
+    useEffect(() => {
+        setIsSidebarOpen(false);
+    }, [location.pathname]);
+
+    // Effect: Toast notifications
     useEffect(() => {
         const isLoginSuccess = localStorage.getItem('login_success');
+        
+        // Handle Login Success Toast
         if (isLoginSuccess) {
             debugLog('Layout: Login success toast shown');
             toast(<ToasterCustom message="Login Berhasil! Selamat Datang." type="success" />, {
@@ -67,6 +65,7 @@ function Layout() {
             localStorage.removeItem('login_success');
         }
 
+        // Handle General Toast from Navigation State
         const message = location.state?.toastMessage;
         if (message) {
             toast(<ToasterCustom message={message} />, {
@@ -76,12 +75,14 @@ function Layout() {
                 icon: false,
                 closeButton: false,
             });
+            // Clear state agar toast tidak muncul lagi saat refresh
             navigate(location.pathname, { replace: true, state: null });
         }
     }, [location, navigate]);
 
+    // --- 3. LOADING STATES ---
+
     if (isLoggingOut || sessionStorage.getItem('logging_out') === 'true') {
-        debugLog('Layout: Showing logout loading');
         return (
             <div className="flex items-center justify-center h-screen w-full bg-gray-50">
                 <div className="text-center">
@@ -93,7 +94,6 @@ function Layout() {
     }
 
     if (!isAuthenticated) {
-        debugLog('Layout: Showing login loading');
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50">
                 <div className="text-center">
@@ -104,11 +104,16 @@ function Layout() {
         );
     }
 
-    debugLog('Layout: Rendering main layout');
+    // --- 4. RENDER LAYOUT ---
+    
     return (
-        <div className="flex h-screen fixed w-screen">
-            <SideBar />
-            <div className="flex flex-col flex-1 h-full">
+        <div className="flex h-screen w-full overflow-hidden">
+            <SideBar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
+
+            <div className="flex flex-col flex-1 h-full min-w-0">
                 <ToastContainer
                     position="top-right"
                     autoClose={3000}
@@ -122,10 +127,10 @@ function Layout() {
                     closeButton={false}
                     className="top-4! right-4! w-auto! max-w-[400px]!"
                 />
-                
-                <TopBar />
-                
-                <div id="modal-portal-root" className="overflow-auto p-8 flex-1 relative">
+
+                <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
+
+                <div id="modal-portal-root" className="overflow-auto p-4 md:p-8 flex-1 relative">
                     <Outlet />
                 </div>
             </div>

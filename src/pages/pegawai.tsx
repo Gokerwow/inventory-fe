@@ -15,7 +15,7 @@ import SearchBar from "../components/searchBar";
 import { NavigationTabs } from "../components/navTabs";
 import PegawaiIcon from '../assets/svgs/Akun Icon.svg?react'
 import Button from "../components/button";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react"; // Tambahkan icon Filter optional untuk UI mobile
 
 const PegawaiTabs = [
     {
@@ -64,18 +64,13 @@ export default function PegawaiPage() {
         })
     }
 
-    // Fungsi untuk toggle status per pegawai
     const handleToggleStatus = async (pegawai: DaftarPegawai) => {
-        // Cegah multiple clicks
         if (updatingStatus[pegawai.nip]) return;
 
         try {
             setUpdatingStatus(prev => ({ ...prev, [pegawai.nip]: true }));
-
-            // Panggil API untuk update status
             await updateStatusPegawai(pegawai.id);
 
-            // Update status di local state setelah berhasil
             setCurrentItems(prevItems =>
                 prevItems.map(item =>
                     item.nip === pegawai.nip
@@ -84,12 +79,10 @@ export default function PegawaiPage() {
                 )
             );
 
-            console.log(`✅ Status pegawai ${pegawai.name} berhasil diupdate`);
             showToast(`Status pegawai ${pegawai.name} berhasil diupdate.`, "success");
         } catch (err) {
             console.error("❌ Error updating status:", err);
             setError("Gagal mengubah status pegawai.");
-            // Bisa tambahkan toast notification di sini
         } finally {
             setUpdatingStatus(prev => ({ ...prev, [pegawai.nip]: false }));
         }
@@ -100,16 +93,13 @@ export default function PegawaiPage() {
     };
 
     const handleFilterJabatanChange = (jabatanId: number) => {
-        console.log("Filter jabatan berubah:", jabatanId);
         setSelectedJabatan(jabatanId);
     }
 
     const handleFilterStatusChange = (status: string) => {
-        console.log("Filter status berubah:", status);
         setSelectedStatus(status);
     }
 
-    // --- EFFECT DEBOUNCE ---
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
@@ -120,7 +110,6 @@ export default function PegawaiPage() {
             clearTimeout(handler);
         };
     }, [search]);
-    // --------------------------------
 
     useEffect(() => {
         checkAccess(user?.role);
@@ -131,12 +120,10 @@ export default function PegawaiPage() {
             setError(null);
 
             try {
-                console.log('Fetching Data Pegawai....')
                 const [responsePegawai, responseJabatan] = await Promise.all([
                     getDaftarPegawai(currentPage, itemsPerPage, selectedJabatan, selectedStatus, debouncedSearch),
-                    getJabatanSelect() // Asumsi fungsi ini tidak butuh parameter pagination
+                    getJabatanSelect()
                 ]);
-                console.log("📦 Pegawai Response:", responsePegawai);
                 setCurrentItems(responsePegawai.data);
                 setJabatanList(responseJabatan);
                 setTotalItems(responsePegawai.total || 0);
@@ -158,17 +145,16 @@ export default function PegawaiPage() {
         {
             header: 'Nama Pegawai',
             cell: (item) => (
-                <div className="flex items-center">
+                <div className="flex items-center justify-end md:justify-start w-fit">
+
                     <div className="shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
+                        <span className="font-semibold text-sm">{item.name.charAt(0).toUpperCase()}</span>
                     </div>
-                    {/* Tambahkan min-w-0 agar flex item bisa mengecil (truncate) */}
+
                     <div className="ml-4 min-w-0 flex-1">
                         <div
-                            className="text-sm font-medium text-gray-900 truncate"
-                            title={item.name} // Tooltip native saat hover
+                            className="text-sm font-medium text-gray-900 truncate max-w-[150px] text-right md:text-left"
+                            title={item.name}
                         >
                             {item.name}
                         </div>
@@ -179,23 +165,22 @@ export default function PegawaiPage() {
         {
             header: 'NIP',
             cell: (item) => (
-                <div className="truncate" title={item.nip}>
+                <div className="truncate text-gray-500" title={item.nip}>
                     {item.nip}
                 </div>
             )
         },
         {
             header: 'Jabatan',
-            cell: (item) => (
+            cell: (item) =>
                 <div className="truncate" title={item.jabatan}>
                     {item.jabatan}
                 </div>
-            )
         },
         {
             header: 'No. Telepon',
             cell: (item) => (
-                <div className="truncate" title={item.phone}>
+                <div className="truncate text-gray-500" title={item.phone}>
                     {item.phone}
                 </div>
             )
@@ -205,39 +190,33 @@ export default function PegawaiPage() {
             cell: (item) => {
                 const isActive = item.status === 'active';
                 const isUpdating = updatingStatus[item.nip];
-
                 return (
                     <button
                         onClick={() => handleToggleStatus(item)}
                         disabled={isUpdating}
-                        className={`relative inline-flex items-center h-6 rounded-full w-11 ${isActive ? 'bg-blue-600' : 'bg-gray-500'
-                            } transition-all duration-200 focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        className={`relative inline-flex items-center h-6 rounded-full w-11 ${isActive ? 'bg-blue-600' : 'bg-gray-300'
+                            } transition-colors duration-200 focus:outline-none ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                             }`}
                     >
-                        <span className="sr-only">
-                            {isActive ? 'Nonaktifkan' : 'Aktifkan'} pegawai
-                        </span>
-                        <span
-                            className={`${isActive ? 'translate-x-6' : 'translate-x-1'
-                                } inline-block w-4 h-4 transform bg-white rounded-full transition ease-in-out duration-200`}
-                        ></span>
+                        <span className={`transform transition ease-in-out duration-200 ${isActive ? 'translate-x-6' : 'translate-x-1'
+                            } inline-block w-4 h-4 bg-white rounded-full shadow`} />
                     </button>
                 );
             }
         },
         {
             header: 'Aksi',
-            align:'center',
+            align: 'center',
             cell: (item) => (
                 <Button
                     onClick={() => handleEditClick(item)}
                     variant="ghost"
-                    className="flex items-center hover:text-blue-600 font-medium "
+                    className="flex items-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                     </svg>
-                    <span className="truncate">Edit</span>
+                    Edit
                 </Button>
             )
         }
@@ -247,59 +226,95 @@ export default function PegawaiPage() {
         <div className="flex flex-col h-full w-full gap-5">
             <NavigationTabs tabs={PegawaiTabs} activeTab={activeTab} onTabClick={handleClick} />
 
-            {/* Table Card */}
+            {/* Main Card Container */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className='p-6 pb-4 flex justify-between items-center'>
-                    <div className="flex items-center justify-center gap-3">
-                        <h2 className="text-xl font-semibold">Daftar Pegawai</h2>
-                        {/* Search Input */}
-                        <SearchBar
-                            placeholder='Cari Pegawai...'
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                        <div className="relative w-full sm:w-auto">
-                            <select onChange={(e) => handleFilterJabatanChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                                <option value=''>Semua Jabatan</option>
-                                {jabatanList.map((jabatan) => (
-                                    <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
+
+                {/* Responsive Header */}
+                <div className="p-4 md:p-6 flex flex-col xl:flex-row justify-between gap-4 border-b border-gray-100">
+
+                    {/* Top Section: Title & Controls */}
+                    <div className="flex flex-col md:flex-row gap-4 w-full xl:items-center">
+                        <h2 className="text-lg md:text-xl font-bold text-gray-800 shrink-0">
+                            Daftar Pegawai
+                        </h2>
+
+                        {/* Wrapper Filter & Search */}
+                        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto flex-1">
+                            {/* Search Bar - Flex Grow */}
+                            <div className="flex-1 min-w-[200px]">
+                                <SearchBar
+                                    placeholder='Cari Pegawai...'
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
                             </div>
-                        </div>
-                        <div className="relative w-full sm:w-auto">
-                            <select onChange={(e) => handleFilterStatusChange(e.target.value)} className="appearance-none w-full sm:w-48 bg-white border border-gray-300 text-gray-700 py-2.5 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium shadow-sm cursor-pointer">
-                                <option value=''>Semua Status</option>
-                                {PegawaiStatus.map((status) => (
-                                    <option key={status.value} value={status.value}>{status.label}</option>
-                                ))}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
+
+                            {/* Filters - Grid 2 Kolom di Mobile, Row di Desktop */}
+                            {/* UBAH DI SINI: Gunakan 'grid grid-cols-2' agar sejajar di HP */}
+                            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+
+                                {/* Filter Jabatan */}
+                                <div className="relative w-full sm:w-auto">
+                                    <select
+                                        onChange={(e) => handleFilterJabatanChange(Number(e.target.value))}
+                                        // Hapus 'py-2.5', ganti 'py-2' agar lebih tipis
+                                        className="appearance-none w-full sm:w-36 bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm font-medium shadow-sm cursor-pointer hover:bg-gray-100 transition-colors truncate"
+                                    >
+                                        <option value='0'>Semua Jabatan</option>
+                                        {jabatanList.map((jabatan) => (
+                                            <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    </div>
+                                </div>
+
+                                {/* Filter Status */}
+                                <div className="relative w-full sm:w-auto">
+                                    <select
+                                        onChange={(e) => handleFilterStatusChange(e.target.value)}
+                                        // Samakan style dengan Jabatan
+                                        className="appearance-none w-full sm:w-36 bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm font-medium shadow-sm cursor-pointer hover:bg-gray-100 transition-colors truncate"
+                                    >
+                                        <option value=''>Semua Status</option>
+                                        {PegawaiStatus.map((status) => (
+                                            <option key={status.value} value={status.value}>{status.label}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <svg className="h-3 w-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <Button onClick={handleTambahClick} variant="primary" className="flex items-center gap-2 shadow-sm">
-                        <Plus className="w-5 h-5" />
-                        Tambah Pegawai
+                    {/* Add Button - Full width on Mobile */}
+                    <Button
+                        onClick={handleTambahClick}
+                        variant="primary"
+                        className="w-full sm:w-auto xl:w-auto flex items-center justify-center gap-2 shadow-sm shrink-0 py-2 px-4 text-sm h-fit"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Tambah Pegawai</span> 
                     </Button>
-
                 </div>
 
-                <div className="flex-1 overflow-auto">
+                {/* Table Section */}
+                <div className="flex-1 overflow-hidden relative">
                     {isLoading ? (
                         <Loader />
                     ) : error ? (
-                        <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
+                        <div className="flex h-full justify-center items-center p-10 text-red-500 bg-red-50 mx-6 my-6 rounded-lg">
+                            <p>{error}</p>
+                        </div>
                     ) : currentItems.length === 0 ? (
-                        <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
-                            <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                        <div className='flex h-full items-center justify-center bg-gray-50 mx-6 mb-6 mt-6 rounded-lg border border-dashed border-gray-300'>
+                            <div className="text-center p-10">
+                                <p className='font-medium text-gray-500'>Tidak ada data pegawai</p>
+                            </div>
                         </div>
                     ) : (
                         <ReusableTable
@@ -309,6 +324,7 @@ export default function PegawaiPage() {
                     )}
                 </div>
 
+                {/* Pagination */}
                 <Pagination
                     currentPage={currentPage}
                     totalItems={totalItems}

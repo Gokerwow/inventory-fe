@@ -28,7 +28,7 @@ const penerimaanTabs = [
 ];
 
 const PenerimaanPage = () => {
-    // ... State data lainnya
+    // ... State (biarkan sama)
     const [penerimaanItems, setPenerimaanItems] = useState<PenerimaanItem[]>([]);
     const [riwayatItems, setRiwayatItems] = useState<RiwayatPenerimaanItem[]>([]);
     const [bastItems, setBastItems] = useState<BASTAPI[]>([]);
@@ -37,22 +37,18 @@ const PenerimaanPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // State Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
 
     const [activeTab, setActiveTab] = useState('penerimaan');
-
-    // === STATE BARU UNTUK DELETE & REFRESH ===
     const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0); // Untuk trigger ulang useEffect
+    const [refreshKey, setRefreshKey] = useState(0); 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const { showToast } = useToast();
-
     const navigate = useNavigate();
 
     const requiredRoles = useMemo(() =>
@@ -63,16 +59,13 @@ const PenerimaanPage = () => {
     const { checkAccess, hasAccess } = useAuthorization(requiredRoles);
     const { user } = useAuth();
 
-    // 1. Fungsi yang akan dikirim ke Table
     const handleDeleteRequest = (id: number) => {
         setSelectedDeleteId(id);
         setIsModalOpen(true);
     };
 
-    // 2. Fungsi Eksekusi Hapus (Dipanggil Modal)
     const handleConfirmSubmit = async () => {
         if (!selectedDeleteId) return;
-
         setIsSubmitting(true);
         try {
             await deletePenerimaanDetail(selectedDeleteId);
@@ -168,15 +161,15 @@ const PenerimaanPage = () => {
             <NavigationTabs tabs={penerimaanTabs} activeTab={activeTab} onTabClick={handleClick} />
 
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                <div className="p-6 pb-4 flex justify-between items-center">
-                    <h2 className="text-xl font-bold">
+                <div className="p-4 md:p-6 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <h2 className="text-lg md:text-xl font-bold">
                         {activeTab === 'penerimaan' ? 'Daftar Penerimaan' : 'Riwayat Penerimaan'}
                     </h2>
                     {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (
                         <Button
                             variant="primary"
-                            onClick={() => navigate(PATHS.PENERIMAAN.TAMBAH)} // 2. Navigate on click
-                            className="flex items-center gap-2 shadow-sm"     // 3. Layout adjustments
+                            onClick={() => navigate(PATHS.PENERIMAAN.TAMBAH)}
+                            className="flex items-center gap-2 shadow-sm w-full md:w-auto justify-center"
                         >
                             <Plus className="w-5 h-5" />
                             <span>Tambah Barang Belanja</span>
@@ -194,11 +187,10 @@ const PenerimaanPage = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="flex-1 overflow-auto">
+                        <div className="flex-1 overflow-hidden relative">
                             <PenerimaanTable
                                 data={transformedData}
                                 variant={activeTab === 'penerimaan' ? 'active' : 'history'}
-                                // 3. Pass fungsi ke props table
                                 onDelete={handleDeleteRequest}
                             />
                         </div>

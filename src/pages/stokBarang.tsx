@@ -20,7 +20,7 @@ import { CategoryFilter } from '../components/categoryFilter';
 import { NavigationTabs } from '../components/navTabs';
 import Button from '../components/button';
 import SearchBar from '../components/searchBar';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Pencil } from 'lucide-react'; // Import Icon Pencil
 
 const stokTabs = [
     {
@@ -84,9 +84,7 @@ function StokBarang() {
             setError(null);
             try {
                 if (activeTab === 'stokBarang') {
-                    console.log('Fetching Stok Data....');
                     const response = await getStokBarang(currentPage, itemsPerPage, selectedCategoryId, debouncedSearch);
-                    console.log("📦 Stok Response:", response);
                     setCurrentStokItems(response.data.flat());
                     setTotalItems(response.total || 0);
                     setItemsPerPage(response.per_page || 10);
@@ -94,25 +92,10 @@ function StokBarang() {
                     const lowStockItems = response.data.flat().filter((item: any) => item.total_stok <= item.minimum_stok);
 
                     if (lowStockItems.length > 0) {
-                        // Cukup satu toast yang memberitahu user untuk mengecek tabel
                         showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'warning');
                     }
-                    // const stokLessThanMinimum = currentStokItems.filter(item => item.total_stok <= item.minimum_stok)
-                    // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-                    // if (stokLessThanMinimum.length > 0) {
-                    //     for (const stok of stokLessThanMinimum) {
-                    //         if (stok.total_stok === stok.minimum_stok) {
-                    //             showToast(`${stok.name} sudah pada stok minimum`)
-                    //         } else {
-                    //             showToast(`${stok.name} kurang dari stok minimum`)
-                    //         }
-                    //         await delay(1000);
-                    //     }
-                    // }
                 } else {
-                    console.log('Fetching BAST Data....');
                     const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch);
-                    console.log("📦 BAST Response:", response);
                     setCurrentBASTItems(response.data.flat());
                     setTotalItems(response.total || 0);
                     setItemsPerPage(response.per_page || 10);
@@ -126,7 +109,6 @@ function StokBarang() {
             }
         };
         FetchData();
-        // Tambahkan year ke dependency array agar refresh saat tahun diganti
     }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, activeTab, refreshTrigger, paymentStatus]);
 
     const handlePageChange = (page: number) => {
@@ -145,7 +127,6 @@ function StokBarang() {
     const handleTabClick = (tab: string) => {
         if (tab === activeTab) return;
         setActiveTab(tab);
-        // Reset semua filter agar data tab baru bersih
         setSelectedCategoryId(undefined);
         setPaymentStatus('');
         setSearch('');
@@ -166,14 +147,11 @@ function StokBarang() {
         setIsModalOpen(true);
         try {
             const detail = await getDetailStokBarang(id);
-
             const dataToSet = {
                 id: id,
                 name: detail.name,
-                // UBAH DISINI: Konversi ke String agar input bisa membaca desimal dengan aman
                 minimum_stok: String(detail.minimum_stok)
             };
-
             setFormData(dataToSet);
             setIsFormLoading(false);
         } catch (error) {
@@ -190,7 +168,6 @@ function StokBarang() {
             };
 
             const response = await updateBarangStok(FixData, formData.id || 0);
-            console.log("Update Success:", response);
             showToast("Berhasil memperbarui data stok barang.", "success");
             setIsModalOpen(false);
             setRefreshTrigger((prev) => prev + 1);
@@ -198,10 +175,9 @@ function StokBarang() {
             console.error("Error fetching detail stok barang:", error);
             showToast("Gagal memperbarui data stok barang.", "error");
         }
-        // try {
-        //     const updatedItem = await getDetailStokBarang(itemDetail?.id || 0, formData);
-        // }
     };
+
+    // --- DEFINISI KOLOM DENGAN RESPONSIVE ALIGNMENT ---
     const barangColumns: ColumnDefinition<BARANG_STOK>[] = [
         {
             header: 'Nama Barang',
@@ -211,25 +187,17 @@ function StokBarang() {
                 const colorClass = config?.colorClass || 'bg-gray-100 text-gray-700';
 
                 return (
-                    <div className="flex items-center">
-                        {/* Icon */}
+                    // Tambahkan w-full agar flex mengisi area kartu di mobile
+                    <div className="flex items-center w-full">
                         <div className={`shrink-0 h-10 w-10 rounded-lg flex items-center justify-center ${colorClass}`}>
                             <IconComponent className='w-6 h-6' />
                         </div>
-
-                        {/* Wrapper Teks dengan min-w-0 agar flex item bisa mengecil */}
                         <div className="ml-4 min-w-0 flex-1">
-                            <div
-                                className="text-sm font-semibold text-gray-900 truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px]"
-                                title={item.name} // Tooltip bawaan browser saat di-hover
-                            >
+                            <div className="text-sm font-semibold text-gray-900 truncate" title={item.name}>
                                 {item.name}
                             </div>
-                            <div
-                                className="text-xs text-gray-500 truncate"
-                                title={`Kategori: ${item.category_name}`}
-                            >
-                                Kategori: {item.category_name}
+                            <div className="text-xs text-gray-500 truncate">
+                                {item.category_name}
                             </div>
                         </div>
                     </div>
@@ -243,16 +211,13 @@ function StokBarang() {
                 return (
                     <div className={`flex items-center gap-2 ${isCritical ? 'text-red-600 font-bold' : ''}`}>
                         {item.total_stok}
-                        {isCritical && (
-                            // Ikon Warning jika stok sedikit
-                            <span title="Stok di bawah minimum!"><AlertTriangle size={16} /></span>
-                        )}
+                        {isCritical && <span title="Stok menipis!"><AlertTriangle size={16} /></span>}
                     </div>
                 )
             }
         },
         {
-            header: 'Minimum Stok',
+            header: 'Min. Stok',
             cell: (item) => <>{item.minimum_stok}</>
         },
         {
@@ -262,14 +227,21 @@ function StokBarang() {
         {
             header: 'Aksi',
             cell: (item) => (
-                <div className="flex w-fit gap-5">
-                    <button onClick={() => handleEditClick(item.id)} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        Edit
+                // justify-end di mobile agar tombol rata kanan di kartu
+                <div className="flex gap-3 justify-end md:justify-start w-full">
+                    <button 
+                        onClick={() => handleEditClick(item.id)} 
+                        className="text-gray-600 hover:text-blue-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-md hover:bg-blue-50 cursor-pointer"
+                    >
+                        <Pencil className="w-4 h-4" />
+                        <span className="text-sm font-medium">Edit</span>
                     </button>
-                    <button onClick={() => handleLihatClick(item.id, 'barang')} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                        <EyeIcon className='w-5 h-5' />
-                        Lihat
+                    <button 
+                        onClick={() => handleLihatClick(item.id, 'barang')} 
+                        className="text-gray-600 hover:text-blue-700 flex items-center gap-1 transition-colors px-2 py-1 rounded-md hover:bg-gray-50 cursor-pointer"
+                    >
+                        <EyeIcon className='w-4 h-4' />
+                        <span className="text-sm font-medium">Lihat</span>
                     </button>
                 </div>
             )
@@ -288,33 +260,29 @@ function StokBarang() {
                 const colorClass = config?.colorClass || 'bg-gray-100 text-gray-700';
 
                 return (
-                    <div className={`flex items-center gap-3 w-fit px-3 py-2 rounded-2xl ${colorClass}`}>
-                        <div className={`shrink-0 rounded-lg flex items-center justify-center`}>
-                            <IconComponent className='w-4 h-4' />
-                        </div>
-                        <span className={`rounded-full text-xs font-medium`}>
-                            {item.category_name}
-                        </span>
+                    <div className={`flex items-center gap-2 w-fit px-2 py-1 rounded-full ${colorClass}`}>
+                        <IconComponent className='w-3 h-3' />
+                        <span className={`text-xs font-medium`}>{item.category_name}</span>
                     </div>
                 );
             }
         },
         {
             header: 'Status',
-            cell: (item) => {
-                return <Status
-                    label={item.status}
-                    value={item.status}
-                />;
-            }
+            cell: (item) => <Status label={item.status} value={item.status} />
         },
         {
             header: 'Aksi',
             cell: (item) => (
-                <button onClick={() => handleLihatClick(item.id, 'penerimaan')} className="text-gray-900 hover:text-blue-600 flex items-center justify-start gap-1 w-full cursor-pointer transition-colors">
-                    <EyeIcon className='w-5 h-5' />
-                    Lihat
-                </button>
+                <div className="flex justify-end md:justify-start w-full">
+                    <button 
+                        onClick={() => handleLihatClick(item.id, 'penerimaan')} 
+                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors px-2 py-1 rounded-md hover:bg-blue-50"
+                    >
+                        <EyeIcon className='w-4 h-4' />
+                        <span className="text-sm font-medium">Lihat</span>
+                    </button>
+                </div>
             )
         },
     ];
@@ -330,51 +298,54 @@ function StokBarang() {
 
     return (
         <div className="w-full flex flex-col gap-5">
-            {/* Navigation Tabs */}
             <NavigationTabs
                 tabs={stokTabs}
                 activeTab={activeTab}
                 onTabClick={handleTabClick}
             />
 
-            {/* Filter Buttons Section */}
             <CategoryFilter
                 selectedCategoryId={selectedCategoryId}
                 onCategoryClick={handleCategoryClick}
                 categoryData={CATEGORY_DATA}
             />
 
-            {/* Table Card */}
+            {/* Main Card Container */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
-                    <div className='flex items-center gap-4'>
-                        <h2 className="text-xl font-bold text-blue-900">Daftar {activeTab == "stokBarang" ? "Stok Barang" : "Pembayaran BAST"}</h2>
-
-                        {/* Search Input */}
-                        <SearchBar
-                            placeholder='Cari Barang...'
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                
+                {/* Responsive Header: Stack di Mobile, Row di Desktop */}
+                <div className="p-4 md:px-6 md:py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+                    
+                    {/* Title & Search */}
+                    <div className='flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto flex-1'>
+                        <h2 className="text-lg md:text-xl font-bold text-blue-900 shrink-0">
+                            Daftar {activeTab === "stokBarang" ? "Stok Barang" : "Pembayaran BAST"}
+                        </h2>
+                        <div className="w-full md:w-64">
+                            <SearchBar
+                                placeholder='Cari Barang...'
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-3"> {/* Wrapper baru agar dropdown sejajar */}
-
-                        {/* --- TAMBAHAN 4: Dropdown Filter Status Pembayaran --- */}
+                    {/* Filter Status Pembayaran (Mobile: Full Width, Desktop: Auto) */}
+                    <div className="w-full md:w-auto flex justify-end"> 
                         {activeTab !== 'stokBarang' && (
-                            <div className="relative">
+                            <div className="relative w-full md:w-auto">
                                 <select
                                     value={paymentStatus}
                                     onChange={(e) => {
                                         setPaymentStatus(e.target.value as 'paid' | 'unpaid' | '');
-                                        setCurrentPage(1); // Reset ke halaman 1 saat filter berubah
+                                        setCurrentPage(1);
                                     }}
-                                    className="appearance-none bg-white border border-gray-300 text-gray-700 py-1.5 px-3 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500 text-sm"
+                                    className="appearance-none w-full md:w-auto bg-gray-50 border border-gray-300 text-gray-700 py-2 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium cursor-pointer"
                                 >
                                     <option value="">Semua Status</option>
                                     <option value="paid">Terbayar</option>
                                     <option value="unpaid">Belum Dibayar</option>
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                                 </div>
                             </div>
@@ -382,78 +353,69 @@ function StokBarang() {
                     </div>
                 </div>
 
-                <div className="flex flex-col">
-                    <div className="w-full h-[700px] overflow-hidden flex justify-center items-center">
-                        {isLoading ? <Loader />
-                            :
-                            <div className='w-full h-full overflow-auto'>
-                                {activeTab === 'stokBarang' ?
-                                    <ReusableTable
-                                        columns={barangColumns}
-                                        currentItems={currentStokItems}
-                                    />
-                                    :
-                                    <ReusableTable
-                                        columns={BASTColumns}
-                                        currentItems={currentBASTItems}
-                                    />}
-                            </div>
-                        }
-                    </div>
+                {/* Table Container - Gunakan flex-1 agar mengisi sisa ruang & min-h untuk mobile */}
+                <div className="flex-1 overflow-hidden relative min-h-[400px] flex justify-center items-center">
+                    {isLoading ? <Loader />
+                        :
+                        <div className='w-full h-full'>
+                            {activeTab === 'stokBarang' ?
+                                <ReusableTable
+                                    columns={barangColumns}
+                                    currentItems={currentStokItems}
+                                />
+                                :
+                                <ReusableTable
+                                    columns={BASTColumns}
+                                    currentItems={currentBASTItems}
+                                />}
+                        </div>
+                    }
+                </div>
 
-                    <div className="px-4 bg-white shrink-0">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            totalPages={totalPages}
-                        />
-                    </div>
+                <div className="bg-white shrink-0 border-t border-gray-100">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        totalPages={totalPages}
+                    />
                 </div>
             </div>
+
             {/* Modal Input */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 isForm={true}
             >
-                <div className="flex flex-col gap-10 w-full p-6">
-                    {/* Judul sesuai Desain (Warna Biru) */}
-                    <h1 className="text-2xl text-center font-bold text-[#057CFF]">
+                <div className="flex flex-col gap-6 w-full p-6">
+                    <h1 className="text-xl md:text-2xl text-center font-bold text-[#057CFF]">
                         FORM DETAIL STOK BARANG
                     </h1>
                     <div className='flex flex-col gap-4'>
-                        {/* Field 1: Nama Barang */}
                         <Input
                             id='name'
                             judul='Nama Barang'
                             placeholder='Masukkan Nama Barang'
                             name='name'
-                            // UBAH DISINI: Langsung baca dari formData
                             value={isFormLoading ? 'Memuat Data...' : formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         />
-
-                        {/* Field 2: Minimum Stok */}
                         <Input
                             id='minimum_stok'
                             judul='Minimum Stok'
                             placeholder='Masukkan Minimum Stok'
                             name='minimum_stok'
                             type="number"
-                            step="0.01" // Pastikan step ini tetap ada
-
-                            // UBAH DISINI: Hapus String() karena state sudah string
+                            step="0.01"
                             value={isFormLoading ? 'Memuat Data...' : formData.minimum_stok}
-
-                            // UBAH DISINI: JANGAN pakai parseFloat dulu. Simpan string mentah.
                             onChange={(e) => setFormData({ ...formData, minimum_stok: e.target.value })}
                         />
                     </div>
-                    <div className='flex items-center justify-center gap-3'>
-                        <Button variant="danger" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button variant="success" onClick={handleConfirmSubmit}>Selesai</Button>
+                    <div className='flex items-center justify-end gap-3 mt-4'>
+                        <Button variant="danger" onClick={() => setIsModalOpen(false)}>Batal</Button>
+                        <Button variant="success" onClick={handleConfirmSubmit}>Simpan</Button>
                     </div>
                 </div>
             </Modal>

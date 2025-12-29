@@ -17,8 +17,7 @@ import BackButton from "../components/backButton";
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    
-    // 1. Perbaikan State Initialization sesuai Interface DaftarPegawai
+
     const [formData, setFormData] = useState<DaftarPegawai>({
         id: 0,
         name: '',
@@ -28,7 +27,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         jabatan_id: 0,
         created_at: '',
         updated_at: '',
-        jabatan: '' // Interface mengharuskan string, bukan object
+        jabatan: ''
     });
 
     const [jabatanOptions, setJabatanOptions] = useState<APIJabatan[]>([]);
@@ -55,9 +54,8 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             try {
                 const response = await getJabatanSelect();
                 setJabatanOptions(response);
-                
+
                 if (isEdit && data) {
-                    // Pastikan data yang masuk sesuai struktur
                     setFormData(data);
                 }
             } catch (err) {
@@ -78,23 +76,19 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             ...prevState,
             [name]: value
         }));
-        // Clear error ketika user mulai mengetik
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
 
-    // 2. Perbaikan Handler Jabatan
-    // Menerima input dari DropdownInput (bisa object APIJabatan atau string)
     const handleJabatanChange = (option: APIJabatan | string) => {
         if (typeof option === 'object' && option !== null) {
             setFormData(prev => ({
                 ...prev,
-                jabatan: option.name, // Simpan nama untuk display (string)
-                jabatan_id: option.id // Simpan ID untuk payload API (number)
+                jabatan: option.name,
+                jabatan_id: option.id
             }));
-            
-            // Clear error
+
             if (errors.jabatan) {
                 setErrors(prev => ({ ...prev, jabatan: '' }));
             }
@@ -130,7 +124,6 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             newErrors.nip = 'NIP minimal 5 digit';
         }
 
-        // 3. Perbaikan Validasi Jabatan (Cek jabatan_id)
         if (!isEdit && (!formData.jabatan_id || formData.jabatan_id === 0)) {
             newErrors.jabatan = 'Jabatan wajib dipilih';
         }
@@ -151,21 +144,18 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
         setIsSubmitting(true);
 
         try {
-            // Payload untuk API
             const pegawaiData: APIPegawaiBaru = {
                 name: formData.name,
                 nip: formData.nip,
-                jabatan_id: formData.jabatan_id, // Gunakan ID yang tersimpan
+                jabatan_id: formData.jabatan_id,
                 phone: formData.phone,
                 status: formData.status || 'active'
             };
 
             if (!isEdit) {
-                console.log('✅ Pegawai yang akan ditambahkan:', pegawaiData);
                 await createPegawai(pegawaiData);
                 showToast('Anda berhasil membuat daftar pegawai baru', 'success');
             } else {
-                console.log('✅ Pegawai yang akan diupdate:', pegawaiData);
                 await updatePegawai(formData.id, pegawaiData);
                 showToast('Anda berhasil mengubah data pegawai', 'success');
             }
@@ -192,22 +182,10 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         if (!validateForm()) {
             showToast('Mohon lengkapi semua field yang wajib diisi', 'error');
             return;
         }
-
-        // Debug log
-        console.log('Data pegawai siap submit:', {
-            name: formData.name,
-            nip: formData.nip,
-            jabatan_id: formData.jabatan_id,
-            jabatan_name: formData.jabatan,
-            phone: formData.phone,
-            status: formData.status
-        });
-
         handleOpenModal();
     };
 
@@ -217,58 +195,66 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
 
     return (
         <div className={`w-full flex flex-col gap-5 ${isEdit ? 'bg-white rounded-lg' : ''}`}>
-            {/* HEADER HALAMAN (Biru) */}
-            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative">
-                <BackButton className="absolute left-6 top-1/2 -translate-y-1/2" />
-                <div className='text-center'>
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">
+            {/* HEADER HALAMAN (Biru) - Responsif */}
+            <div className="bg-[#005DB9] rounded-xl p-6 text-center text-white shadow-md relative flex flex-col items-center justify-center min-h-[120px]">
+                {/* Back Button di kiri atas untuk mobile */}
+                <div className="hidden md:block absolute left-6 top-1/2 -translate-y-1/2">
+                    <BackButton />
+                </div>
+
+                <div className='text-center w-full px-8'>
+                    <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wide">
                         {!isEdit ? 'Tambah Pegawai Baru' : 'Form Manajemen Pegawai'}
                     </h1>
-                    <p className="text-blue-100 text-sm mt-1 opacity-90">
+                    <p className="text-blue-100 text-xs md:text-sm mt-1 opacity-90 hidden sm:block">
                         {!isEdit ? 'Isi form berikut untuk menambahkan akun pegawai baru ke dalam sistem' : 'Edit Identitas Pegawai'}
                     </p>
                 </div>
             </div>
-            
-            <div className={`w-full rounded-xl shadow-lg flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col`}>
+
+            <div className={`w-full rounded-xl shadow-lg flex-1 ${isEdit ? '' : 'bg-white rounded-lg'} flex flex-col overflow-hidden`}>
                 {!isEdit && (
-                    <div className="bg-blue-600 p-6 rounded-t-xl md:p-8 flex justify-between items-start text-white">
+                    <div className="bg-blue-600 p-4 md:p-6 rounded-t-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-white">
                         <div className="flex gap-4 items-center">
                             <div className="bg-white p-2 rounded-lg shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-8 md:w-8 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                 </svg>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold">Form Data Pegawai</h1>
-                                <p className="text-blue-100 text-sm mt-1">Lengkapi semua informasi di bawah ini</p>
+                                <h1 className="text-lg md:text-2xl font-bold">Form Data Pegawai</h1>
+                                <p className="text-blue-100 text-xs md:text-sm mt-1">Lengkapi semua informasi di bawah ini</p>
                             </div>
                         </div>
-                        <span className="bg-white text-black text-xs font-semibold px-3 py-1 rounded-md shadow-sm whitespace-nowrap">
+                        <span className="bg-white text-black text-xs font-semibold px-3 py-1 rounded-md shadow-sm whitespace-nowrap self-start sm:self-center">
                             Wajib Diisi
                         </span>
                     </div>
                 )}
 
-                <div className="p-6 flex flex-col flex-1">
-                    <div className="bg-indigo-50 border-l-4 border-blue-600 p-4 rounded-r-md flex gap-4 items-start mb-8">
-                        <div className="bg-blue-100 p-1 rounded-full text-blue-600 mt-0.5">
+                {/* Form Content Wrapper */}
+                <div className="p-4 md:p-6 flex flex-col flex-1">
+
+                    {/* Info Alert - Stack on mobile */}
+                    <div className="bg-indigo-50 border-l-4 border-blue-600 p-4 rounded-r-md flex flex-col sm:flex-row gap-3 sm:gap-4 items-start mb-6 md:mb-8">
+                        <div className="bg-blue-100 p-1 rounded-full text-blue-600 mt-0.5 shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="font-semibold text-gray-900">Informasi Penting</h3>
-                            <p className="text-gray-600 text-sm mt-1 leading-relaxed">
+                            <h3 className="font-semibold text-gray-900 text-sm md:text-base">Informasi Penting</h3>
+                            <p className="text-gray-600 text-xs md:text-sm mt-1 leading-relaxed">
                                 Pastikan semua data yang dimasukkan sudah benar dan valid. Data yang sudah disimpan akan masuk ke sistem.
                             </p>
                         </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-                        <h2 className="text-xl font-bold text-gray-900 border-b pb-4 mb-6">Informasi Pribadi</h2>
+                        <h2 className="text-lg md:text-xl font-bold text-gray-900 border-b pb-4 mb-6">Informasi Pribadi</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-6">
+                        {/* Grid Form: 1 kolom di mobile, 2 kolom di desktop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 md:gap-y-6 mb-6">
                             <div>
                                 <Input
                                     id='namaPegawai'
@@ -281,18 +267,17 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.name && (
                                     <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                                 )}
-                                <span className="text-sm text-gray-500">Contoh: Rizky Pratama</span>
+                                <span className="text-xs md:text-sm text-gray-500 mt-1 block">Contoh: Rizky Pratama</span>
                             </div>
 
                             <div>
-                                {/* 4. Perbaikan Props Dropdown */}
                                 <DropdownInput
                                     judul="Jabatan"
                                     options={jabatanOptions}
                                     placeholder='Pilih Jabatan'
                                     onChange={handleJabatanChange}
                                     name='jabatan'
-                                    value={formData.jabatan || ''} // Kirim string name
+                                    value={formData.jabatan || ''}
                                     disabled={isEdit}
                                 />
                                 {errors.jabatan && (
@@ -313,7 +298,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.nip && (
                                     <p className="text-red-500 text-xs mt-1">{errors.nip}</p>
                                 )}
-                                <span className="text-sm text-gray-500">Contoh: 197361736176903</span>
+                                <span className="text-xs md:text-sm text-gray-500 mt-1 block">Contoh: 197361736176903</span>
                             </div>
 
                             <div>
@@ -328,15 +313,17 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                                 {errors.phone && (
                                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                                 )}
-                                <span className="text-sm text-gray-500">Contoh: 08123456789</span>
+                                <span className="text-xs md:text-sm text-gray-500 mt-1 block">Contoh: 08123456789</span>
                             </div>
                         </div>
 
-                        <div className="flex justify-end mt-auto pt-6">
+                        {/* Footer Action Buttons */}
+                        <div className="flex justify-end mt-auto pt-6 border-t border-gray-100">
                             <Button
                                 variant="success"
                                 type="submit"
                                 disabled={isSubmitting}
+                                className="w-full md:w-auto px-8" // Full width di mobile
                             >
                                 {isSubmitting ? "Menyimpan..." : "Selesai"}
                             </Button>
@@ -344,7 +331,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
                     </form>
                 </div>
             </div>
-            
+
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}

@@ -4,13 +4,13 @@ interface DropdownInputProps<T> {
     options: T[];
     placeholder?: string;
     judul?: string;
-    value?: string; // Nilai teks yang sedang dipilih/diketik
-    onChange?: (selectedOption: T | string) => void; // Bisa return Object (lama) atau String (baru)
+    value?: string;
+    onChange?: (selectedOption: T | string) => void;
     getOptionLabel?: (option: T) => string;
     getOptionValue?: (option: T) => string | number;
     name?: string;
     disabled?: boolean;
-    isCreatable?: boolean; // Prop baru untuk mengaktifkan mode tambah
+    isCreatable?: boolean;
 }
 
 export default function DropdownInput<T = any>({
@@ -29,18 +29,14 @@ export default function DropdownInput<T = any>({
     const [searchTerm, setSearchTerm] = useState(value || "");
     const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Update search term jika value dari parent berubah
     useEffect(() => {
         setSearchTerm(value || "");
     }, [value]);
 
-    // Handle Click Outside untuk menutup dropdown
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setOpen(false);
-                // Jika user mengetik tapi tidak memilih, kembalikan ke value terakhir yang valid
-                // Atau biarkan (tergantung UX). Di sini kita biarkan tertutup saja.
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -49,7 +45,6 @@ export default function DropdownInput<T = any>({
         };
     }, [wrapperRef]);
 
-    // --- Helpers ---
     const defaultGetLabel = (option: T): string => {
         if (typeof option === 'string') return option;
         if (typeof option === 'number') return String(option);
@@ -62,17 +57,14 @@ export default function DropdownInput<T = any>({
 
     const getLabelFn = getOptionLabel || defaultGetLabel;
 
-    // --- Filtering Logic ---
     const filteredOptions = options.filter((option) =>
         getLabelFn(option).toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Cek apakah input user sama persis dengan salah satu opsi (case insensitive)
     const exactMatch = filteredOptions.some(
         (option) => getLabelFn(option).toLowerCase() === searchTerm.toLowerCase()
     );
 
-    // --- Handlers ---
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
         setOpen(true);
@@ -86,7 +78,7 @@ export default function DropdownInput<T = any>({
 
     const handleCreateNew = () => {
         setOpen(false);
-        if (onChange) onChange(searchTerm); // Return string nama baru
+        if (onChange) onChange(searchTerm);
     };
 
     const handleInputClick = () => {
@@ -96,7 +88,7 @@ export default function DropdownInput<T = any>({
     return (
         <div className="relative flex flex-col" ref={wrapperRef}>
             {judul && (
-                <label className="mb-2 font-semibold text-gray-700">{judul}</label>
+                <label className="mb-1.5 md:mb-2 text-sm md:text-base font-semibold text-gray-700">{judul}</label>
             )}
 
             <div className="relative">
@@ -109,12 +101,13 @@ export default function DropdownInput<T = any>({
                     disabled={disabled}
                     placeholder={placeholder}
                     autoComplete="off"
-                    className={`w-full rounded-lg border-2 border-[#CDCDCD] text-sm px-5 py-2.5 pr-10 outline-none transition-all duration-200
+                    // Responsive styling for input
+                    className={`w-full rounded-lg border-2 border-[#CDCDCD] outline-none transition-all duration-200
+                        text-sm md:text-base px-4 py-2 md:px-5 md:py-2.5 pr-10
                         ${disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-gray-50 focus:border-blue-500'}
                     `}
                 />
                 
-                {/* Arrow Icon */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <svg
                         className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${open ? 'rotate-180' : 'rotate-0'}`}
@@ -127,21 +120,20 @@ export default function DropdownInput<T = any>({
                 </div>
             </div>
 
-            {/* Dropdown Menu */}
             <div
-                className={`absolute top-full left-0 mt-1 z-20 bg-white divide-y divide-gray-100 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto border border-gray-100 transition-all duration-200 ease-out origin-top ${
+                className={`absolute top-full left-0 mt-1 z-50 bg-white divide-y divide-gray-100 rounded-lg shadow-xl w-full max-h-60 overflow-y-auto border border-gray-100 transition-all duration-200 ease-out origin-top ${
                     open ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
                 }`}
             >
                 <ul className="py-1 text-sm text-gray-700">
-                    {/* Render Options */}
                     {filteredOptions.length > 0 ? (
                         filteredOptions.map((option, index) => (
                             <li key={index}>
                                 <button
                                     type="button"
                                     onClick={() => handleSelectOption(option)}
-                                    className="block w-full text-left px-4 py-2 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                    // Touch target size untuk mobile
+                                    className="block w-full text-left px-4 py-2.5 md:py-2 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                                 >
                                     {getLabelFn(option)}
                                 </button>
@@ -149,17 +141,16 @@ export default function DropdownInput<T = any>({
                         ))
                     ) : (
                         !isCreatable && (
-                            <li className="px-4 py-2 text-gray-500 italic">Tidak ditemukan</li>
+                            <li className="px-4 py-2.5 md:py-2 text-gray-500 italic">Tidak ditemukan</li>
                         )
                     )}
 
-                    {/* Render "Create New" Option */}
                     {isCreatable && searchTerm && !exactMatch && (
                         <li>
                             <button
                                 type="button"
                                 onClick={handleCreateNew}
-                                className="block w-full text-left px-4 py-2 bg-green-50 text-green-700 font-semibold hover:bg-green-100 border-t border-green-100"
+                                className="block w-full text-left px-4 py-2.5 md:py-2 bg-green-50 text-green-700 font-semibold hover:bg-green-100 border-t border-green-100"
                             >
                                 + Tambah "{searchTerm}"
                             </button>

@@ -27,22 +27,20 @@ const notificationTabs = [
 ];
 
 export default function NotifikasiPage() {
+    // ... (State logic tetap sama seperti sebelumnya) ...
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentItems, setCurrentItems] = useState<APINotifikasi[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [itemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
     const [activeTab, setActiveTab] = useState('all');
     const [unreadCount, setUnreadCount] = useState(0);
     const { showToast } = useToast();
 
-    // --- MODAL STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // State untuk membedakan jenis aksi modal
     const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
     const [modalAction, setModalAction] = useState<'delete_single' | 'delete_all' | 'mark_all_read' | null>(null);
 
@@ -79,18 +77,15 @@ export default function NotifikasiPage() {
         if (isSubmitting) return;
         try {
             if (!item.isRead) {
-                // Update UI secara optimis (responsif)
                 setCurrentItems(prev => prev.map(n => n.id === item.id ? { ...n, isRead: true } : n));
                 await markReadNotifikasi(item.id);
             }
             if (item.url) window.location.href = item.url;
         } catch (err) {
             console.error("Gagal menandai baca:", err);
-            fetchData(); // rollback jika gagal
+            fetchData();
         }
     };
-
-    // --- HANDLERS UNTUK MEMBUKA MODAL ---
 
     const handleMarkAllReadClick = () => {
         setModalAction('mark_all_read');
@@ -108,7 +103,6 @@ export default function NotifikasiPage() {
         setIsModalOpen(true);
     };
 
-    // --- LOGIKA UTAMA KONFIRMASI MODAL ---
     const handleConfirmAction = async () => {
         setIsSubmitting(true);
         try {
@@ -135,7 +129,6 @@ export default function NotifikasiPage() {
         }
     };
 
-    // Helper untuk teks modal dinamis
     const getModalText = () => {
         switch (modalAction) {
             case 'mark_all_read':
@@ -149,17 +142,20 @@ export default function NotifikasiPage() {
         }
     };
 
+    // --- Columns Definition ---
     const notifColumns: ColumnDefinition<APINotifikasi>[] = [
         {
             header: 'Status',
-            width: '150px',
+            width: '140px',
+            // Sembunyikan label kolom di mobile agar layout card lebih bersih
+            hideHeaderOnMobile: true,
             cell: (item) => (
                 <div className="flex items-center gap-2">
                     <Circle
-                        size={10}
+                        size={8}
                         className={!item.isRead ? "text-blue-600 fill-blue-600" : "text-gray-300 fill-gray-300"}
                     />
-                    <span className={`text-sm font-medium ${!item.isRead ? 'text-blue-600' : 'text-gray-500'}`}>
+                    <span className={`text-xs md:text-sm font-medium ${!item.isRead ? 'text-blue-600' : 'text-gray-500'}`}>
                         {item.isRead ? 'Sudah Dibaca' : 'Belum Dibaca'}
                     </span>
                 </div>
@@ -167,21 +163,24 @@ export default function NotifikasiPage() {
         },
         {
             header: 'Pengirim',
-            width: '180px',
+            width: '160px',
             cell: (item) => (
-                <span className="text-sm font-semibold text-gray-900 truncate" title={item.sender}>
-                    {item.sender}
-                </span>
+                <div className="flex flex-col md:block">
+                    <span className="text-xs text-gray-400 md:hidden uppercase font-bold mb-1">Pengirim</span>
+                    <span className="text-sm font-semibold text-gray-900 truncate block" title={item.sender}>
+                        {item.sender}
+                    </span>
+                </div>
             )
         },
         {
             header: 'Pesan',
             cell: (item) => (
-                <div className="flex flex-col py-1 min-w-0">
+                <div className="flex flex-col py-1 min-w-0 w-full">
                     <span className={`text-sm truncate ${!item.isRead ? 'font-bold text-gray-900' : 'font-medium text-gray-800'}`}>
                         {item.title}
                     </span>
-                    <span className="text-xs text-gray-500 mt-0.5 truncate max-w-md">
+                    <span className="text-xs text-gray-500 mt-0.5 truncate w-full block">
                         {item.message}
                     </span>
                 </div>
@@ -189,9 +188,9 @@ export default function NotifikasiPage() {
         },
         {
             header: 'Waktu',
-            width: '150px',
+            width: '140px',
             cell: (item) => (
-                <span className="text-sm text-gray-500 whitespace-nowrap">
+                <span className="text-xs md:text-sm text-gray-500 whitespace-nowrap block">
                     {item.date}
                 </span>
             )
@@ -199,14 +198,14 @@ export default function NotifikasiPage() {
         {
             header: 'Aksi',
             align: 'center',
-            width: '180px',
+            width: '120px',
             cell: (item) => (
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-2 justify-end md:justify-center w-full">
                     {!item.isRead && (
                         <Button
                             variant="ghost"
                             onClick={(e) => { e.stopPropagation(); handleMarkAsRead(item); }}
-                            className="text-blue-600 hover:text-blue-800 p-1"
+                            className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded-full"
                             title="Tandai Dibaca"
                         >
                             <CheckCircle size={18} />
@@ -214,7 +213,7 @@ export default function NotifikasiPage() {
                     )}
                     <Button
                         variant="ghost"
-                        className="text-red-500 hover:text-red-700 p-1"
+                        className="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded-full"
                         onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteClick(item.id);
@@ -236,50 +235,73 @@ export default function NotifikasiPage() {
                 onTabClick={handleTabClick}
             />
 
+            {/* Container Utama */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                <div className="p-6 pb-4 flex justify-between items-center border-b border-gray-100">
-                    <h2 className="text-xl font-semibold">
-                        Daftar Notifikasi {unreadCount > 0 && <span className="text-blue-600 text-sm ml-2">({unreadCount} Baru)</span>}
+                
+                {/* Responsive Header: Stack di Mobile, Row di Desktop */}
+                <div className="p-4 md:p-6 flex md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100">
+                    
+                    {/* Judul & Count */}
+                    <h2 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        Daftar Notifikasi 
+                        {unreadCount > 0 && (
+                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                                {unreadCount} Baru
+                            </span>
+                        )}
                     </h2>
-                    <div className='flex gap-2'>
+
+                    {/* Tombol Aksi - Responsive Text */}
+                    <div className='flex gap-2 self-end md:self-auto'>
                         <Button
                             onClick={handleMarkAllReadClick}
                             variant='primary'
                             disabled={unreadCount === 0 || isLoading || isSubmitting}
-                            className='flex items-center justify-center gap-2'
+                            className='flex items-center justify-center gap-2 px-3 py-2 text-sm'
+                            title="Tandai Semua Dibaca"
                         >
-                            <Check size={15} />
-                            Tandai Semua Dibaca
+                            <Check size={16} />
+                            <span className="hidden sm:inline">Tandai Semua Dibaca</span>
                         </Button>
                         <Button
                             onClick={handleDeleteAllClick}
                             variant='danger'
                             disabled={currentItems.length === 0 || isLoading || isSubmitting}
-                            className='flex items-center justify-center gap-2'
+                            className='flex items-center justify-center gap-2 px-3 py-2 text-sm'
+                            title="Hapus Semua"
                         >
-                            <Trash2 size={15} />
-                            Hapus Semua
+                            <Trash2 size={16} />
+                            <span className="hidden sm:inline">Hapus Semua</span>
                         </Button>
                     </div>
                 </div>
 
-                {isLoading ? (
-                    <Loader />
-                ) : error ? (
-                    <div className="flex-1 flex justify-center items-center py-10">
-                        <p className="text-red-500">{error}</p>
-                    </div>
-                ) : currentItems.length === 0 ? (
-                    <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
-                        <span className='font-medium text-gray-500'>DATA KOSONG</span>
-                    </div>
-                ) : (
-                    <>
-                        <ReusableTable
-                            columns={notifColumns}
-                            currentItems={currentItems}
-                            onRowClick={(item) => handleMarkAsRead(item)}
-                        />
+                {/* Table Content */}
+                <div className="flex-1 overflow-hidden relative flex">
+                    {isLoading ? (
+                        <Loader />
+                    ) : error ? (
+                        <div className="flex-1 flex justify-center items-center py-10">
+                            <p className="text-red-500">{error}</p>
+                        </div>
+                    ) : currentItems.length === 0 ? (
+                        <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
+                            <span className='font-medium text-gray-500'>TIDAK ADA NOTIFIKASI</span>
+                        </div>
+                    ) : (
+                        <>
+                            <ReusableTable
+                                columns={notifColumns}
+                                currentItems={currentItems}
+                                onRowClick={(item) => handleMarkAsRead(item)}
+                            />
+                        </>
+                    )}
+                </div>
+
+                {/* Pagination (Jika ada data) */}
+                {currentItems.length > 0 && (
+                    <div className="border-t border-gray-100">
                         <Pagination
                             currentPage={currentPage}
                             totalItems={totalItems}
@@ -287,7 +309,7 @@ export default function NotifikasiPage() {
                             onPageChange={(page) => setCurrentPage(page)}
                             totalPages={totalPages}
                         />
-                    </>
+                    </div>
                 )}
 
             </div>

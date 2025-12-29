@@ -313,7 +313,7 @@ export default function PemesananPage() {
     }
 
     return (
-        <div className={`w-full min-h-full flex flex-col gap-5 ${activeTab === 'pemesanan' ? '' : 'h-full '}`}>
+        <div className={`w-full min-h-full flex flex-col gap-5 ${activeTab === 'pemesanan' ? '' : 'min-h-full'}`}>
 
             {/* Navigation Tabs */}
             <NavigationTabs
@@ -333,47 +333,31 @@ export default function PemesananPage() {
 
             {/* Table Card */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-auto">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center shrink-0">
-                    <div className='flex items-center gap-4'>
-                        <h2 className="text-xl font-bold text-blue-900">Daftar {activeTab === 'pemesanan' ? 'Pemesanan' : 'Status Pemesanan'}</h2>
+                <div className="border-b border-gray-200 flex justify-between items-center shrink-0">
+                    <div className="px-4 py-4 md:px-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+                        <h2 className="text-lg md:text-xl font-bold text-blue-900 whitespace-nowrap">
+                            {activeTab === 'pemesanan' ? 'Katalog Barang' : 'Status Pemesanan'}
+                        </h2>
 
-                        {/* Search Input */}
-                        <div className="relative">
+                        {/* Search Input - Full Width di Mobile */}
+                        <div className="relative w-full md:w-64">
                             {activeTab === 'pemesanan' &&
                                 <>
                                     <input
                                         type="text"
                                         name="search"
-                                        className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all duration-200 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
+                                        className="pl-10 pr-4 py-2 w-full text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
                                         placeholder="Cari barang..."
                                         onChange={(e) => setSearch(e.target.value)}
                                     />
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="w-5 h-5 text-gray-400"
-                                            viewBox="0 0 512 512"
-                                        >
-                                            <path
-                                                d="M221.09 64a157.09 157.09 0 10157.09 157.09A157.1 157.1 0 00221.09 64z"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeMiterlimit="10"
-                                                strokeWidth="32"
-                                            />
-                                            <path
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeMiterlimit="10"
-                                                strokeWidth="32"
-                                                d="M338.29 338.29L448 448"
-                                            />
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 512 512">
+                                            <path d="M221.09 64a157.09 157.09 0 10157.09 157.09A157.1 157.1 0 00221.09 64z" fill="none" stroke="currentColor" strokeMiterlimit="10" strokeWidth="32" />
+                                            <path fill="none" stroke="currentColor" strokeLinecap="round" strokeMiterlimit="10" strokeWidth="32" d="M338.29 338.29L448 448" />
                                         </svg>
                                     </div>
                                 </>
                             }
-
                         </div>
                     </div>
                 </div>

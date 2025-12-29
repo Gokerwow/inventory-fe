@@ -1,18 +1,17 @@
 import { type ChangeEvent } from 'react';
 import { twMerge } from 'tailwind-merge';
 
-// Saya rapikan sedikit definisi type-nya agar lebih mudah dibaca
 interface InputProps {
     id: string;
     judul: string;
     placeholder: string;
-    value?: string | number; // Update agar bisa terima angka langsung jika perlu
+    value?: string | number;
     type?: string;
     name: string;
     onChange: (e: ChangeEvent<HTMLInputElement>) => void;
     className?: string;
     readOnly?: boolean;
-    step?: string | number; // 1. TAMBAHKAN INI
+    step?: string | number;
 }
 
 export default function Input({ 
@@ -29,7 +28,7 @@ export default function Input({
 }: InputProps) {
     return (
         <div className={twMerge(`relative flex flex-col ${className}`)}>
-            <label className="mb-2 font-semibold">{judul}</label>
+            <label className="mb-1.5 md:mb-2 text-sm md:text-base font-semibold text-gray-700">{judul}</label>
 
             <div className="relative w-full">
                 <input
@@ -40,9 +39,12 @@ export default function Input({
                     value={value}
                     onChange={onChange}
                     disabled={readOnly}
-                    step={step} // 3. TERUSKAN KE ELEMENT INPUT HTML
+                    step={step}
                     className={twMerge(
-                        "text-[#6E7781] border-2 border-[#CDCDCD] rounded-lg text-sm px-5 py-2.5 w-full transition-colors duration-200",
+                        // Base styles: Responsive font size & padding
+                        "text-[#6E7781] border-2 border-[#CDCDCD] rounded-lg w-full transition-colors duration-200",
+                        "text-sm md:text-base", // Font responsive
+                        "px-4 py-2 md:px-5 md:py-2.5", // Padding responsive (sedikit lebih kecil di mobile)
                         "focus:outline-none focus:border-blue-500", 
                         readOnly && "bg-gray-100 cursor-not-allowed focus:border-[#CDCDCD] text-gray-500 select-none"
                     )}

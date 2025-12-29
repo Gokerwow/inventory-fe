@@ -18,7 +18,6 @@ const LOGTabs = [
     },
 ];
 
-
 export default function MonitoringPage() {
     const [dataLog, setDataLog] = useState<LogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -43,9 +42,7 @@ export default function MonitoringPage() {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                // Fetch data tanpa sorting backend (atau sesuaikan jika backend support)
                 const response = await getLogAktivitas(currentPage, itemsPerPage, debouncedSearch);
-                console.log(response, 'INI WOE')
                 setDataLog(response.data);
                 setTotalItems(response.total || 0);
                 setItemsPerPage(response.per_page || 10);
@@ -62,7 +59,6 @@ export default function MonitoringPage() {
         fetchData();
     }, [user?.role, currentPage, debouncedSearch]);
 
-    // --- EFFECT DEBOUNCE ---
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(search);
@@ -73,7 +69,6 @@ export default function MonitoringPage() {
             clearTimeout(handler);
         };
     }, [search]);
-    // --------------------------------
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -81,25 +76,34 @@ export default function MonitoringPage() {
 
     const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
 
+    // Jika error, tampilkan pesan di tengah
     if (error) {
         return (
-            <div className="min-h-full p-8 bg-[#F3F7FA] rounded-lg shadow-md flex justify-center items-center">
-                <p className="text-red-500">{error}</p>
+            <div className="flex flex-col h-full w-full gap-5">
+                 <NavigationTabs tabs={LOGTabs} activeTab={activeTab} onTabClick={handleClick} />
+                 <div className="flex-1 p-8 bg-white rounded-lg shadow-md flex justify-center items-center border border-red-200">
+                    <p className="text-red-500 font-medium">{error}</p>
+                </div>
             </div>
         );
     }
 
     const LOGColummns: ColumnDefinition<LogItem>[] = [
-        { header: 'NAME', cell: (item) => item.name },
-        { header: 'WAKTU ', cell: (item) => `${item.waktu.substring(0, 5)} WIB` },
-        { header: 'TANGGAL ', cell: (item) => formatDate(item.tanggal) },
+        { header: 'NAME', cell: (item) => <span className="font-medium text-gray-900">{item.name}</span> },
+        { header: 'WAKTU', cell: (item) => <span className="text-gray-500">{item.waktu.substring(0, 5)} WIB</span> },
+        { header: 'TANGGAL', cell: (item) => <span className="text-gray-500">{formatDate(item.tanggal)}</span> },
         {
             header: 'AKTIVITAS',
             cell: (item) => {
-                return <Status
-                    value={item.activity}
-                    className="w-48 text-center" // Custom width agar rapi
-                />;
+                return (
+                    // Bungkus Status dengan div agar width terjaga di dalam tabel
+                    <div className="w-full max-w-[200px]"> 
+                         <Status
+                            value={item.activity}
+                            className="w-full text-center"
+                        />
+                    </div>
+                );
             }
         },
     ];
@@ -108,24 +112,37 @@ export default function MonitoringPage() {
         <div className="flex flex-col h-full w-full gap-5">
             <NavigationTabs tabs={LOGTabs} activeTab={activeTab} onTabClick={handleClick} />
 
-            <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                <div className='p-6 pb-4 flex gap-4 items-center'>
-                    <h2 className="text-xl font-semibold">Log Monitoring</h2>
-                    {/* Search Input */}
-                    <SearchBar
-                        placeholder='Cari Log Aktivitas...'
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+            {/* Container Utama dengan flex-col dan min-h-0 untuk scrolling */}
+            <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 min-h-0">
+                
+                {/* Header Section: Judul & Search */}
+                <div className='p-4 md:p-6 pb-4 flex flex-col sm:flex-row items-start sm:items-center gap-4'>
+                    <h2 className="text-lg md:text-xl font-bold text-gray-800 shrink-0">
+                        Log Monitoring
+                    </h2>
+                    
+                    {/* Search Bar Wrapper: Full width di mobile, auto di desktop */}
+                    <div className="w-full sm:w-72 md:w-96">
+                        <SearchBar
+                            placeholder='Cari Log Aktivitas...'
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
-                {/* TABEL */}
-                <div className="flex-1 overflow-auto">
+
+                {/* Table Section: relative + overflow-hidden penting agar ReusableTable bisa scroll mandiri */}
+                <div className="flex-1 overflow-hidden relative border-t border-gray-100">
                     {isLoading ? (
                         <Loader />
-                    ) : error ? (
-                        <div className="flex-1 flex justify-center items-center py-10"><p className="text-red-500">{error}</p></div>
                     ) : dataLog.length === 0 ? (
-                        <div className='flex-1 flex items-center justify-center py-20 bg-gray-50 mx-6 mb-6 rounded-lg border border-dashed border-gray-300'>
-                            <span className='font-medium text-gray-500'>DATA KOSONG</span>
+                        <div className='absolute inset-0 flex flex-col items-center justify-center p-8 text-center'>
+                            <div className="bg-gray-50 p-6 rounded-full mb-4">
+                                <MonitoringIcon className="w-10 h-10 text-gray-300" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900">Belum ada aktivitas</h3>
+                            <p className="text-gray-500 max-w-sm mt-1">
+                                Data aktivitas pengguna akan muncul di sini setelah ada interaksi pada sistem.
+                            </p>
                         </div>
                     ) : (
                         <ReusableTable
@@ -134,6 +151,8 @@ export default function MonitoringPage() {
                         />
                     )}
                 </div>
+
+                {/* Pagination Section */}
                 <Pagination
                     currentPage={currentPage}
                     totalItems={totalItems}

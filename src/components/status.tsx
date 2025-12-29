@@ -5,7 +5,7 @@ const STATUS_STYLES: Record<StatusVariant, string> = {
     warning: "bg-yellow-100 text-yellow-700 border border-yellow-200",
     pending: "bg-gray-100 text-gray-600 border border-gray-200",
     danger:  "bg-red-100 text-red-700 border border-red-200",
-    neutral: "bg-blue-100 text-blue-700 border border-blue-200", // Biru untuk Neutral
+    neutral: "bg-blue-100 text-blue-700 border border-blue-200",
 };
 
 const VARIANT_MAP: Record<string, StatusVariant> = {
@@ -99,7 +99,13 @@ export default function Status({ value, code, label, className = '' }: StatusPro
 
     return (
         <span 
-            className={`px-2 py-1 rounded-md text-xs font-semibold inline-block truncate ${STATUS_STYLES[variant]} ${className}`}
+            className={`
+                px-2.5 py-1 rounded-md text-xs font-semibold 
+                inline-flex items-center justify-center text-center
+                whitespace-normal break-words max-w-full leading-tight
+                ${STATUS_STYLES[variant]} 
+                ${className}
+            `}
         >
             {displayText}
         </span>

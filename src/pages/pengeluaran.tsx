@@ -18,9 +18,9 @@ import { exportPengeluaranExcel, getPengeluaranList } from '../services/pengelua
 
 // --- 1. IMPORT LIBARARY PENDUKUNG ---
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react'; // Icon
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'; // Logic Tanggal
-import { id as indonesia } from 'date-fns/locale'; // Format Bahasa Indonesia
+import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react'; 
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'; 
+import { id as indonesia } from 'date-fns/locale'; 
 import CustomCalendar from '../components/calender';
 import Button from '../components/button';
 import { formatDate } from '../services/utils';
@@ -34,7 +34,6 @@ function Pengeluaran() {
     const [activeTab, setActiveTab] = useState('pengeluaran');
     const navigate = useNavigate()
 
-    // State Pagination & Data
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -44,7 +43,7 @@ function Pengeluaran() {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false)
-    const [isExporting, setIsExporting] = useState(false); // State loading untuk export
+    const [isExporting, setIsExporting] = useState(false);
 
     // --- STATE DATE PICKER ---
     const [startDate, setStartDate] = useState('');
@@ -56,7 +55,6 @@ function Pengeluaran() {
     const { user } = useAuth();
 
 
-    // --- LOGIC PRESET ---
     const handlePresetClick = (type: string) => {
         const today = new Date();
         let start = new Date();
@@ -81,31 +79,18 @@ function Pengeluaran() {
     const handleExportClick = async () => {
         setIsExporting(true);
         try {
-            // Panggil API dengan filter tanggal saat ini
             const response = await exportPengeluaranExcel(startDate, endDate);
-
-            // Buat URL sementara untuk blob data
             const url = window.URL.createObjectURL(new Blob([response.data]));
-
-            // Buat elemen <a> (link) virtual
             const link = document.createElement('a');
             link.href = url;
-
-            // Set nama file (bisa dinamis)
             const fileName = `Pengeluaran_${startDate || 'All'}_to_${endDate || 'All'}.xlsx`;
             link.setAttribute('download', fileName);
-
-            // Masukkan ke body, klik, lalu hapus
             document.body.appendChild(link);
             link.click();
-            link.parentNode?.removeChild(link); // Clean up
-
-            // Hapus object URL agar tidak memory leak
+            link.parentNode?.removeChild(link); 
             window.URL.revokeObjectURL(url);
-
         } catch (error) {
             console.error("Gagal mengunduh file Excel", error);
-            // Opsional: showToast("Gagal mengunduh file", "error");
         } finally {
             setIsExporting(false);
         }
@@ -115,7 +100,7 @@ function Pengeluaran() {
         setStartDate(start);
         setEndDate(end);
         if (start && end) {
-            setActivePreset(''); // Reset preset jika manual selection selesai
+            setActivePreset('');
             setCurrentPage(1);
         }
     };
@@ -127,7 +112,6 @@ function Pengeluaran() {
         setCurrentPage(1);
     };
 
-    // --- FETCH DATA ---
     useEffect(() => {
         checkAccess(user?.role);
         if (!hasAccess(user?.role)) return;
@@ -136,7 +120,6 @@ function Pengeluaran() {
             setIsLoading(true)
             try {
                 if (activeTab === 'pengeluaran') {
-                    // Logic Pengeluaran (Tetap)
                     let dataPemesanan;
                     if (user?.role === ROLES.ADMIN_GUDANG) {
                         dataPemesanan = await getPemesananList(currentPage, itemsPerPage, debouncedSearch, user.role);
@@ -148,7 +131,6 @@ function Pengeluaran() {
                     setItemsPerPage(dataPemesanan.per_page || 10);
                     setTotalPages(dataPemesanan.last_page || 1);
                 } else {
-                    // Logic Riwayat (Dengan Date)
                     const dataPengeluaran = await getPengeluaranList(
                         currentPage, itemsPerPage, debouncedSearch, user?.role, startDate, endDate
                     );
@@ -174,13 +156,12 @@ function Pengeluaran() {
     const handlePageChange = (page: number) => setCurrentPage(page);
     const handleLihatClick = (id: number) => navigate(generatePath(PATHS.PENGELUARAN.LIHAT, { id: id.toString() }));
 
-    // ... Columns Definition (Sama seperti sebelumnya) ...
     const pengeluaranColumns: ColumnDefinition<APIPemesanan>[] = useMemo(() => [
         { header: 'INSTALASI', key: 'instalasi', cell: (item) => <span className="text-gray-900">{item.user_name}</span> },
         { header: 'RUANGAN', key: 'ruangan', cell: (item) => <span className="text-gray-900">{item.ruangan}</span> },
         { header: 'TANGGAL', key: 'tanggal', cell: (item) => <span className="text-gray-900">{formatDate(item.tanggal_pemesanan)}</span> },
         { header: 'STATUS', key: 'status', align: 'center', cell: (item) => <Status code={item.status_code} label={item.status} value={item.status} /> },
-        { header: 'AKSI', key: 'aksi', align: 'center', cell: (item) => (<button className="w-full flex items-center justify-center gap-2 text-black cursor-pointer hover:scale-110 transition-all duration-200" onClick={() => handleLihatClick(item.id)}><div className="bg-white/20 rounded-full p-0.5"><EyeIcon className='w-5 h-5' /></div>Lihat</button>) }
+        { header: 'AKSI', key: 'aksi', align: 'center', cell: (item) => (<button className="flex items-center justify-end md:justify-center w-full gap-2 text-black cursor-pointer hover:text-blue-600 transition-all duration-200" onClick={() => handleLihatClick(item.id)}><div className="bg-gray-100 p-1 rounded-md"><EyeIcon className='w-4 h-4' /></div><span className="text-sm font-medium">Lihat</span></button>) }
     ], []);
 
     const riwayatPengeluaranColumns: ColumnDefinition<any>[] = useMemo(() => {
@@ -212,48 +193,52 @@ function Pengeluaran() {
                 onTabClick={(tab) => { setActiveTab(tab); setSearch(''); handleResetDate(); }}
             />
 
-            <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 shrink-0">
-                    {/* PARENT CONTAINER:
-                    Menggunakan 'justify-between' untuk memisahkan anak kiri dan kanan 
-                */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-0">
+                {/* Header Container */}
+                <div className="p-4 md:p-6 border-b border-gray-100 shrink-0">
+                    <div className="flex flex-col xl:flex-row justify-between gap-4 xl:items-center">
 
                         {/* --- SISI KIRI (Judul & Search) --- */}
-                        <div className='flex items-center gap-3 w-full sm:w-auto'>
-                            <h1 className="text-xl font-bold text-[#002B5B] whitespace-nowrap">
+                        <div className='flex flex-col md:flex-row md:items-center gap-4 w-full xl:w-auto flex-1'>
+                            <h1 className="text-lg md:text-xl font-bold text-[#002B5B] whitespace-nowrap shrink-0">
                                 {activeTab === 'pengeluaran' ? 'Daftar Pengeluaran' : 'Riwayat Pengeluaran'}
                             </h1>
-                            <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                            <div className="w-full md:w-72">
+                                <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                            </div>
                         </div>
 
                         {/* --- SISI KANAN (Date Picker & Export) --- */}
-                        {/* Kode ini dikeluarkan dari div Sisi Kiri di atas */}
                         {activeTab === 'riwayatPengeluaran' && user?.role === ROLES.ADMIN_GUDANG && (
-                            <div className='flex items-center gap-3'> {/* Tambahkan items-center & gap-3 agar rapi */}
+                            <div className='flex flex-col sm:flex-row gap-3 w-full xl:w-auto'> 
 
                                 {/* POP UP CALENDAR & PRESETS */}
-                                <Popover className="relative">
+                                <Popover className="relative w-full sm:w-auto">
                                     {({ open, close }) => (
                                         <>
-                                            <PopoverButton className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border outline-none cursor-pointer
+                                            <PopoverButton className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border outline-none cursor-pointer
                                         ${open || (startDate && endDate) ? 'bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-100/50' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                                                <CalendarIcon size={18} className={startDate ? "text-blue-600" : "text-gray-500"} />
-                                                <div className="flex flex-col items-start leading-tight">
-                                                    <span className="text-[10px] uppercase text-gray-400 font-bold tracking-wider">Periode</span>
-                                                    <span className="whitespace-nowrap font-semibold">
-                                                        {startDate && endDate
-                                                            ? `${format(parseISO(startDate), 'dd MMM', { locale: indonesia })} - ${format(parseISO(endDate), 'dd MMM yyyy', { locale: indonesia })}`
-                                                            : "Semua Waktu"}
-                                                    </span>
+                                                <div className="flex items-center gap-2">
+                                                    <CalendarIcon size={18} className={startDate ? "text-blue-600" : "text-gray-500"} />
+                                                    <div className="flex flex-col items-start leading-tight">
+                                                        <span className="text-[10px] uppercase text-gray-400 font-bold tracking-wider">Periode</span>
+                                                        <span className="whitespace-nowrap font-semibold">
+                                                            {startDate && endDate
+                                                                ? `${format(parseISO(startDate), 'dd MMM', { locale: indonesia })} - ${format(parseISO(endDate), 'dd MMM yyyy', { locale: indonesia })}`
+                                                                : "Semua Waktu"}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <ChevronDown size={16} className={`ml-2 opacity-50 transition-transform ${open ? 'rotate-180' : ''}`} />
                                             </PopoverButton>
 
-                                            {/* POPOVER PANEL (Isi Calendar) - Kode tetap sama, hanya merapikan indentasi */}
-                                            <PopoverPanel className="absolute right-0 z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden ring-1 ring-black ring-opacity-5 origin-top-right flex flex-row min-h-[350px] w-[600px]">
-                                                <div className="w-40 bg-gray-50 border-r border-gray-100 p-2 flex flex-col gap-1 shrink-0">
-                                                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 px-2 mt-2">Pilih Cepat</p>
+                                            {/* POPOVER PANEL RESPONSIVE */}
+                                            {/* Gunakan w-[85vw] untuk mobile agar pas layar, dan sm:w-[600px] untuk desktop */}
+                                            <PopoverPanel className="absolute right-0 z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden ring-1 ring-black ring-opacity-5 origin-top-right flex flex-col sm:flex-row w-[85vw] sm:w-[600px] max-w-[600px]">
+                                                
+                                                {/* Sidebar Preset: Scroll Horizontal di Mobile, Vertikal di Desktop */}
+                                                <div className="w-full sm:w-40 bg-gray-50 border-b sm:border-b-0 sm:border-r border-gray-100 p-2 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-visible shrink-0 no-scrollbar">
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 px-2 hidden sm:block mt-2">Pilih Cepat</p>
                                                     {[
                                                         { id: 'today', label: 'Hari Ini' },
                                                         { id: 'thisWeek', label: 'Minggu Ini' },
@@ -262,14 +247,14 @@ function Pengeluaran() {
                                                         { id: 'thisYear', label: 'Tahun Ini' },
                                                     ].map((preset) => (
                                                         <button key={preset.id} onClick={() => handlePresetClick(preset.id)}
-                                                            className={`text-left px-3 py-2 text-xs font-medium rounded-lg transition-all flex justify-between items-center cursor-pointer ${activePreset === preset.id ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-white'}`}>
+                                                            className={`text-left px-3 py-2 text-xs font-medium rounded-lg transition-all flex justify-between items-center cursor-pointer whitespace-nowrap shrink-0 ${activePreset === preset.id ? 'bg-blue-100 text-blue-700' : 'bg-white sm:bg-transparent text-gray-600 hover:bg-white border border-gray-200 sm:border-transparent'}`}>
                                                             {preset.label}
-                                                            {activePreset === preset.id && <Check size={14} className="text-blue-600" />}
+                                                            {activePreset === preset.id && <Check size={14} className="text-blue-600 hidden sm:block" />}
                                                         </button>
                                                     ))}
-                                                    <div className="flex-1"></div>
+                                                    <div className="flex-1 hidden sm:block"></div>
                                                     {(startDate || endDate) && (
-                                                        <button onClick={handleResetDate} className="mb-2 text-xs text-red-500 hover:text-red-700 flex items-center justify-center gap-1 hover:bg-red-50 px-2 py-2 rounded transition-colors w-full border border-transparent hover:border-red-100">
+                                                        <button onClick={handleResetDate} className="hidden sm:flex mb-2 text-xs text-red-500 hover:text-red-700 items-center justify-center gap-1 hover:bg-red-50 px-2 py-2 rounded transition-colors w-full border border-transparent hover:border-red-100">
                                                             <X size={12} /> Hapus Filter
                                                         </button>
                                                     )}
@@ -284,7 +269,14 @@ function Pengeluaran() {
                                                         endDate={endDate}
                                                         onChange={handleCalendarChange}
                                                     />
-                                                    <div className="w-full px-2 mt-2 pt-3 border-t border-gray-100 flex justify-end">
+                                                    <div className="w-full px-2 mt-2 pt-3 border-t border-gray-100 flex justify-between items-center">
+                                                        {/* Tombol Hapus Filter Mobile */}
+                                                        {(startDate || endDate) ? (
+                                                            <button onClick={handleResetDate} className="sm:hidden text-xs text-red-500 flex items-center gap-1">
+                                                                <X size={12} /> Reset
+                                                            </button>
+                                                        ) : <div></div>}
+                                                        
                                                         <button onClick={() => close()} className="bg-[#002B5B] hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-lg font-bold shadow-md transition-all">
                                                             Selesai
                                                         </button>
@@ -299,8 +291,8 @@ function Pengeluaran() {
                                 <Button
                                     variant='primary'
                                     onClick={handleExportClick}
-                                    disabled={isExporting}
-                                    className="whitespace-nowrap flex items-center gap-2" 
+                                    disabled={isExporting || currentActiveData.length === 0}
+                                    className="w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-2" 
                                 >
                                     <Download size={20}/>
                                     {isExporting ? 'Exporting...' : 'Export Excel'}
@@ -316,11 +308,14 @@ function Pengeluaran() {
                     </div>
                 ) : (
                     <>
-                        {activeTab === 'pengeluaran' ?
-                            <div className="flex-1 overflow-auto min-h-0"><ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} /></div>
-                            :
-                            <div className="flex-1 overflow-auto min-h-0"><ReusableTable columns={riwayatPengeluaranColumns} currentItems={pengeluaranItem} /></div>
-                        }
+                        {/* Wrapper tabel dibuat flex-1 dan overflow-hidden agar ReusableTable menangani scroll */}
+                        <div className="flex-1 overflow-hidden relative min-h-[400px]">
+                            {activeTab === 'pengeluaran' ?
+                                <ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} />
+                                :
+                                <ReusableTable columns={riwayatPengeluaranColumns} currentItems={pengeluaranItem} />
+                            }
+                        </div>
                         <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} totalPages={totalPages} />
                     </>
                 )}
