@@ -72,8 +72,8 @@ export default function ProfilePage() {
         <div className="w-full flex flex-col gap-6 p-1">
             {/* Header Profil */}
             <div className="bg-[#005DB9] flex items-center gap-6 rounded-2xl p-8 md:p-10 text-white shadow-lg relative overflow-hidden">
-                <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                <div className='relative z-10 rounded-full border-4 border-white/30 bg-white/10 w-28 h-28 md:w-36 md:h-36 flex items-center justify-center overflow-hidden shadow-2xl backdrop-blur-md'>
+                <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/30 rounded-full blur-3xl"></div>
+                <div className='relative z-10 rounded-full border-4 border-white bg-white/10 w-28 h-28 md:w-36 md:h-36 flex items-center justify-center overflow-hidden shadow-2xl backdrop-blur-md'>
                     <img src={user?.photo ?? Avatar} alt="Profile" className='w-full h-full object-cover' />
                 </div>
                 <div className="relative z-10">
@@ -88,8 +88,8 @@ export default function ProfilePage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className={`grid gap-3 ${filteredTabs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                {filteredTabs.map((tab) => (
+            {user?.role !== ROLES.SUPER_ADMIN && filteredTabs.map((tab) => (
+                <div className={`grid gap-3 ${filteredTabs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     <button
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id)}
@@ -101,8 +101,8 @@ export default function ProfilePage() {
                         <tab.icon className="w-5 h-5" />
                         <span className="hidden md:inline">{tab.label}</span>
                     </button>
-                ))}
-            </div>
+                </div>
+            ))}
 
             {/* Tab Content Area */}
             <div className="min-h-[400px]">
@@ -120,7 +120,7 @@ export default function ProfilePage() {
                             ].map((info, i) => (
                                 <div key={i} className="flex flex-col md:flex-row md:items-center border-b border-gray-50 pb-4 last:border-0">
                                     <span className="w-40 text-gray-400 text-sm font-medium">{info.label}</span>
-                                    <span className="text-gray-700 font-semibold md:ml-4">{info.value || '-'}</span>
+                                    <span className="text-gray-700 font-semibold md:ml-4">: {info.value || '-'}</span>
                                 </div>
                             ))}
                         </div>
