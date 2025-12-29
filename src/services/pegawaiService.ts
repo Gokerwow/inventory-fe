@@ -1,7 +1,7 @@
 import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
 import apiClient from '../utils/api';
 import { simulateApiCall } from './utils';
-import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru, type PaginationResponse } from '../constant/roles';
+import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru, type PaginationResponse, type APIProfilePegawai } from '../constant/roles';
 
 type Employee = typeof employees[0];
 type FaqItem = typeof FAQ[0];
@@ -10,6 +10,31 @@ type FaqItem = typeof FAQ[0];
  * Mengambil daftar pegawai di bawah admin.
  * Digunakan di: src/pages/profil.tsx
  */
+export const getProfilePegawai = async (
+    page: number = 1,
+    perPage?: number,
+): Promise<PaginationResponse<APIProfilePegawai>> => {
+    console.log(`SERVICE: Mengambil daftar profil pegawai halaman ${page}...`);
+
+    try {
+        const params: Record<string, number | string> = { page };
+        if (perPage) {
+            params.per_page = perPage;
+        }
+        const response = await apiClient.get('/api/v1/pegawai/profile', { params });
+
+        if (response.data && response.data.data) {
+            console.log("Data profil pegawai diterima:", response.data.data);
+            return response.data.data as PaginationResponse<APIProfilePegawai>;
+        } else {
+            console.error("Struktur data tidak terduga:", response.data);
+            throw new Error('Struktur data tidak sesuai');
+        }
+    } catch (error) {
+        console.error("Gagal mengambil data profil pegawai:", error);
+        throw new Error('Gagal mengambil data profil pegawai.');
+    }
+};
 
 export const getDaftarPegawai = async (
     page: number = 1,
