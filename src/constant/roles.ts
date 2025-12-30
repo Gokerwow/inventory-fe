@@ -384,13 +384,13 @@ export const menuItems = [
     // { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
     { path: '/notifikasi', icon: '', label: 'Notifikasi', role: [], tag: 'Notifikasi' },
     { path: '/profil', icon: '', label: 'Pegawai', role: [], tag: 'Profil' },
-    { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Pegawai' },
-    { path: '/monitoring', icon: MonitoringIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Monitoring' },
+    { path: '/pegawai', icon: PegawaiIcon, label: 'Pegawai', role: [ROLES.SUPER_ADMIN], tag: 'Pegawai' },
+    { path: '/monitoring', icon: MonitoringIcon, label: 'Monitoring', role: [ROLES.SUPER_ADMIN], tag: 'Monitoring' },
     { path: '/dashboard', icon: DashboardIcon, label: 'Dashboard', role: [ROLES.ADMIN_GUDANG], tag: 'Dashboard' },
-    { path: '/stok-barang', icon: BarangIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Manajemen Barang' },
-    { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], tag: 'Manajemen Penerimaan' },
-    { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG], tag: 'Manajemen Pengeluaran' },
-    { path: '/pemesanan', icon: PemesananIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Manajemen Pemesanan' },
+    { path: '/stok-barang', icon: BarangIcon, label: 'Stok Barang', role: [ROLES.ADMIN_GUDANG], tag: 'Barang' },
+    { path: '/penerimaan', icon: PenerimaanIcon, label: 'Penerimaan', role: [ROLES.ADMIN_GUDANG, ROLES.PPK, ROLES.TEKNIS], tag: 'Penerimaan' },
+    { path: '/pengeluaran', icon: PengeluaranIcon, label: 'Pengeluaran', role: [ROLES.PENANGGUNG_JAWAB, ROLES.ADMIN_GUDANG], tag: 'Pengeluaran' },
+    { path: '/pemesanan', icon: PemesananIcon, label: 'Pemesanan', role: [ROLES.INSTALASI], tag: 'Pemesanan' },
 ];
 
 export interface DaftarPegawai {

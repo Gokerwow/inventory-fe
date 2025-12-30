@@ -113,10 +113,10 @@ export default function ProfilePage() {
             </div>
 
             {/* Tab Content Area */}
-            <div className="min-h-[400px]">
+            <div className="min-h-[400px] flex flex-col">
                 {/* 1. Tab Profil */}
                 {activeTab === 'profil' && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 animate-fadeIn">
+                    <div className="bg-white flex-1 rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 animate-fadeIn">
                         <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
                             <User className="text-blue-600 w-5 h-5" /> Informasi Pribadi
                         </h2>

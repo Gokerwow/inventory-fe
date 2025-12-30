@@ -20,7 +20,7 @@ export default function SearchBar({
                 type="text"
                 value={value} // Use controlled input if 'value' is passed
                 onChange={onChange}
-                className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all duration-200 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
+                className="pl-10 pr-4 py-2 text-sm border border-gray-300 text-gray-700 outline-none rounded-lg transition-all duration-200 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200 placeholder:text-gray-400"
                 placeholder={placeholder}
             />
             <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">

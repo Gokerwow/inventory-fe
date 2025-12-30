@@ -18,9 +18,9 @@ import { exportPengeluaranExcel, getPengeluaranList } from '../services/pengelua
 
 // --- 1. IMPORT LIBARARY PENDUKUNG ---
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react'; 
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns'; 
-import { id as indonesia } from 'date-fns/locale'; 
+import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns';
+import { id as indonesia } from 'date-fns/locale';
 import CustomCalendar from '../components/calender';
 import Button from '../components/button';
 import { formatDate } from '../services/utils';
@@ -87,7 +87,7 @@ function Pengeluaran() {
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
-            link.parentNode?.removeChild(link); 
+            link.parentNode?.removeChild(link);
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Gagal mengunduh file Excel", error);
@@ -186,7 +186,7 @@ function Pengeluaran() {
     const currentActiveData = activeTab === 'pengeluaran' ? pemesananItem : pengeluaranItem;
 
     return (
-        <div className="w-full flex flex-col gap-5 h-full">
+        <div className="w-full flex flex-col gap-5 h-full min-h-screen">
             <NavigationTabs
                 tabs={pengeluaranTabs}
                 activeTab={activeTab}
@@ -203,14 +203,28 @@ function Pengeluaran() {
                             <h1 className="text-lg md:text-xl font-bold text-[#002B5B] whitespace-nowrap shrink-0">
                                 {activeTab === 'pengeluaran' ? 'Daftar Pengeluaran' : 'Riwayat Pengeluaran'}
                             </h1>
-                            <div className="w-full md:w-72">
-                                <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                            <div className='flex gap-2 w-full md:w-auto'>
+                                <div className="md:w-72">
+                                    <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                                </div>
+                                {/* TOMBOL EXPORT */}
+                                <Button
+                                    variant='primary'
+                                    onClick={handleExportClick}
+                                    disabled={isExporting || currentActiveData.length === 0}
+                                    // PERUBAHAN DISINI:
+                                    // 1. Gunakan !p-0 untuk memaksa hapus padding bawaan Button di mobile
+                                    // 2. Gunakan !w-10 !h-10 untuk memaksa ukuran kotak
+                                    className="flex-1"
+                                >
+                                    <Download size={20} />
+                                </Button>
                             </div>
                         </div>
 
                         {/* --- SISI KANAN (Date Picker & Export) --- */}
                         {activeTab === 'riwayatPengeluaran' && user?.role === ROLES.ADMIN_GUDANG && (
-                            <div className='flex flex-col sm:flex-row gap-3 w-full xl:w-auto'> 
+                            <div className='flex flex-col sm:flex-row gap-3 w-full xl:w-auto'>
 
                                 {/* POP UP CALENDAR & PRESETS */}
                                 <Popover className="relative w-full sm:w-auto">
@@ -235,7 +249,7 @@ function Pengeluaran() {
                                             {/* POPOVER PANEL RESPONSIVE */}
                                             {/* Gunakan w-[85vw] untuk mobile agar pas layar, dan sm:w-[600px] untuk desktop */}
                                             <PopoverPanel className="absolute right-0 z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden ring-1 ring-black ring-opacity-5 origin-top-right flex flex-col sm:flex-row w-[85vw] sm:w-[600px] max-w-[600px]">
-                                                
+
                                                 {/* Sidebar Preset: Scroll Horizontal di Mobile, Vertikal di Desktop */}
                                                 <div className="w-full sm:w-40 bg-gray-50 border-b sm:border-b-0 sm:border-r border-gray-100 p-2 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-visible shrink-0 no-scrollbar">
                                                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 px-2 hidden sm:block mt-2">Pilih Cepat</p>
@@ -276,7 +290,7 @@ function Pengeluaran() {
                                                                 <X size={12} /> Reset
                                                             </button>
                                                         ) : <div></div>}
-                                                        
+
                                                         <button onClick={() => close()} className="bg-[#002B5B] hover:bg-blue-900 text-white text-xs px-4 py-2 rounded-lg font-bold shadow-md transition-all">
                                                             Selesai
                                                         </button>
@@ -292,7 +306,7 @@ function Pengeluaran() {
                                     variant='primary'
                                     onClick={handleExportClick}
                                     disabled={isExporting || currentActiveData.length === 0}
-                                    className="w-full sm:w-auto whitespace-nowrap flex items-center justify-center gap-2" 
+                                    className="w-full hidden! sm:w-auto whitespace-nowrap sm:flex items-center justify-center gap-2" 
                                 >
                                     <Download size={20}/>
                                     {isExporting ? 'Exporting...' : 'Export Excel'}
@@ -309,7 +323,7 @@ function Pengeluaran() {
                 ) : (
                     <>
                         {/* Wrapper tabel dibuat flex-1 dan overflow-hidden agar ReusableTable menangani scroll */}
-                        <div className="flex-1 overflow-hidden relative min-h-[400px]">
+                        <div className="flex-1 overflow-auto relative">
                             {activeTab === 'pengeluaran' ?
                                 <ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} />
                                 :
