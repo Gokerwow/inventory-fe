@@ -35,7 +35,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
         <div className="flex flex-col w-full h-full min-h-[380px] bg-gray-50 md:bg-white overflow-hidden md:shadow-sm md:rounded-lg relative">
             
             {/* === MOBILE VIEW: CARD LIST === */}
-            <div className="md:hidden flex-1 overflow-y-auto p-4 sm:mb-15 space-y-4">
+            <div className="md:hidden flex-1 overflow-y-auto p-4 pb-15 sm:pb-4 space-y-4">
                 {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div 

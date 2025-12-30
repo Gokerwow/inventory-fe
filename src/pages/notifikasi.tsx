@@ -142,7 +142,6 @@ export default function NotifikasiPage() {
         }
     };
 
-    // --- Columns Definition ---
     const notifColumns: ColumnDefinition<APINotifikasi>[] = [
         {
             header: 'Status',

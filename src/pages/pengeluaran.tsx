@@ -322,7 +322,7 @@ function Pengeluaran() {
                 ) : (
                     <>
                         {/* Wrapper tabel dibuat flex-1 dan overflow-hidden agar ReusableTable menangani scroll */}
-                        <div className="flex-1 overflow-auto relative">
+                        <div className="flex-1 overflow-hidden relative">
                             {activeTab === 'pengeluaran' ?
                                 <ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} />
                                 :
