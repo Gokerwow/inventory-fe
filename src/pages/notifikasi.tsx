@@ -109,11 +109,11 @@ export default function NotifikasiPage() {
             if (modalAction === 'mark_all_read') {
                 await markAllNotifikasi();
                 showToast("Semua notifikasi ditandai sebagai dibaca", "success");
-            } 
+            }
             else if (modalAction === 'delete_all') {
                 await deleteAllNotifikasi();
                 showToast("Semua notifikasi berhasil dikosongkan", "success");
-            } 
+            }
             else if (modalAction === 'delete_single' && selectedDeleteId) {
                 await deleteNotifikasi(selectedDeleteId);
                 showToast("Notifikasi berhasil dihapus", "success");
@@ -237,15 +237,20 @@ export default function NotifikasiPage() {
 
             {/* Container Utama */}
             <div className="bg-white flex-1 rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-0">
-                
+
                 {/* Responsive Header: Stack di Mobile, Row di Desktop */}
                 <div className="p-4 md:p-6 flex md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100">
-                    
+
                     {/* Judul & Count */}
-                    <h2 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        Daftar Notifikasi 
+                    <h2 className="text-lg md:text-xl font-semibold text-gray-800 flex items-center gap-2 whitespace-nowrap">
+                        {/* Tambahkan whitespace-nowrap di atas */}
+
+                        <span className="truncate">Daftar Notifikasi</span>
+                        {/* Opsional: Bungkus teks utama dengan span & truncate agar jika layar SANGAT kecil, teksnya yang terpotong (...) bukan layoutnya yang rusak */}
+
                         {unreadCount > 0 && (
-                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold shrink-0">
+                                {/* Tambahkan shrink-0 di sini */}
                                 {unreadCount} Baru
                             </span>
                         )}

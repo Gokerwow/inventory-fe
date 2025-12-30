@@ -991,7 +991,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 </div>
             </form>
 
-            <ConfirmModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit} isLoading={isSubmitting} text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : "Apa anda yakin untuk membuat penerimaan?"} />
+            <ConfirmModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit} isLoading={isSubmitting} text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : isInspectMode ? "Apa anda yakin untuk Mengonfirmasi Penerimaan?" : "Apa anda yakin untuk membuat penerimaan?"} />
             <ConfirmModal isOpen={isResetModalOpen} onClose={() => { setIsResetModalOpen(false); setPendingCategory(null); }} onConfirm={handleConfirmReset} title="Ganti Kategori?" text="Mengganti kategori akan MENGHAPUS semua barang di keranjang. Lanjutkan?" confirmText="Ya, Ganti" cancelText="Batal" />
             <ConfirmModal isOpen={isPayModalOpen} onClose={() => { setIsPayModalOpen(false); setItemToPay(null); }} onConfirm={handleConfirmPay} isLoading={isSubmitting} text="Tandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan." />
             <ModalTambahBarang isOpen={isAddBarangModalOpen} onClose={() => setIsAddBarangModalOpen(false)} onSave={handleSaveNewItem} categoryId={formDataPenerimaan.category_id} />

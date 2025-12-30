@@ -208,17 +208,16 @@ function Pengeluaran() {
                                     <SearchBar placeholder='Cari Pengeluaran...' onChange={(e) => setSearch(e.target.value)} value={search} />
                                 </div>
                                 {/* TOMBOL EXPORT */}
-                                <Button
-                                    variant='primary'
-                                    onClick={handleExportClick}
-                                    disabled={isExporting || currentActiveData.length === 0}
-                                    // PERUBAHAN DISINI:
-                                    // 1. Gunakan !p-0 untuk memaksa hapus padding bawaan Button di mobile
-                                    // 2. Gunakan !w-10 !h-10 untuk memaksa ukuran kotak
-                                    className="flex-1"
-                                >
-                                    <Download size={20} />
-                                </Button>
+                                {activeTab === 'riwayatPengeluaran' && user?.role === ROLES.ADMIN_GUDANG &&
+                                    <Button
+                                        variant='primary'
+                                        onClick={handleExportClick}
+                                        disabled={isExporting || currentActiveData.length === 0}
+                                        className="flex-1 sm:hidden"
+                                    >
+                                        <Download size={20} />
+                                    </Button>
+                                }
                             </div>
                         </div>
 
@@ -306,9 +305,9 @@ function Pengeluaran() {
                                     variant='primary'
                                     onClick={handleExportClick}
                                     disabled={isExporting || currentActiveData.length === 0}
-                                    className="w-full hidden! sm:w-auto whitespace-nowrap sm:flex items-center justify-center gap-2" 
+                                    className="w-full hidden! sm:w-auto whitespace-nowrap sm:flex! items-center justify-center gap-2"
                                 >
-                                    <Download size={20}/>
+                                    <Download size={20} />
                                     {isExporting ? 'Exporting...' : 'Export Excel'}
                                 </Button>
                             </div>

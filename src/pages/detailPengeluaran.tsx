@@ -28,7 +28,7 @@ export function DetailPengeluaranPage() {
     const [pemesananItem, setPemesananItem] = useState<APIDetailPemesanan | null>(null);
     const detailItems = pemesananItem?.detail_items?.data ?? [];
     const [selectedItem, setSelectedItem] = useState<APIDetailStokBAST[]>([]);
-    
+
     // State untuk Checkbox & Input dalam Tabel    
     const [checkedBastIds, setCheckedBastIds] = useState<number[]>([]);
     const [rowQuantities, setRowQuantities] = useState<Record<number, number | string>>({});
@@ -368,9 +368,14 @@ export function DetailPengeluaranPage() {
             cell: (item) => <span className="text-gray-900 font-medium">{item.stok_name}</span>
         },
         {
-            header: 'JUMLAH PERMINTAAN',
-            key: 'jumlahStok',
-            cell: (item) => <span className="text-gray-900 font-bold">{item.quantity_pj} Unit</span>
+            header: 'PERMINTAAN INSTALASI',
+            key: 'permintaanInstalasi',
+            cell: (item) => <span className="text-gray-900 font-bold">{item.quantity} {item.satuan_name}</span>
+        },
+        {
+            header: 'PERSETUJUAN PENANGGUNG JAWAB',
+            key: 'persetujuanPJ',
+            cell: (item) => <span className="text-gray-900 font-bold">{item.quantity_pj} {item.satuan_name}</span>
         },
         {
             header: 'STATUS ALOKASI',
@@ -585,7 +590,7 @@ export function DetailPengeluaranPage() {
 
                 {/* Container Data: Table (Desktop) vs Card (Mobile) */}
                 <div className="flex-1 overflow-hidden min-h-[300px] flex flex-col relative">
-                    
+
                     {/* === TAMPILAN DESKTOP (TABLE) === */}
                     <div className="hidden md:block flex-1 overflow-x-auto">
                         <ReusableTable
@@ -606,7 +611,7 @@ export function DetailPengeluaranPage() {
                                 const allocationsMap = allAllocations[item.id] || {};
                                 const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
                                 let targetQty = currentAllocated > 0 ? currentAllocated : (item.quantity_pj ?? item.quantity);
-                                
+
                                 let statusColor = "bg-gray-100 text-gray-500 border-gray-200";
                                 let statusText = "Belum Diatur";
                                 if (currentAllocated === targetQty && targetQty > 0) { statusColor = "bg-green-50 text-green-700 border-green-200"; statusText = "Selesai"; }
@@ -621,15 +626,29 @@ export function DetailPengeluaranPage() {
                                             </span>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 border-t border-gray-100 pt-2 mt-1">
-                                            <div>
-                                                <span className="block font-bold text-gray-400 uppercase text-[10px]">Permintaan</span>
-                                                <span className="text-sm font-semibold text-gray-900">{item.quantity_pj} {item.satuan_name}</span>
+                                        <div className="flex justify-between items-start gap-2 text-xs text-gray-600 border-t border-gray-100 pt-2 mt-1">
+
+                                            {/* --- KELOMPOK KIRI (Vertikal) --- */}
+                                            <div className="flex flex-col gap-2">
+                                                {/* Item 1: Permintaan */}
+                                                <div>
+                                                    <span className="block font-bold text-gray-400 uppercase text-[10px]">Permintaan Instalasi</span>
+                                                    <span className="text-sm font-semibold text-gray-900">{item.quantity} {item.satuan_name}</span>
+                                                </div>
+
+                                                {/* Item 2: Persetujuan */}
+                                                <div>
+                                                    <span className="block font-bold text-gray-400 uppercase text-[10px]">Persetujuan PJ</span>
+                                                    <span className="text-sm font-semibold text-gray-900">{item.quantity_pj} {item.satuan_name}</span>
+                                                </div>
                                             </div>
+
+                                            {/* --- KELOMPOK KANAN (Terpenuhi) --- */}
                                             <div className="text-right">
                                                 <span className="block font-bold text-gray-400 uppercase text-[10px]">Terpenuhi</span>
                                                 <span className="text-sm font-semibold text-blue-600">{currentAllocated} {item.satuan_name}</span>
                                             </div>
+
                                         </div>
 
                                         {/* Action Buttons Mobile */}
@@ -718,7 +737,7 @@ export function DetailPengeluaranPage() {
                 maxWidth="max-w-4xl"
             >
                 <div className="w-full bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] md:max-h-auto overflow-hidden">
-                    
+
                     {/* Header Modal */}
                     <div className="bg-[#057CFF] px-4 py-3 md:px-6 md:py-4 flex justify-between items-center shrink-0">
                         <h2 className="text-lg md:text-xl font-bold text-white truncate mr-4">Kelola Detail Barang</h2>
@@ -727,7 +746,7 @@ export function DetailPengeluaranPage() {
 
                     {/* Body Modal */}
                     <div className="p-4 md:p-6 space-y-4 md:space-y-6 text-gray-800 overflow-y-auto flex-1">
-                        
+
                         {/* Info Alert Box */}
                         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 md:p-4">
                             <div className="flex items-start gap-3">
@@ -773,7 +792,7 @@ export function DetailPengeluaranPage() {
                         {/* === DATA AREA (Desktop Table vs Mobile Cards) === */}
                         <div className="border border-gray-200 rounded-lg overflow-hidden relative min-h-[300px] flex flex-col">
                             {isModalLoading && <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-20"><Loader /></div>}
-                            
+
                             {/* 1. TAMPILAN DESKTOP (TABLE) - Hidden di Mobile */}
                             <div className="hidden md:block flex-1 overflow-x-auto">
                                 <div className="min-w-[600px]">
@@ -786,17 +805,16 @@ export function DetailPengeluaranPage() {
                                 {selectedItem.map((item) => {
                                     const isChecked = checkedBastIds.includes(item.detail_penerimaan_id);
                                     return (
-                                        <div 
+                                        <div
                                             key={item.detail_penerimaan_id}
                                             onClick={() => handleToggleCheckbox(item.detail_penerimaan_id)}
-                                            className={`border rounded-xl p-4 shadow-sm transition-all cursor-pointer ${
-                                                isChecked ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-white border-gray-200'
-                                            }`}
+                                            className={`border rounded-xl p-4 shadow-sm transition-all cursor-pointer ${isChecked ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300' : 'bg-white border-gray-200'
+                                                }`}
                                         >
                                             {/* Header Card */}
                                             <div className="flex items-center gap-3 mb-3">
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     checked={isChecked}
                                                     onChange={() => handleToggleCheckbox(item.detail_penerimaan_id)}
                                                     className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -815,11 +833,11 @@ export function DetailPengeluaranPage() {
                                             {isChecked && (
                                                 <div className="mt-3 pt-3 border-t border-blue-200 flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
                                                     <span className="text-sm font-semibold text-blue-700">Jumlah Ambil:</span>
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         className="w-24 border border-blue-300 rounded px-3 py-1.5 text-center font-bold text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                                                         value={rowQuantities[item.detail_penerimaan_id] ?? ''}
-                                                        onClick={(e) => e.stopPropagation()} 
+                                                        onClick={(e) => e.stopPropagation()}
                                                         onChange={(e) => handleRowQuantityChange(item.detail_penerimaan_id, e.target.value)}
                                                         min={1}
                                                         max={item.quantity_remaining}
