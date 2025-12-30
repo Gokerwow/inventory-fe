@@ -74,12 +74,12 @@ export default function ProfilePage() {
             <div className="bg-[#005DB9] flex flex-col sm:flex-row items-center gap-4 sm:gap-6 rounded-2xl p-6 md:p-10 text-white shadow-lg relative overflow-hidden">
                 {/* Background Decoration */}
                 <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-                
+
                 {/* Avatar Section */}
                 <div className='relative z-10 rounded-full border-4 border-white bg-white/10 w-24 h-24 md:w-36 md:h-36 flex shrink-0 items-center justify-center overflow-hidden shadow-2xl backdrop-blur-md'>
                     <img src={user?.photo ?? Avatar} alt="Profile" className='w-full h-full object-cover' />
                 </div>
-                
+
                 {/* Info Text Section */}
                 <div className="relative z-10 flex flex-col items-center sm:items-start text-center sm:text-left min-w-0 flex-1">
                     <h1 className="text-xl md:text-3xl font-bold uppercase tracking-tight break-words max-w-full">
@@ -95,15 +95,17 @@ export default function ProfilePage() {
             </div>
 
             {/* Navigation Tabs Responsif */}
-            <div className={`grid gap-2 sm:gap-3 ${filteredTabs.length === 3 ?'grid-cols-3' :  filteredTabs.length === 2 ? 'grid-cols-2' : 'flex'}'`}>
+            <div className={`grid grid-cols-1 gap-2 sm:gap-3 ${filteredTabs.length === 3 ? 'md:grid-cols-3' :
+                    filteredTabs.length === 2 ? 'md:grid-cols-2' :
+                        'md:grid-cols-1'
+                }`}>
                 {filteredTabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => handleTabChange(tab.id)}
-                        // Hapus 'hidden md:inline' agar teks selalu muncul, gunakan text-sm di mobile
                         className={`flex items-center justify-center gap-2 py-3 md:py-4 rounded-xl font-bold transition-all duration-300 cursor-pointer active:scale-95 ${activeTab === tab.id
-                            ? 'bg-white text-blue-600 shadow-md ring-2 ring-blue-100 scale-[1.02]'
-                            : 'bg-gray-50 text-gray-500 hover:bg-white hover:text-blue-500'
+                                ? 'bg-white text-blue-600 shadow-md ring-2 ring-blue-100 scale-[1.02]'
+                                : 'bg-gray-50 text-gray-500 hover:bg-white hover:text-blue-500'
                             }`}
                     >
                         <tab.icon className="w-5 h-5 shrink-0" />
@@ -152,7 +154,6 @@ export default function ProfilePage() {
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-20">
                                 <Loader />
-                                <p className="text-gray-400 text-sm mt-4 animate-pulse">Menghubungkan ke server...</p>
                             </div>
                         ) : pegawaiList.length > 0 ? (
                             <>
