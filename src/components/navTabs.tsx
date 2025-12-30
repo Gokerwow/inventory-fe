@@ -30,7 +30,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ tabs, activeTab,
                     className={`w-full flex items-center justify-between bg-white border border-gray-200 px-4 py-3 rounded-xl shadow-sm transition-all active:bg-gray-50 ${isOpen ? 'ring-2 ring-blue-100 border-blue-400' : ''
                         }`}
                 >
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex items-center gap-3">
                         {activeTabObj.icon && (
                             <span className="text-blue-600 shrink-0">
                                 {activeTabObj.icon}

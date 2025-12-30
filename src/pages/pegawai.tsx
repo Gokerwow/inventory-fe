@@ -16,6 +16,7 @@ import { NavigationTabs } from "../components/navTabs";
 import PegawaiIcon from '../assets/svgs/Akun Icon.svg?react'
 import Button from "../components/button";
 import { Plus, Filter } from "lucide-react"; // Tambahkan icon Filter optional untuk UI mobile
+import CustomSelect from "../components/customFilter";
 
 const PegawaiTabs = [
     {
@@ -38,6 +39,7 @@ export default function PegawaiPage() {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [activeTab, setActiveTab] = useState('pegawai');
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
     const PegawaiStatus = [
         { label: 'Aktif', value: 'active' },
@@ -63,6 +65,12 @@ export default function PegawaiPage() {
             }
         })
     }
+
+    const handleToggleDropdown = (id: string) => {
+        // Jika id yang diklik sama dengan yang aktif -> tutup (null)
+        // Jika beda -> buka yang baru (id)
+        setActiveDropdown(prev => prev === id ? null : id);
+    };
 
     const handleToggleStatus = async (pegawai: DaftarPegawai) => {
         if (updatingStatus[pegawai.nip]) return;
@@ -145,7 +153,7 @@ export default function PegawaiPage() {
         {
             header: 'Nama Pegawai',
             cell: (item) => (
-                <div className="flex items-center justify-end md:justify-start w-fit">
+                <div className="flex items-center justify-end md:justify-start w-full">
 
                     <div className="shrink-0 h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white">
                         <span className="font-semibold text-sm">{item.name.charAt(0).toUpperCase()}</span>
@@ -241,52 +249,62 @@ export default function PegawaiPage() {
                         {/* Wrapper Filter & Search */}
                         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto flex-1">
                             {/* Search Bar - Flex Grow */}
-                            <div className="flex-1 min-w-[200px]">
+                            <div className="flex-1 flex gap-4">
                                 <SearchBar
                                     placeholder='Cari Pegawai...'
                                     onChange={(e) => setSearch(e.target.value)}
+                                    className="flex-1"
                                 />
+                                <Button
+                                    onClick={handleTambahClick}
+                                    variant="primary"
+                                    className="w-auto"
+                                >
+                                    <Plus className="w-4 h-4 flex! sm:hidden!" />
+                                </Button>
                             </div>
 
-                            {/* Filters - Grid 2 Kolom di Mobile, Row di Desktop */}
-                            {/* UBAH DI SINI: Gunakan 'grid grid-cols-2' agar sejajar di HP */}
-                            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+                            <div className="relative grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
 
                                 {/* Filter Jabatan */}
-                                <div className="relative w-full sm:w-auto">
-                                    <select
-                                        onChange={(e) => handleFilterJabatanChange(Number(e.target.value))}
-                                        // Hapus 'py-2.5', ganti 'py-2' agar lebih tipis
-                                        className="appearance-none w-full sm:w-36 bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm font-medium shadow-sm cursor-pointer hover:bg-gray-100 transition-colors truncate"
-                                    >
-                                        <option value='0'>Semua Jabatan</option>
-                                        {jabatanList.map((jabatan) => (
-                                            <option key={jabatan.id} value={jabatan.id}>{jabatan.name}</option>
-                                        ))}
-                                    </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                        <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    </div>
-                                </div>
+                                <CustomSelect
+                                    options={[
+                                        { value: 0, label: 'Semua Jabatan' },
+                                        ...jabatanList.map(j => ({ value: j.id, label: j.name }))
+                                    ]}
+                                    value={selectedJabatan}
+                                    onChange={handleFilterJabatanChange}
+                                    placeholder="Semua Jabatan"
+
+                                    // Styling
+                                    className="static sm:relative w-full sm:w-36"
+                                    dropdownClassName="w-full"
+
+                                    // Logic Kontrol
+                                    isOpen={activeDropdown === 'jabatan'}
+                                    onToggle={() => handleToggleDropdown('jabatan')}
+                                    onClose={() => setActiveDropdown(null)}
+                                />
 
                                 {/* Filter Status */}
-                                <div className="relative w-full sm:w-auto">
-                                    <select
-                                        onChange={(e) => handleFilterStatusChange(e.target.value)}
-                                        // Samakan style dengan Jabatan
-                                        className="appearance-none w-full sm:w-36 bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm font-medium shadow-sm cursor-pointer hover:bg-gray-100 transition-colors truncate"
-                                    >
-                                        <option value=''>Semua Status</option>
-                                        {PegawaiStatus.map((status) => (
-                                            <option key={status.value} value={status.value}>{status.label}</option>
-                                        ))}
-                                    </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                        <svg className="h-3 w-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                                <CustomSelect
+                                    options={[
+                                        { value: '', label: 'Semua Status' },
+                                        ...PegawaiStatus.map(j => ({ value: j.value, label: j.label }))
+                                    ]}
+                                    value={selectedStatus}
+                                    onChange={handleFilterStatusChange}
+                                    placeholder="Semua Status"
+
+                                    // Styling
+                                    className="static sm:relative w-full sm:w-36"
+                                    dropdownClassName="w-full"
+
+                                    // Logic Kontrol
+                                    isOpen={activeDropdown === 'status'}
+                                    onToggle={() => handleToggleDropdown('status')}
+                                    onClose={() => setActiveDropdown(null)}
+                                />
                             </div>
                         </div>
                     </div>
@@ -295,10 +313,10 @@ export default function PegawaiPage() {
                     <Button
                         onClick={handleTambahClick}
                         variant="primary"
-                        className="w-full sm:w-auto xl:w-auto flex items-center justify-center gap-2 shadow-sm shrink-0 py-2 px-4 text-sm h-fit"
+                        className="sm:flex items-center justify-center gap-2 shadow-sm shrink-0 hidden!"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>Tambah Pegawai</span> 
+                        <span>Tambah Pegawai</span>
                     </Button>
                 </div>
 
@@ -320,10 +338,10 @@ export default function PegawaiPage() {
                         <ReusableTable
                             columns={pegawaiColumns}
                             currentItems={currentItems}
+                            mobileContainerClassName="pb-20 sm:pb-4"
                         />
                     )}
                 </div>
-
                 {/* Pagination */}
                 <Pagination
                     currentPage={currentPage}
@@ -332,6 +350,7 @@ export default function PegawaiPage() {
                     onPageChange={handlePageChange}
                     totalPages={totalPages}
                 />
+
             </div>
         </div>
     )

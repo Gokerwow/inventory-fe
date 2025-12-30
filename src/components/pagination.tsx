@@ -144,7 +144,7 @@ const Pagination = ({
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 
                 {/* Informasi Halaman (Mobile: Center, Desktop: Left) */}
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 hidden sm:block">
                         {/* PERUBAHAN: Tampilkan informasi yang lebih akurat */}
                         Menampilkan {totalItems > 0 ? startIndex + 1 : 0} sampai {endIndex} dari {totalItems} hasil
                     </div>

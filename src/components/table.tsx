@@ -13,12 +13,16 @@ interface ReusableTableProps<T> {
     columns: ColumnDefinition<T>[];
     currentItems: T[];
     onRowClick?: (item: T) => void;
+    // 1. TAMBAHKAN PROP INI
+    mobileContainerClassName?: string; 
 }
 
 export default function ReusableTable<T extends { id?: number | string }>({
     columns,
     currentItems = [],
-    onRowClick
+    onRowClick,
+    // 2. AMBIL PROP DI SINI
+    mobileContainerClassName 
 }: ReusableTableProps<T>) {
 
     const gridTemplateColumns = useMemo(() => {
@@ -35,7 +39,9 @@ export default function ReusableTable<T extends { id?: number | string }>({
         <div className="flex flex-col w-full h-full min-h-[380px] bg-gray-50 md:bg-white overflow-hidden md:shadow-sm md:rounded-lg relative">
             
             {/* === MOBILE VIEW: CARD LIST === */}
-            <div className="md:hidden flex-1 overflow-y-auto p-4 pb-15 sm:pb-4 space-y-4">
+            {/* 3. UBAH CLASSNAME DI SINI */}
+            {/* Logikanya: Jika parent mengirim mobileContainerClassName, pakai itu. Jika tidak, pakai default 'pb-18 sm:pb-4' */}
+            <div className={`md:hidden flex-1 overflow-y-auto p-4 space-y-4 ${mobileContainerClassName || 'pb-8 sm:pb-4'}`}>
                 {currentItems && currentItems.length > 0 ? (
                     currentItems.map((item, index) => (
                         <div 
@@ -52,7 +58,7 @@ export default function ReusableTable<T extends { id?: number | string }>({
                                         </span>
                                     )}
                                     
-                                    {/* Isi Data (Kanan) - SEKARANG RATA KIRI */}
+                                    {/* Isi Data (Kanan) */}
                                     <div className={`font-semibold text-gray-800 flex-1 min-w-0 break-words text-left ${!col.hideHeaderOnMobile ? '' : 'w-full text-center'}`}>
                                         {col.cell(item)}
                                     </div>

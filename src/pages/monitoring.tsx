@@ -151,7 +151,6 @@ export default function MonitoringPage() {
                         />
                     )}
                 </div>
-
                 {/* Pagination Section */}
                 <Pagination
                     currentPage={currentPage}
@@ -160,6 +159,7 @@ export default function MonitoringPage() {
                     onPageChange={handlePageChange}
                     totalPages={totalPages}
                 />
+
             </div>
         </div>
     );
