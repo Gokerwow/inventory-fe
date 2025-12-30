@@ -1,5 +1,5 @@
 import AtkIcon from '../assets/svgs/AtkIcon.svg?react';
-import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA } from '../constant/roles';
+import { ROLES, type APIStokUpdate, type BARANG_STOK, type BASTAPI, CATEGORY_DATA, ROLE_DISPLAY_NAMES } from '../constant/roles';
 import type { ColumnDefinition } from '../components/table';
 import { useEffect, useState } from 'react';
 import { useAuthorization } from '../hooks/useAuthorization';
@@ -250,7 +250,7 @@ function StokBarang() {
 
     const BASTColumns: ColumnDefinition<BASTAPI>[] = [
         { header: 'No Surat', cell: (item) => item.no_surat },
-        { header: 'Role', cell: (item) => item.role_user },
+        { header: 'Role', cell: (item) => ROLE_DISPLAY_NAMES[item.role_user] },
         { header: 'Nama Pegawai', cell: (item) => item.pegawai_name },
         {
             header: 'Kategori',
