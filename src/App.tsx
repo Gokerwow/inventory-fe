@@ -8,10 +8,8 @@ import Pengeluaran from './pages/pengeluaran';
 import Profil from './pages/profil';
 // import RolePick from './pages/rolePick';
 import FormPenerimaan from './pages/FormPenerimaan';
-import AkunPage from './pages/akun';
 import PegawaiPage from './pages/pegawai';
 import MonitoringPage from './pages/monitoring';
-import FormAkunPage from './pages/FormAkun';
 import { PATHS } from './Routes/path';
 import Unauthorized from './pages/unauthorized';
 import UnduhBast from './pages/unduhBAST';
@@ -119,11 +117,6 @@ function App() {
         </Route>
         <Route path={PATHS.PROFIL.INDEX}>
           <Route index element={<Profil />} />
-          <Route path={PATHS.PROFIL.EDIT} element={<FormAkunPage isEdit={true} />} />
-        </Route>
-        <Route path={PATHS.AKUN.INDEX}>
-          <Route index element={<AkunPage />} />
-          <Route path={PATHS.AKUN.TAMBAH} element={<FormAkunPage />} />
         </Route>
         <Route path={PATHS.PEGAWAI.INDEX}>
           <Route index element={<PegawaiPage />} />

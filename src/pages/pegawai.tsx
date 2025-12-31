@@ -253,14 +253,14 @@ export default function PegawaiPage() {
                                 <SearchBar
                                     placeholder='Cari Pegawai...'
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="flex-1"
+                                    className="flex-1 sm:flex-none sm:w-72 md:w-96"
                                 />
                                 <Button
                                     onClick={handleTambahClick}
                                     variant="primary"
-                                    className="w-auto"
+                                    className="w-auto flex! sm:hidden!"
                                 >
-                                    <Plus className="w-4 h-4 flex! sm:hidden!" />
+                                    <Plus className="w-4 h-4" />
                                 </Button>
                             </div>
 
@@ -277,7 +277,7 @@ export default function PegawaiPage() {
                                     placeholder="Semua Jabatan"
 
                                     // Styling
-                                    className="static sm:relative w-full sm:w-36"
+                                    className="static w-full sm:w-36"
                                     dropdownClassName="w-full"
 
                                     // Logic Kontrol
@@ -297,7 +297,7 @@ export default function PegawaiPage() {
                                     placeholder="Semua Status"
 
                                     // Styling
-                                    className="static sm:relative w-full sm:w-36"
+                                    className="static w-full sm:w-36"
                                     dropdownClassName="w-full"
 
                                     // Logic Kontrol
@@ -313,7 +313,7 @@ export default function PegawaiPage() {
                     <Button
                         onClick={handleTambahClick}
                         variant="primary"
-                        className="sm:flex items-center justify-center gap-2 shadow-sm shrink-0 hidden!"
+                        className="sm:flex! items-center justify-center gap-2 shadow-sm shrink-0 hidden!"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Tambah Pegawai</span>
