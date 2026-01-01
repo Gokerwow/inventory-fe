@@ -1,90 +1,93 @@
-// src/context/AuthProvider.tsx
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AuthContext } from './AuthContext.tsx';
 import apiClient from '../utils/api.ts';
 import { debugLog } from '../utils/debugLogger.tsx';
+import Loader from '../components/loader.tsx';
 
 export function AuthProvider({ children }: { children: React.ReactNode; }) {
-    const [user, setUser] = useState(() => {
-        try {
-            debugLog('AuthProvider: Initializing');
-            
-            if (sessionStorage.getItem('logging_out') === 'true') {
-                debugLog('AuthProvider: logging_out flag detected, returning null');
-                return null;
-            }
-            
-            const token = localStorage.getItem('access_token');
-            const storedUser = localStorage.getItem('user');
-            
-            debugLog('AuthProvider: Initial check', { 
-                hasToken: !!token, 
-                hasUser: !!storedUser 
-            });
-
-            return (token && storedUser) ? JSON.parse(storedUser) : null;
-        } catch (error) {
-            debugLog('AuthProvider: Error initializing', error);
-            return null;
-        }
+    const [user, setUser] = useState<any>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
     });
 
+    const [isLoading, setIsLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    const login = useCallback(() => {
+    const fetchUser = useCallback(async () => {
         if (sessionStorage.getItem('logging_out') === 'true') {
-            debugLog('login: Blocked - logging_out flag is true');
+            setIsLoading(false);
             return;
         }
-        
-        debugLog('login: Redirecting to SSO login');
-        window.location.href = 'http://localhost:8001/api/sso/login';
-    }, []);
-
-    const logout = useCallback(async () => {
-        debugLog('logout: START');
-        
-        setIsLoggingOut(true);
-        sessionStorage.setItem('logging_out', 'true');
-        debugLog('logout: Flags set', { isLoggingOut: true, sessionFlag: 'true' });
 
         try {
-            debugLog('logout: Calling API');
-            const response = await apiClient.post('/api/v1/sso/logout');
-            debugLog('logout: API success', response.data);
-
-            localStorage.clear();
-            setUser(null);
-            debugLog('logout: Storage cleared');
-
-            const targetUrl = response.data.target_url || 'http://localhost:8000/logout';
-            debugLog('logout: Redirecting to', targetUrl);
-            
-            window.location.href = targetUrl;
-
-        } catch (error) {
-            debugLog('logout: API error', error);
-            
-            localStorage.clear();
-            setUser(null);
-            debugLog('logout: Storage cleared (error path)');
-            
-            debugLog('logout: Redirecting to SSO logout (error path)');
-            window.location.href = 'http://localhost:8000/logout';
+            debugLog('fetchUser: Syncing...');
+            const response = await apiClient.get('/api/v1/me');
+            setUser(response.data);
+            localStorage.setItem('user', JSON.stringify(response.data));
+        } catch (error: any) {
+            debugLog('fetchUser: Error', error.response?.status);
+            if (error.response?.status === 401) {
+                setUser(null);
+                localStorage.removeItem('user');
+            }
+        } finally {
+            setIsLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        fetchUser();
+    }, [fetchUser]);
+
+    const logout = useCallback(async () => {
+        if (isLoggingOut) return;
+
+        setIsLoggingOut(true);
+        sessionStorage.setItem('logging_out', 'true');
+
+        try {
+            const response = await apiClient.post('/api/v1/sso/logout');
+            localStorage.clear();
+            setUser(null);
+            window.location.href = response.data.target_url;
+        } catch (error) {
+            localStorage.clear();
+            setUser(null);
+            window.location.href = 'http://localhost:8000/logout';
+        }
+    }, [isLoggingOut]);
 
     const value = useMemo(() => ({
         user,
-        login,
+        login: () => window.location.href = 'http://localhost:8001/api/sso/login',
         logout,
         isAuthenticated: !!user,
         isLoggingOut,
-    }), [user, login, logout, isLoggingOut]);
+        isLoading,
+    }), [user, logout, isLoggingOut, isLoading]);
+
+    const showContent = user || !isLoading;
 
     return (
         <AuthContext.Provider value={value}>
-            {children}
+            {showContent ? children : (
+                <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className='mb-4'>
+                            <Loader />
+                        </div>
+
+                        <div className="flex flex-col items-center animate-pulse">
+                            <p className="text-lg font-semibold text-slate-700 tracking-wide">
+                                Menyiapkan Akses
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                Sedang memverifikasi sesi anda...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthContext.Provider>
     );
 }
