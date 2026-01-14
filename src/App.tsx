@@ -25,6 +25,7 @@ import { useAuth } from './hooks/useAuth';
 import { menuItems } from './constant/roles';
 import NotifikasiPage from './pages/notifikasi';
 import { debugLog } from './utils/debugLogger';
+import NotFound from './pages/notFound';
 
 const RootHandler = () => {
   const { isAuthenticated, login, user, isLoggingOut } = useAuth();
@@ -52,7 +53,7 @@ const RootHandler = () => {
     const userRole = user.role;
     const allowedMenu = menuItems.find(item => item.role.includes(userRole));
     const targetPath = allowedMenu ? allowedMenu.path : '/unauthorized';
-    
+
     debugLog('RootHandler: Redirecting to', targetPath);
     return <Navigate to={targetPath} replace />;
   }
@@ -67,8 +68,7 @@ function App() {
       <Route path="/auth/sso-callback" element={<SSOCallback />} />
 
       <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="*" element={<Navigate to="/unauthorized" replace />} />
-
+      <Route path="*" element={<NotFound />} />
       <Route path="/" element={<Layout />}>
         {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
         <Route index element={<RootHandler />} />
