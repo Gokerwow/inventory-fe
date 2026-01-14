@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from 'react';
-import EyeIcon from '../assets/svgs/eye.svg?react'
+import EyeIcon from '../assets/svgs/eye.svg?react';
 import ReusableTable, { type ColumnDefinition } from '../components/table';
 import { NavigationTabs } from '../components/navTabs';
-import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react'
-import ReceiptIcon from '../assets/svgs/receipt-item.svg?react'
+import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react';
+import ReceiptIcon from '../assets/svgs/receipt-item.svg?react';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthorization } from '../hooks/useAuthorization';
 import { ROLES, type APIPemesanan, type APIPengeluaranList } from '../constant/roles';
@@ -13,12 +13,11 @@ import Pagination from '../components/pagination';
 import Status from '../components/status';
 import Loader from '../components/loader';
 import SearchBar from '../components/searchBar';
-import { generatePath, useNavigate } from 'react-router-dom';
+import { generatePath, useNavigate, useSearchParams } from 'react-router-dom';
 import { PATHS } from '../Routes/path';
 import { exportPengeluaranExcel, getPengeluaranList } from '../services/pengeluaranService';
-
 // --- 1. IMPORT LIBARARY PENDUKUNG ---
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { Calendar as CalendarIcon, Check, ChevronDown, Download, X } from 'lucide-react';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns';
 import { id as indonesia } from 'date-fns/locale';
@@ -33,17 +32,39 @@ const pengeluaranTabs = [
 
 function Pengeluaran() {
     const [activeTab, setActiveTab] = useState('pengeluaran');
-    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab === 'riwayat') {
+            setActiveTab('riwayatPengeluaran');
+        } else if (tab === 'daftar') {
+            setActiveTab('pengeluaran');
+        }
+    }, [searchParams]);
+
+    const handleTabChange = (tabId: string) => {
+        setActiveTab(tabId);
+        setSearch('');
+        handleResetDate();
+
+        if (tabId === 'riwayatPengeluaran') {
+            setSearchParams({ tab: 'riwayat' });
+        } else {
+            setSearchParams({ tab: 'daftar' });
+        }
+    };
+    const navigate = useNavigate();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
-    const [pemesananItem, setPemesananItem] = useState<APIPemesanan[]>([])
-    const [pengeluaranItem, setPengeluaranItem] = useState<APIPengeluaranList[]>([])
+    const [pemesananItem, setPemesananItem] = useState<APIPemesanan[]>([]);
+    const [pengeluaranItem, setPengeluaranItem] = useState<APIPengeluaranList[]>([]);
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
     // --- STATE DATE PICKER ---
@@ -118,7 +139,7 @@ function Pengeluaran() {
         if (!hasAccess(user?.role)) return;
 
         const fetchAllData = async () => {
-            setIsLoading(true)
+            setIsLoading(true);
             try {
                 if (activeTab === 'pengeluaran') {
                     let dataPemesanan;
@@ -145,9 +166,9 @@ function Pengeluaran() {
             } finally {
                 setIsLoading(false);
             }
-        }
-        fetchAllData()
-    }, [currentPage, user?.role, debouncedSearch, activeTab, startDate, endDate, checkAccess, hasAccess, itemsPerPage])
+        };
+        fetchAllData();
+    }, [currentPage, user?.role, debouncedSearch, activeTab, startDate, endDate, checkAccess, hasAccess, itemsPerPage]);
 
     useEffect(() => {
         const handler = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 500);
@@ -191,7 +212,7 @@ function Pengeluaran() {
             <NavigationTabs
                 tabs={pengeluaranTabs}
                 activeTab={activeTab}
-                onTabClick={(tab) => { setActiveTab(tab); setSearch(''); handleResetDate(); }}
+                onTabClick={handleTabChange}
             />
 
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-0">
@@ -322,7 +343,6 @@ function Pengeluaran() {
                     </div>
                 ) : (
                     <>
-                        {/* Wrapper tabel dibuat flex-1 dan overflow-hidden agar ReusableTable menangani scroll */}
                         <div className="flex-1 overflow-hidden relative">
                             {activeTab === 'pengeluaran' ?
                                 <ReusableTable columns={pengeluaranColumns} currentItems={pemesananItem} />
