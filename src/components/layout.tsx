@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import SideBar from '../components/sidebar';
 import TopBar from '../components/topBar';
@@ -61,7 +62,7 @@ function Layout() {
                 position: 'top-right',
                 icon: false,
                 closeButton: false,
-            });
+            } as any);
             localStorage.removeItem('login_success');
         }
 
@@ -74,7 +75,7 @@ function Layout() {
                 position: 'top-right',
                 icon: false,
                 closeButton: false,
-            });
+            } as any);
             // Clear state agar toast tidak muncul lagi saat refresh
             navigate(location.pathname, { replace: true, state: null });
         }

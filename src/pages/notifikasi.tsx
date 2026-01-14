@@ -55,11 +55,13 @@ export default function NotifikasiPage() {
         try {
             const statusParam = activeTab === 'all' ? undefined : activeTab;
             const response = await getDaftarNotifikasi(currentPage, itemsPerPage, statusParam);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = response as any;
 
             setCurrentItems(result.list.data);
             setTotalItems(result.list.total || 0);
             setTotalPages(result.list.last_page || 1);
+            setItemsPerPage(result.list.per_page || 10);
             setUnreadCount(result.unread_count || 0);
         } catch (err) {
             console.error("❌ Error fetching notifications:", err);

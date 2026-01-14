@@ -15,7 +15,7 @@ import SearchBar from "../components/searchBar";
 import { NavigationTabs } from "../components/navTabs";
 import PegawaiIcon from '../assets/svgs/Akun Icon.svg?react'
 import Button from "../components/button";
-import { Plus, Filter } from "lucide-react"; // Tambahkan icon Filter optional untuk UI mobile
+import { Plus } from "lucide-react"; // Tambahkan icon Filter optional untuk UI mobile
 import CustomSelect from "../components/customFilter";
 
 const PegawaiTabs = [
@@ -147,7 +147,7 @@ export default function PegawaiPage() {
         }
 
         fetchData()
-    }, [user?.role, currentPage, selectedJabatan, selectedStatus, debouncedSearch])
+    }, [user?.role, currentPage, selectedJabatan, selectedStatus, debouncedSearch, checkAccess, hasAccess, itemsPerPage])
 
     const pegawaiColumns: ColumnDefinition<DaftarPegawai>[] = [
         {

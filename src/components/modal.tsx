@@ -51,7 +51,7 @@ export default function Modal({
     // PERUBAHAN 2: Bungkus return dengan createPortal(JSX, document.body)
     return createPortal(
         <Transition show={isOpen} as={Fragment}>
-            <div className="relative z-[9999]"> {/* Naikkan z-index agar aman */}
+            <div className="relative z-9999"> {/* Naikkan z-index agar aman */}
                 
                 {/* Backdrop / Overlay */}
                 <Transition.Child

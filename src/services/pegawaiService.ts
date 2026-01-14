@@ -1,5 +1,6 @@
-import { employees, FAQ, type EmployeeType } from '../Mock Data/data';
+import { employees, FAQ } from '../Mock Data/data';
 import apiClient from '../utils/api';
+import axios from 'axios';
 import { simulateApiCall } from './utils';
 import { type SelectPihak, type DaftarPegawai, type APIPegawaiBaru, type PaginationResponse, type APIProfilePegawai } from '../constant/roles';
 
@@ -135,7 +136,7 @@ export const updatePegawai = async (pegawaiId: number, formData: Partial<APIPega
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
-        if (error.response && error.response.data) {
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
             // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
         }
@@ -151,7 +152,7 @@ export const updateStatusPegawai = async (pegawaiId: number): Promise<APIPegawai
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
-        if (error.response && error.response.data) {
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
             // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
         }

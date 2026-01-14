@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import ShopCartIcon from '../assets/svgs/shopping-cart.svg?react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -177,35 +178,27 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
 
     const handleSaveNewItem = (newItem: any) => {
         setBarang((prevItems) => {
-            // 1. Cek apakah barang sudah ada di list?
-            // Jika barang lama (punya ID), cek by ID. Jika barang baru (ID 0), cek by Nama.
             const existingItemIndex = prevItems.findIndex((item) => {
-                if (newItem.stok_id !== 0) {
-                    return item.stok_id === newItem.stok_id;
+                const currentId = 'stok_id' in item ? item.stok_id : 0;
+                const currentName = 'stok_name' in item ? item.stok_name : ('name' in item ? item.name : '');
+                const newId = 'stok_id' in newItem ? newItem.stok_id : 0;
+                const newName = 'stok_name' in newItem ? newItem.stok_name : ('name' in newItem ? newItem.name : '');
+                if (newId !== 0) {
+                    return currentId === newId;
                 } else {
-                    // Cek case-insensitive untuk barang baru manual
-                    return item.stok_name.toLowerCase() === newItem.stok_name.toLowerCase();
+                    return (currentName || '').toLowerCase() === (newName || '').toLowerCase();
                 }
             });
 
-            // 2. Jika barang sudah ada (Index ketemu)
             if (existingItemIndex !== -1) {
-                // Copy array agar tidak memutasi state langsung
                 const updatedItems = [...prevItems];
                 const existingItem = updatedItems[existingItemIndex];
-
-                // Tambahkan Quantity
                 const newQuantity = existingItem.quantity + newItem.quantity;
-
-                // Hitung Total Harga Baru 
-                // (Opsional: Anda bisa memilih harga mana yang dipakai, di sini kita pakai harga terbaru yang diinput)
                 const newTotalHarga = newQuantity * newItem.price;
-
-                // Update item yang ada
                 updatedItems[existingItemIndex] = {
                     ...existingItem,
                     quantity: newQuantity,
-                    price: newItem.price, // Update harga ke yang paling baru (opsional)
+                    price: newItem.price,
                     total_harga: newTotalHarga,
                 };
 
@@ -219,11 +212,18 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     };
 
     const handleDeleteBarang = (stokId: number) => {
-        const itemToDelete = barang.find(item => item.stok_id === stokId);
-        if (itemToDelete && itemToDelete.id) {
+        const itemToDelete = barang.find(item => 'stok_id' in item && item.stok_id === stokId);
+        if (itemToDelete && 'id' in itemToDelete) {
             setDeletedIds(prev => [...prev, itemToDelete.id]);
         }
-        setBarang(prev => prev.filter(item => item.stok_id !== stokId));
+
+        setBarang(prev => prev.filter(item => {
+            if ('stok_id' in item) {
+                return item.stok_id !== stokId;
+            }
+            return true;
+        }));
+
         showToast('Barang berhasil dihapus', 'success');
     };
 
@@ -231,15 +231,17 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
     const handleSetStatus = async (detailId: number, isLayak: boolean) => {
         if (!paramId) return;
 
-        setBarang(prev => prev.map(item =>
-            item.id === detailId ? { ...item, is_updating: true } : item
-        ));
+        setBarang(prev => prev.map(item => {
+            if ('id' in item && item.id === detailId) {
+                return { ...item, is_updating: true };
+            }
+            return item;
+        }));
 
         try {
             await updateBarangStatus(Number(paramId), detailId, isLayak);
-
             setBarang(prev => prev.map(item => {
-                if (item.id === detailId) {
+                if ('id' in item && item.id === detailId) {
                     return {
                         ...item,
                         is_layak: isLayak,
@@ -255,7 +257,9 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         } catch (err) {
             console.error(err);
             setBarang(prev => prev.map(item =>
-                item.id === detailId ? { ...item, is_updating: false } : item
+                ('id' in item && item.id === detailId)
+                    ? { ...item, is_updating: false }
+                    : item
             ));
             showToast("Gagal menyimpan status", "error");
         }
@@ -281,9 +285,12 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
             const penerimaanId = Number(paramId);
             await updateDetailBarangTerbayar(penerimaanId, itemToPay);
 
-            setBarang(prev => prev.map(item =>
-                item.id === itemToPay ? { ...item, is_paid: true } : item
-            ));
+            setBarang(prev => prev.map(item => {
+                if ('id' in item && item.id === itemToPay) {
+                    return { ...item, is_paid: true };
+                }
+                return item;
+            }));
 
             showToast("Item berhasil ditandai terbayar!", "success");
         } catch (error) {
@@ -306,20 +313,18 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         }));
     };
 
-    const handleKategoriChange = (option: Kategori | null) => {
+    // 1. Update the type to accept 'string' as well
+    const handleKategoriChange = (option: Kategori | string | null) => {
+        if (typeof option === 'string') {
+            return;
+        }
         const newCategoryId = option?.id ?? 0;
         const oldCategoryId = formDataPenerimaan.category_id;
-
-        // Jika kategori yang dipilih sama, tidak perlu lakukan apa-apa
         if (newCategoryId === oldCategoryId) return;
-
         if (barang.length > 0) {
-            // 1. Simpan kategori yang INGIN dipilih ke state sementara
             setPendingCategory(option);
-            // 2. Buka Modal Konfirmasi
             setIsResetModalOpen(true);
         } else {
-            // 3. Jika keranjang kosong, langsung ganti kategori tanpa modal
             updateCategoryData(option);
         }
     };
@@ -386,7 +391,11 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         }));
     }
 
-    const handlePihakPertamaChange = (pihak: SelectPihak | null) => {
+    const handlePihakPertamaChange = (pihak: SelectPihak | string | null) => {
+        if (typeof pihak === 'string') {
+            return;
+        }
+
         setFormDataPenerimaan((prev) => ({
             ...prev,
             pegawais: [
@@ -408,10 +417,20 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
         }));
     };
 
-    const handlePihakKeduaChange = (pihak: SelectPihak | null) => {
+    // 1. Update parameter type to include 'string'
+    const handlePihakKeduaChange = (pihak: SelectPihak | string | null) => {
+
+        // 2. Add Guard Clause: Ignore if it's a string
+        if (typeof pihak === 'string') {
+            return;
+        }
+
+        // --- Original Logic (unchanged) ---
+        // TypeScript now knows 'pihak' is strictly SelectPihak | null
         setFormDataPenerimaan((prev) => ({
             ...prev,
             pegawais: [
+                // Keep the first person (Pihak Pertama) safe
                 prev.pegawais?.[0] ?? {
                     pegawai_id_pertama: 0,
                     pegawai_name_pertama: '',
@@ -419,6 +438,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                     jabatan_name_pertama: '',
                     alamat_staker_pertama: ''
                 },
+                // Update the second person (Pihak Kedua)
                 {
                     pegawai_id_kedua: pihak?.id ?? 0,
                     pegawai_name_kedua: pihak?.name ?? '',
@@ -518,18 +538,18 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                     detail_barangs: barang.map((item): Detail_Barang | APIBarangBaru => {
                         if ('name' in item || ('stok_id' in item && item.stok_id === 0)) {
                             return {
-                                name: 'name' in item ? item.name : item.stok_name || '',
+                                name: 'name' in item ? item.name : (item as any).stok_name || '',
                                 satuan_name: item.satuan_name || '',
-                                minimum_stok: 'minimum_stok' in item ? item.minimum_stok : (item.minimum_stok || 0),
+                                minimum_stok: 'minimum_stok' in item ? item.minimum_stok : ((item as any).minimum_stok || 0),
                                 quantity: item.quantity,
-                                harga: 'harga' in item ? item.harga : item.price,
+                                harga: ('harga' in item ? item.harga : item.price) || 0,
                             };
                         } else {
                             return {
                                 stok_id: item.stok_id,
                                 quantity: item.quantity,
-                                harga: item.price,
-                            };
+                                harga: item.price || 0,
+                            } as any;
                         }
                     }),
                     pegawais: listPegawai
@@ -681,7 +701,6 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                 value={formDataPenerimaan.pegawais[0].pegawai_name_pertama}
                                 onChange={handlePihakPertamaChange}
                                 name='namaPihakPertama'
-                                type='button'
                                 disabled={isReadOnly}
                             />
                             <Input
@@ -721,7 +740,6 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                                 options={pihak}
                                 placeholder='Pilih Nama'
                                 judul='Nama Lengkap'
-                                type='button'
                                 value={formDataPenerimaan?.pegawais[1].pegawai_name_kedua}
                                 onChange={handlePihakKeduaChange}
                                 name='namaPihakKedua'
@@ -785,7 +803,6 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                             placeholder="Pilih Kategori Barang"
                             options={kategoriOptions}
                             judul="Pilih Kategori Barang"
-                            type="button"
                             onChange={handleKategoriChange}
                             value={formDataPenerimaan.category_name}
                             name="category_name"
@@ -991,9 +1008,29 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
                 </div>
             </form>
 
-            <ConfirmModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={isDelete ? () => handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit} isLoading={isSubmitting} text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : isInspectMode ? "Apa anda yakin untuk Mengonfirmasi Penerimaan?" : "Apa anda yakin untuk membuat penerimaan?"} />
-            <ConfirmModal isOpen={isResetModalOpen} onClose={() => { setIsResetModalOpen(false); setPendingCategory(null); }} onConfirm={handleConfirmReset} title="Ganti Kategori?" text="Mengganti kategori akan MENGHAPUS semua barang di keranjang. Lanjutkan?" confirmText="Ya, Ganti" cancelText="Batal" />
-            <ConfirmModal isOpen={isPayModalOpen} onClose={() => { setIsPayModalOpen(false); setItemToPay(null); }} onConfirm={handleConfirmPay} isLoading={isSubmitting} text="Tandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan." />
+            <ConfirmModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={isDelete ? () =>
+                    handleDeletePenerimaan(Number(paramId)) : handleConfirmSubmit}
+                isLoading={isSubmitting}
+                text={isDelete ? "Apa anda yakin ingin menghapus data ini?" : isEditMode ? "Apa anda yakin ingin menyimpan perubahan ini?" : isInspectMode ? "Apa anda yakin untuk Mengonfirmasi Penerimaan?" : "Apa anda yakin untuk membuat penerimaan?"} />
+            <ConfirmModal
+                isOpen={isResetModalOpen}
+                onClose={() => {
+                    setIsResetModalOpen(false);
+                    setPendingCategory(null);
+                }}
+                onConfirm={handleConfirmReset}
+                text="Mengganti kategori akan MENGHAPUS semua barang di keranjang. Lanjutkan?"
+                confirmLabel="Ya, Ganti"
+                cancelLabel="Batal"
+            />
+            <ConfirmModal
+                isOpen={isPayModalOpen}
+                onClose={() => { setIsPayModalOpen(false); setItemToPay(null); }}
+                onConfirm={handleConfirmPay} isLoading={isSubmitting}
+                text="Tandai item ini sebagai TERBAYAR? Status tidak dapat dikembalikan." />
             <ModalTambahBarang isOpen={isAddBarangModalOpen} onClose={() => setIsAddBarangModalOpen(false)} onSave={handleSaveNewItem} categoryId={formDataPenerimaan.category_id} />
         </div >
     );
@@ -1001,7 +1038,7 @@ export default function TambahPenerimaan({ mode }: FormPenerimaanProps) {
 
 // --- Helper Component untuk Render Tombol Aksi (Agar tidak duplikasi kode Desktop & Mobile) ---
 const RenderActions = ({ item, mode, actions, loadingState }: any) => {
-    const { isFinanceMode, isInspectMode, isPreviewMode, isEditMode } = mode;
+    const { isFinanceMode, isInspectMode, isPreviewMode } = mode;
     const { handlePayClick, handleSetStatus, handleDeleteBarang } = actions;
     const { payingItemId } = loadingState;
 

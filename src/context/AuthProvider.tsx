@@ -5,6 +5,7 @@ import { debugLog } from '../utils/debugLogger.tsx';
 import Loader from '../components/loader.tsx';
 
 export function AuthProvider({ children }: { children: React.ReactNode; }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [user, setUser] = useState<any>(() => {
         const savedUser = localStorage.getItem('user');
         return savedUser ? JSON.parse(savedUser) : null;
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
             const response = await apiClient.get('/api/v1/me');
             setUser(response.data);
             localStorage.setItem('user', JSON.stringify(response.data));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             debugLog('fetchUser: Error', error.response?.status);
             if (error.response?.status === 401) {
@@ -51,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
             setUser(null);
             window.location.href = response.data.target_url;
         } catch (error) {
+            console.log(error)
             localStorage.clear();
             setUser(null);
             window.location.href = 'http://localhost:8000/logout';

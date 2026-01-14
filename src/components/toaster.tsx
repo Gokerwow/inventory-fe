@@ -20,7 +20,7 @@ export const ToasterCustom = ({ message, type = 'success' }: ToasterCustomProps)
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isError ? 'bg-red-500' : 'bg-green-500'}`} />
 
                 {/* 2. BACKGROUND IKON (Berubah Warna) */}
-                <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full ${isError ? 'bg-red-50' : 'bg-green-50'}`}>
+                <div className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-full ${isError ? 'bg-red-50' : 'bg-green-50'}`}>
                     {/* 3. IKON (Berubah Sesuai Tipe) */}
                     {isError ? (
                         <AlertCircle className="w-5 h-5 text-red-600" strokeWidth={2.5} />
@@ -36,7 +36,7 @@ export const ToasterCustom = ({ message, type = 'success' }: ToasterCustomProps)
                         {isError ? 'Gagal' : 'Sukses'}
                     </h4>
                     {/* Pesan */}
-                    <p className="text-sm font-semibold text-gray-800 leading-snug break-words">
+                    <p className="text-sm font-semibold text-gray-800 leading-snug wrap-break-word">
                         {message}
                     </p>
                 </div>

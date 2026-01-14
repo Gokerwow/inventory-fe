@@ -80,8 +80,8 @@ export default function MonitoringPage() {
     if (error) {
         return (
             <div className="flex flex-col h-full w-full gap-5">
-                 <NavigationTabs tabs={LOGTabs} activeTab={activeTab} onTabClick={handleClick} />
-                 <div className="flex-1 p-8 bg-white rounded-lg shadow-md flex justify-center items-center border border-red-200">
+                <NavigationTabs tabs={LOGTabs} activeTab={activeTab} onTabClick={handleClick} />
+                <div className="flex-1 p-8 bg-white rounded-lg shadow-md flex justify-center items-center border border-red-200">
                     <p className="text-red-500 font-medium">{error}</p>
                 </div>
             </div>
@@ -89,7 +89,7 @@ export default function MonitoringPage() {
     }
 
     const LOGColummns: ColumnDefinition<LogItem>[] = [
-        { header: 'NAME', cell: (item) => <span className="font-medium text-gray-900">{item.name}</span> },
+        { header: 'NAME', cell: (item) => <span className="font-medium text-gray-900">{item.user}</span> },
         { header: 'WAKTU', cell: (item) => <span className="text-gray-500">{item.waktu.substring(0, 5)} WIB</span> },
         { header: 'TANGGAL', cell: (item) => <span className="text-gray-500">{formatDate(item.tanggal)}</span> },
         {
@@ -97,8 +97,8 @@ export default function MonitoringPage() {
             cell: (item) => {
                 return (
                     // Bungkus Status dengan div agar width terjaga di dalam tabel
-                    <div className="w-full max-w-[200px]"> 
-                         <Status
+                    <div className="w-full max-w-[200px]">
+                        <Status
                             value={item.activity}
                             className="w-full text-center"
                         />
@@ -114,13 +114,13 @@ export default function MonitoringPage() {
 
             {/* Container Utama dengan flex-col dan min-h-0 untuk scrolling */}
             <div className="flex flex-col flex-1 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 min-h-0">
-                
+
                 {/* Header Section: Judul & Search */}
                 <div className='p-4 md:p-6 pb-4 flex flex-col sm:flex-row items-start sm:items-center gap-4'>
                     <h2 className="text-lg md:text-xl font-bold text-gray-800 shrink-0">
                         Log Monitoring
                     </h2>
-                    
+
                     {/* Search Bar Wrapper: Full width di mobile, auto di desktop */}
                     <div className="w-full sm:w-72 md:w-96">
                         <SearchBar

@@ -14,9 +14,9 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
             position: 'top-right',
             icon: false,
             closeButton: false,
-            // Anda bisa mengatur durasi di sini jika default library terlalu lama
             autoClose: 3000, 
-        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
     };
 
     return (

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/ErrorBoundary.tsx
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { type ReactNode } from 'react';

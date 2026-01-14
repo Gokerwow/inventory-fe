@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import DashboardIcon from '../assets/svgs/DashboardIcon.svg?react';
 import BarangIcon from '../assets/svgs/barangIcon.svg?react'
 import PenerimaanIcon from '../assets/svgs/penerimaanIcon.svg?react';
@@ -378,9 +379,18 @@ export interface PaginationResponse<T> {
     prev_page_url: string | null;
     to: number;
     total: number;
+    unread_count?: number
 }
 
-export const menuItems = [
+interface MenuItem {
+    path: string;
+    icon: any; 
+    label: string;
+    role: string[];
+    tag: string;
+}
+
+export const menuItems: MenuItem[] = [
     // { path: '/akun', icon: AkunIcon, label: 'Akun', role: [ROLES.SUPER_ADMIN], tag: 'Manajemen Akun' },
     { path: '/notifikasi', icon: '', label: 'Notifikasi', role: [], tag: 'Notifikasi' },
     { path: '/profil', icon: '', label: 'Pegawai', role: [], tag: 'Profil' },
@@ -477,7 +487,7 @@ export interface APIBarangBaru {
     harga: number,
 }
 
-interface MutationItem {
+export interface MutationItem {
     tanggal: string;
     tipe: 'masuk' | 'keluar';
     no_surat: string;
@@ -493,15 +503,12 @@ export interface APIDetailBarang {
     satuan: string;
     minimum_stok: string;
     total_stok: string;
-    mutasi: {
-        current_page: number;
-        data: MutationItem[];
-    };
+    mutasi: PaginationResponse<MutationItem>;
 }
 
 export interface APIDetailStokBAST {
     detail_penerimaan_id: number;
-    bast_id: string; 
+    bast_id: string;
     tanggal_bast: string;
     quantity_total: number;
     quantity_used: number;

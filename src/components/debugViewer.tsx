@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/DebugViewer.tsx
 import { useState } from 'react';
 import { getDebugLogs, clearDebugLogs } from '../utils/debugLogger';

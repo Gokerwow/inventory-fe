@@ -16,7 +16,6 @@ import BackButton from "../components/backButton";
 
 export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<DaftarPegawai>({
         id: 0,
@@ -61,14 +60,13 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             } catch (err) {
                 console.error("Gagal mengambil data jabatan:", err);
                 showToast('Gagal mengambil data jabatan.', 'error');
-                setError("Gagal memuat data.");
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchData();
-    }, []);
+    }, [checkAccess, data, hasAccess, isEdit, showToast, user?.role]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -163,6 +161,7 @@ export function FormPegawaiPage({ isEdit = false }: { isEdit?: boolean }) {
             navigate(PATHS.PEGAWAI.INDEX);
             handleCloseModal();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             console.error("Gagal menyimpan pegawai:", err);
             handleCloseModal();

@@ -11,12 +11,12 @@ import { type LogItem, type PaginationResponse } from '../constant/roles';
 export const getLogAktivitas = async (
     page: number = 1,
     perPage?: number,
-    search?: number,
+    search?: string,
 ): Promise<PaginationResponse<LogItem>> => {
     console.log(`SERVICE: Mengambil log aktivitas page ${page}...`);
 
     try {
-        const params: Record<string, number> = { page };
+        const params: Record<string, string | number> = { page };
         if (perPage) {
             params.per_page = perPage;
         }

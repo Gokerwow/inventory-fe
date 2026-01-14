@@ -1,4 +1,4 @@
-import { ROLES, type APIAlokasiPengeluaranPayload, type APIDetailStokBAST, type APIPatchQuantityPJ, type APIPengeluaranList, type PaginationResponse } from "../constant/roles";
+import { ROLES, type APIAlokasiPengeluaranPayload, type APIPatchQuantityPJ, type APIPengeluaranList, type PaginationResponse } from "../constant/roles";
 import apiClient from "../utils/api";
 
 

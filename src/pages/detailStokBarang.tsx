@@ -44,7 +44,7 @@ const DetailStokBarang = () => {
             }
         };
         fetchData();
-    }, [user?.role, paramId, currentPage]);
+    }, [user?.role, paramId, currentPage, checkAccess, hasAccess]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);

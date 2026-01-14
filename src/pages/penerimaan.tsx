@@ -140,6 +140,7 @@ const PenerimaanPage = () => {
 
     const dataToShow = user?.role === ROLES.ADMIN_GUDANG ? (activeTab === 'penerimaan' ? bastItems : riwayatBastItems) : (activeTab === 'penerimaan' ? penerimaanItems : riwayatItems);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedData = Array.isArray(dataToShow) ? dataToShow.map((item: any) => ({
         id: item.id,
         no_surat: item.noSurat || item.no_surat,

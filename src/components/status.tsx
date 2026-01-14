@@ -102,7 +102,7 @@ export default function Status({ value, code, label, className = '' }: StatusPro
             className={`
                 px-2.5 py-1 rounded-md text-xs font-semibold 
                 inline-flex items-center justify-center text-center
-                whitespace-normal break-words max-w-full leading-tight
+                whitespace-normal wrap-break-word max-w-full leading-tight
                 ${STATUS_STYLES[variant]} 
                 ${className}
             `}

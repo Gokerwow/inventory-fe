@@ -94,7 +94,7 @@ export function DetailPengeluaranPage() {
             }
         };
         fetchData();
-    }, [user?.role, paramId, currentPage, itemsPerPage, debouncedSearch]); // Added dependency
+    }, [user?.role, paramId, currentPage, itemsPerPage, debouncedSearch, checkAccess, hasAccess]); // Added dependency
 
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -303,6 +303,7 @@ export function DetailPengeluaranPage() {
                 navigate(generatePath(PATHS.PENGELUARAN.INDEX));
             }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Error submit:", error);
             const errorMsg = error.response?.data?.message || 'Gagal mengkonfirmasi pengeluaran';
@@ -461,7 +462,7 @@ export function DetailPengeluaranPage() {
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /></svg>
                         </button>
-                        <span className="text-gray-900 font-bold min-w-[24px] text-center text-lg">{displayValue}</span>
+                        <span className="text-gray-900 font-bold min-w-6 text-center text-lg">{displayValue}</span>
                         <button
                             onClick={() => handleUpdateQuantity(item.id, 1)}
                             className="w-7 h-7 flex items-center justify-center rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-100"
@@ -545,11 +546,10 @@ export function DetailPengeluaranPage() {
         : 0;
 
     const totalAmbil = Object.values(rowQuantities).reduce((a, b) => {
-        const val = typeof b === 'number' ? b : 0;
-        return (a as number) + val;
+        return (a as number) + Number(b || 0);
     }, 0);
 
-    const targetAmount = typeof accAmount === 'number' ? accAmount : 0;
+    const targetAmount = Number(accAmount || 0);
 
     if (isLoading) return <Loader />;
 
@@ -572,7 +572,7 @@ export function DetailPengeluaranPage() {
             </div>
 
             {/* === MAIN CONTENT === */}
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1 ${user.role === ROLES.ADMIN_GUDANG ? 'h-full' : 'h-fit'}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1 ${user?.role === ROLES.ADMIN_GUDANG ? 'h-full' : 'h-fit'}`}>
 
                 {/* Header Table & Search */}
                 <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
@@ -610,7 +610,7 @@ export function DetailPengeluaranPage() {
                                 // Logic Status Warna untuk Mobile
                                 const allocationsMap = allAllocations[item.id] || {};
                                 const currentAllocated = Object.values(allocationsMap).reduce((sum, qty) => sum + qty, 0);
-                                let targetQty = currentAllocated > 0 ? currentAllocated : (item.quantity_pj ?? item.quantity);
+                                const targetQty = currentAllocated > 0 ? currentAllocated : (item.quantity_pj ?? item.quantity);
 
                                 let statusColor = "bg-gray-100 text-gray-500 border-gray-200";
                                 let statusText = "Belum Diatur";
@@ -653,7 +653,7 @@ export function DetailPengeluaranPage() {
 
                                         {/* Action Buttons Mobile */}
                                         <div className="mt-2 pt-2 border-t border-gray-100">
-                                            {user.role === ROLES.ADMIN_GUDANG ? (
+                                            {user?.role === ROLES.ADMIN_GUDANG ? (
                                                 <button
                                                     onClick={() => handlePilihClick(item.id, item.stok_id)}
                                                     className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 active:scale-95 transition-all"
@@ -690,7 +690,7 @@ export function DetailPengeluaranPage() {
                 </div>
 
                 {/* Footer Action (Admin Gudang Only) */}
-                {user.role === ROLES.ADMIN_GUDANG && (
+                {user?.role === ROLES.ADMIN_GUDANG && (
                     <div className="flex justify-end p-4 md:p-6 border-t border-gray-100 bg-gray-50">
                         <Button
                             variant="success"
@@ -705,7 +705,7 @@ export function DetailPengeluaranPage() {
             </div>
 
             {/* === CARD INFORMASI (Khusus Penanggung Jawab) === */}
-            {user.role === ROLES.PENANGGUNG_JAWAB && (
+            {user?.role === ROLES.PENANGGUNG_JAWAB && (
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 shrink-0">
                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
                         <h2 className="text-base font-bold text-[#002B5B]">Info Pesanan</h2>
@@ -860,13 +860,27 @@ export function DetailPengeluaranPage() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
                                 <span className="text-sm font-medium text-gray-600">Total Terpilih:</span>
-                                <span className="font-bold text-gray-900 text-lg">{Object.values(rowQuantities).reduce((a, b) => a + b, 0)} Unit</span>
+                                <span className="font-bold text-gray-900 text-lg">
+                                    {Object.values(rowQuantities).reduce((a, b) => Number(a) + Number(b), 0)} Unit
+                                </span>
                             </div>
                             {targetAmount > 0 && (
                                 <div className={`border rounded-lg p-3 md:p-4 flex items-start gap-3 transition-all ${totalAmbil === targetAmount ? 'bg-[#E6F4EA] border-green-100' : 'bg-red-50 border-red-100'}`}>
                                     <div className={`rounded-full p-0.5 shrink-0 mt-0.5 ${totalAmbil === targetAmount ? 'bg-[#00A86B]' : 'bg-red-500'}`}>{totalAmbil === targetAmount ? <CheckCircle size={14} className="text-white" /> : <X size={14} className="text-white" />}</div>
                                     <div className="flex flex-col text-sm">
-                                        {totalAmbil === targetAmount ? <span className="font-bold text-[#00A86B]">Jumlah Sesuai. Siap Disimpan.</span> : <><span className="font-bold text-red-600">Jumlah Belum Sesuai!</span><span className="text-gray-600 text-xs mt-0.5">{totalAmbil < targetAmount ? `Kurang ${targetAmount - totalAmbil} unit.` : `Lebih ${totalAmbil - targetAmount} unit.`}</span></>}
+                                        {totalAmbil === targetAmount ? (
+                                            <span className="font-bold text-[#00A86B]">Jumlah Sesuai. Siap Disimpan.</span>
+                                        ) : (
+                                            <>
+                                                <span className="font-bold text-red-600">Jumlah Belum Sesuai!</span>
+                                                <span className="text-gray-600 text-xs mt-0.5">
+                                                    {/* Make sure logic uses numbers here too */}
+                                                    {Number(totalAmbil) < Number(targetAmount)
+                                                        ? `Kurang ${Number(targetAmount) - Number(totalAmbil)} unit.`
+                                                        : `Lebih ${Number(totalAmbil) - Number(targetAmount)} unit.`}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from "react";
 import { useToast } from "../hooks/useToast";
 import CurrencyInput from "../components/currencyInput";
@@ -52,7 +53,7 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
             };
             fetchBarang();
         }
-    }, [isOpen, categoryId]);
+    }, [isOpen, categoryId, showToast]);
 
     // Calculate Total
     useEffect(() => {
@@ -185,7 +186,6 @@ const ModalTambahBarang: React.FC<ModalTambahBarangProps> = ({ isOpen, onClose, 
                                 value={isNewItem ? manualSatuan : (selectedBarangObj?.satuan_name || '')}
                                 readOnly={!isNewItem}
                                 onChange={(e) => isNewItem ? setManualSatuan(e.target.value) : {}}
-                                // @ts-ignore
                                 ref={satuanInputRef}
                             />
                         </div>

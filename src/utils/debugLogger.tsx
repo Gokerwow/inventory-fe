@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const debugLog = (message: string, data?: any) => {
     const timestamp = new Date().toISOString();
     const log = { timestamp, message, data };

@@ -48,6 +48,7 @@ export default function Dashboard() {
     const [isLoadingMasuk, setIsLoadingMasuk] = useState(true);
     const [isLoadingKeluar, setIsLoadingKeluar] = useState(true);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformChartData = (data: any[]) => {
         return data.map((item) => ({
             bulan: monthNames[item.month - 1],

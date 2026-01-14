@@ -62,7 +62,7 @@ interface UploadBastPayload {
     uploaded_signed_file: File | null;
 }
 
-export const uploadBAST = async (id: number, data: UploadBastPayload) => {
+export const uploadBAST = async (id: string, data: UploadBastPayload) => {
     // 1. Buat instance FormData
     const formData = new FormData();
 

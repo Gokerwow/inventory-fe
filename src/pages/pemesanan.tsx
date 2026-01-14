@@ -97,7 +97,7 @@ export default function PemesananPage() {
         }
 
         fetchData();
-    }, [activeTab, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, user?.role, refreshKey]);
+    }, [activeTab, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, user?.role, refreshKey, checkAccess, hasAccess]);
 
     // --- EFFECT DEBOUNCE ---
     useEffect(() => {
@@ -245,7 +245,6 @@ export default function PemesananPage() {
             header: 'Status',
             cell: (item) => {
                 return <Status
-                    code={item.status_code}
                     label={item.status}
                     value={item.status}
                 />
@@ -440,7 +439,7 @@ export default function PemesananPage() {
                                                             </svg>
                                                         </button>
 
-                                                        <span className="text-gray-800 font-medium min-w-[20px] text-center">
+                                                        <span className="text-gray-800 font-medium min-w-5 text-center">
                                                             {pesanan.quantity}
                                                         </span>
 

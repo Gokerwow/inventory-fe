@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from 'react';
 import EyeIcon from '../assets/svgs/eye.svg?react'
 import ReusableTable, { type ColumnDefinition } from '../components/table';
@@ -6,7 +7,7 @@ import ShoppingCartIcon from '../assets/svgs/shopping-cart.svg?react'
 import ReceiptIcon from '../assets/svgs/receipt-item.svg?react'
 import { useAuth } from '../hooks/useAuth';
 import { useAuthorization } from '../hooks/useAuthorization';
-import { ROLES, type APIPemesanan } from '../constant/roles';
+import { ROLES, type APIPemesanan, type APIPengeluaranList } from '../constant/roles';
 import { getPemesananList } from '../services/pemesananService';
 import Pagination from '../components/pagination';
 import Status from '../components/status';
@@ -39,7 +40,7 @@ function Pengeluaran() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
     const [pemesananItem, setPemesananItem] = useState<APIPemesanan[]>([])
-    const [pengeluaranItem, setPengeluaranItem] = useState<APIPemesanan[]>([])
+    const [pengeluaranItem, setPengeluaranItem] = useState<APIPengeluaranList[]>([])
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false)
@@ -146,7 +147,7 @@ function Pengeluaran() {
             }
         }
         fetchAllData()
-    }, [currentPage, user?.role, debouncedSearch, activeTab, startDate, endDate])
+    }, [currentPage, user?.role, debouncedSearch, activeTab, startDate, endDate, checkAccess, hasAccess, itemsPerPage])
 
     useEffect(() => {
         const handler = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 500);
@@ -160,7 +161,7 @@ function Pengeluaran() {
         { header: 'INSTALASI', key: 'instalasi', cell: (item) => <span className="text-gray-900">{item.user_name}</span> },
         { header: 'RUANGAN', key: 'ruangan', cell: (item) => <span className="text-gray-900">{item.ruangan}</span> },
         { header: 'TANGGAL', key: 'tanggal', cell: (item) => <span className="text-gray-900">{formatDate(item.tanggal_pemesanan)}</span> },
-        { header: 'STATUS', key: 'status', align: 'center', cell: (item) => <Status code={item.status_code} label={item.status} value={item.status} /> },
+        { header: 'STATUS', key: 'status', align: 'center', cell: (item) => <Status label={item.status} value={item.status} /> },
         { header: 'AKSI', key: 'aksi', align: 'center', cell: (item) => (<button className="flex items-center justify-end md:justify-center w-full gap-2 text-black cursor-pointer hover:text-blue-600 transition-all duration-200" onClick={() => handleLihatClick(item.id)}><div className="bg-gray-100 p-1 rounded-md"><EyeIcon className='w-4 h-4' /></div><span className="text-sm font-medium">Lihat</span></button>) }
     ], []);
 

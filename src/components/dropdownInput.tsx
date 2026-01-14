@@ -7,12 +7,12 @@ interface DropdownInputProps<T> {
     value?: string;
     onChange?: (selectedOption: T | string) => void;
     getOptionLabel?: (option: T) => string;
-    getOptionValue?: (option: T) => string | number;
     name?: string;
     disabled?: boolean;
     isCreatable?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function DropdownInput<T = any>({
     options,
     placeholder,
@@ -20,7 +20,6 @@ export default function DropdownInput<T = any>({
     value,
     onChange,
     getOptionLabel,
-    getOptionValue,
     name,
     disabled,
     isCreatable = false
@@ -49,7 +48,9 @@ export default function DropdownInput<T = any>({
         if (typeof option === 'string') return option;
         if (typeof option === 'number') return String(option);
         if (option && typeof option === 'object') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ('name' in option) return String((option as any).name);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ('nama' in option) return String((option as any).nama);
         }
         return String(option);

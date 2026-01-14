@@ -10,6 +10,7 @@ export function TagProvider({ children }: { children: ReactNode }){
     }), [tag])
 
     return (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         <TagContext.Provider value={value as any}>
             {children}
         </TagContext.Provider>

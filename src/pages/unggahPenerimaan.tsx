@@ -13,7 +13,7 @@ import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
 import Loader from '../components/loader';
 import BackButton from '../components/backButton';
-import { Upload, X, Trash2 } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 
 const LihatPenerimaan = () => {
     const { id } = useParams<{ id: string }>(); 
@@ -72,7 +72,7 @@ const LihatPenerimaan = () => {
 
         fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user.role, currentPage, id]);
+    }, [user?.role, currentPage, id]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);

@@ -1,5 +1,13 @@
 import apiClient from "../utils/api";
-import { type APIDetailBarang, type APIDetailStokBAST, type APIResponseBASTAvailable, type APIStokUpdate, type BARANG_STOK, type PaginationResponse, type TIPE_BARANG_STOK } from "../constant/roles";
+import axios from "axios"; // Added for isAxiosError check
+import { 
+    type APIDetailBarang, 
+    type APIResponseBASTAvailable, 
+    type APIStokUpdate, 
+    type BARANG_STOK, 
+    type PaginationResponse, 
+    type TIPE_BARANG_STOK 
+} from "../constant/roles";
 
 export const getBarangBelanja = async (id: number): Promise<TIPE_BARANG_STOK[]> => {
     console.log("SERVICE: Mengabil barang stok...");
@@ -22,7 +30,7 @@ export const getStokBarang = async (
     perPage?: number,
     categoryId?: number,
     search?: string,
-): Promise<PaginationResponse<BARANG_STOK[]>> => {
+): Promise<PaginationResponse<BARANG_STOK>> => { // FIXED: Removed [] from generic
     console.log("SERVICE: Mengabil barang stok...");
     try {
         // Buat params untuk query string
@@ -40,7 +48,8 @@ export const getStokBarang = async (
         const response = await apiClient.get('/api/v1/stok', {
             params
         });
-        const barangData = response.data.data as PaginationResponse<BARANG_STOK[]>;
+        // FIXED: Removed [] from generic
+        const barangData = response.data.data as PaginationResponse<BARANG_STOK>;
         return barangData;
     } catch (error) {
         console.error("Gagal mengambil barang stok:", error);
@@ -73,7 +82,8 @@ export const updateBarangStok = async (formData: Partial<APIStokUpdate>, barangI
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
-        if (error.response && error.response.data) {
+        // FIXED: Safely check if error is an Axios error before accessing response
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
         }
         console.error("❌ Error mengedit stok:", error);
@@ -102,7 +112,7 @@ export const getStokByAvailableBAST = async (
     id: number,
     page: number = 1,
     perPage?: number,
-): Promise<APIResponseBASTAvailable> => { // GANTI DISINI
+): Promise<APIResponseBASTAvailable> => { 
     try {
         const params: Record<string, number | string> = { page };
         if (perPage) {

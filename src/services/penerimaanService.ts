@@ -2,6 +2,7 @@ import type { PenerimaanItem, RiwayatPenerimaanItem } from '../constant/roles';
 import apiClient from '../utils/api';
 import axios from 'axios';
 import { ROLES, type APIDataPenerimaan, type APIDetailPenerimaan, type PaginationResponse } from '../constant/roles';
+
 /**
  * Mengambil daftar penerimaan untuk tab "Penerimaan".
  * Digunakan di: src/pages/penerimaan.tsx
@@ -147,14 +148,15 @@ export const createPenerimaan = async (formData: APIDataPenerimaan): Promise<API
     }
 };
 
-export const editPenerimaan = async (penerimaanId: number,formData: APIDataPenerimaan): Promise<APIDataPenerimaan> => {
+export const editPenerimaan = async (penerimaanId: number, formData: APIDataPenerimaan): Promise<APIDataPenerimaan> => {
     console.log("SERVICE: Mengedit penerimaan...", formData);
     try {
         const response = await apiClient.put(`/api/v1/penerimaan/${penerimaanId}`, formData);
         console.log("✅ Response dari BE:", response.data);
         return response.data;
     } catch (error) {
-        if (error.response && error.response.data) {
+        // FIXED: Safely check for axios error before accessing error.response
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
             // Backend biasanya mengirim format seperti: { errors: { no_surat: ["Nomor surat sudah ada"] } }
         }
@@ -182,13 +184,15 @@ export const confirmPenerimaan = async (id: number) => {
             console.error("Headers:", error.response.headers);
             
             // Throw error dengan pesan dari backend jika ada
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const errorData = error.response.data as any;
             throw new Error(
-                (error.response.data as any)?.message || 
-                (error.response.data as any)?.error || 
+                errorData?.message || 
+                errorData?.error || 
                 "Gagal mengonfirmasi penerimaan"
             );
         }
         // Non-Axios error or no response available
         throw new Error("Gagal mengonfirmasi penerimaan");
     }
-}; 
+};

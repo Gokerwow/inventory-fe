@@ -97,6 +97,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
         },
         {
             header: 'Status',
+            width:'200px',
             cell: (item) => (
                 <Status
                     // Logic warna ikut status_code (misal: "0", "pending")
@@ -107,6 +108,7 @@ export default function PenerimaanTable({ data, variant, onDelete }: PenerimaanT
 
                     // Fallback (jaga-jaga jika code/label kosong)
                     value={item.status_code || item.status}
+                    className='w-full'
                 />
             )
         },

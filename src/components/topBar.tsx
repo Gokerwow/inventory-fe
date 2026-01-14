@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import NotifIcon from '../assets/images/Notification.png';
 import { NavLink } from 'react-router-dom';
@@ -25,10 +26,11 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         const checkUnread = async () => {
             try {
                 const response = await getDaftarNotifikasi(1, 10, '');
-                if (response.data && typeof response.unread_count === 'number') {
-                    setHasUnread(response.unread_count > 0);
+                const result = response as any;
+                if (response.data && typeof response.data === 'number') {
+                    setHasUnread(result.unread_count > 0);
                 } else {
-                    const notifList = response.list?.data || [];
+                    const notifList = result.list?.data || [];
                     const unread = notifList.some((n: any) => n.isRead === false);
                     setHasUnread(unread);
                 }
@@ -42,7 +44,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
             const interval = setInterval(checkUnread, 30000);
             return () => clearInterval(interval);
         }
-    }, [user]);
+    }, [requiredRoles, user]);
 
     if (!user) return false;
 

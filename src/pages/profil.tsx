@@ -9,12 +9,12 @@ import Card from '../components/card';
 import Status from '../components/status';
 import Pagination from '../components/pagination';
 import Loader from '../components/loader';
-import FAQItem from '../components/FAQItem';
+import FAQComponent from '../components/FAQItem';
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState('profil');
     const { user } = useAuth();
-    const { checkAccess } = useAuthorization(user?.role);
+    const { checkAccess } = useAuthorization(user?.role || '');
 
     // --- State Management ---
     const [pegawaiList, setPegawaiList] = useState<APIProfilePegawai[]>([]);
@@ -82,12 +82,12 @@ export default function ProfilePage() {
 
                 {/* Info Text Section */}
                 <div className="relative z-10 flex flex-col items-center sm:items-start text-center sm:text-left min-w-0 flex-1">
-                    <h1 className="text-xl md:text-3xl font-bold uppercase tracking-tight break-words max-w-full">
+                    <h1 className="text-xl md:text-3xl font-bold uppercase tracking-tight wrap-break-word max-w-full">
                         {user?.name}
                     </h1>
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 mt-2">
                         <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm whitespace-nowrap">
-                            {ROLE_DISPLAY_NAMES[user?.role] || user?.role}
+                            {user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : null}
                         </span>
                         <span className="text-blue-100 text-xs opacity-80 italic hidden sm:inline">Sistem Gudang</span>
                     </div>
@@ -125,7 +125,7 @@ export default function ProfilePage() {
                         <div className="grid gap-4">
                             {[
                                 { label: 'Username', value: user?.name },
-                                { label: 'Jabatan', value: ROLE_DISPLAY_NAMES[user?.role] || user?.role },
+                                { label: 'Jabatan', value: user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : '-'},
                                 { label: 'Email', value: user?.email },
                             ].map((info, i) => (
                                 // Ubah layout jadi stack di mobile, row di desktop
@@ -199,14 +199,14 @@ export default function ProfilePage() {
                         <div className="bg-blue-600 p-6 rounded-2xl mb-6 text-white flex items-center justify-between">
                             <div>
                                 <h2 className="text-lg md:text-xl font-bold">Pusat Bantuan</h2>
-                                <p className="text-blue-100 text-sm opacity-80">Pertanyaan seputar role {ROLE_DISPLAY_NAMES[user?.role]}</p>
+                                <p className="text-blue-100 text-sm opacity-80">Pertanyaan seputar role {user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : null}</p>
                             </div>
                             <HelpCircle className="w-8 h-8 md:w-10 md:h-10 opacity-20 shrink-0" />
                         </div>
                         <div className="space-y-3">
                             {currentRoleFAQs.length > 0 ? (
                                 currentRoleFAQs.map((faq, index) => (
-                                    <FAQItem key={index} question={faq.question} answer={faq.answer} />
+                                    <FAQComponent key={index} question={faq.question} answer={faq.answer} />
                                 ))
                             ) : (
                                 <div className="text-center py-10 text-gray-400 italic">FAQ belum tersedia.</div>

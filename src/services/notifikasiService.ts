@@ -1,4 +1,5 @@
 import apiClient from '../utils/api';
+import axios from 'axios';
 import { type APINotifikasi, type PaginationResponse } from '../constant/roles';
 
 /**
@@ -41,43 +42,45 @@ export const markReadNotifikasi = async (notifikasiId: number): Promise<APINotif
         const response = await apiClient.patch(`/api/v1/notifikasi/${notifikasiId}/markRead`);
         console.log("✅ Response dari BE:", response.data);
         return response.data;
-    } catch (error: any) {
-        if (error.response && error.response.data) {
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
         }
         console.error("❌ Error mengedit notifikasi:", error);
         throw error;
     }
 };
+
 export const markAllNotifikasi = async (): Promise<APINotifikasi> => {
     console.log("SERVICE: Tandai lihat notifikasi...");
     try {
         const response = await apiClient.patch(`/api/v1/notifikasi/markAll`);
         console.log("✅ Response dari BE:", response.data);
         return response.data;
-    } catch (error: any) {
-        if (error.response && error.response.data) {
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response && error.response.data) {
             console.error("❌ DETAIL ERROR VALIDASI (422):", error.response.data);
         }
         console.error("❌ Error mengedit notifikasi:", error);
         throw error;
     }
 };
-export const deleteNotifikasi = async (notifikasiId: number): Promise<any> => {
+
+export const deleteNotifikasi = async (notifikasiId: number): Promise<unknown> => {
     try {
         const response = await apiClient.delete(`/api/v1/notifikasi/${notifikasiId}`);
         return response.data;
-    } catch (error: unknown) {
+    } catch (error) {
         console.error("Gagal menghapus data notifikasi:", error);
         throw new Error('Gagal menghapus data notifikasi');
     }
 };
 
-export const deleteAllNotifikasi = async (): Promise<any> => {
+export const deleteAllNotifikasi = async (): Promise<unknown> => {
     try {
         const response = await apiClient.delete(`/api/v1/notifikasi/delete-all`);
         return response.data;
-    } catch (error: any) {
+    } catch (error) {
         console.error("Gagal menghapus data notifikasi:", error);
         throw new Error('Gagal menghapus data notifikasi');
     }

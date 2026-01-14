@@ -89,10 +89,11 @@ function StokBarang() {
                     setTotalItems(response.total || 0);
                     setItemsPerPage(response.per_page || 10);
                     setTotalPages(response.last_page || 1);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const lowStockItems = response.data.flat().filter((item: any) => item.total_stok <= item.minimum_stok);
 
                     if (lowStockItems.length > 0) {
-                        showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'warning');
+                        showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'error');
                     }
                 } else {
                     const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch);
@@ -109,7 +110,7 @@ function StokBarang() {
             }
         };
         FetchData();
-    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, activeTab, refreshTrigger, paymentStatus]);
+    }, [checkAccess, hasAccess, user?.role, currentPage, itemsPerPage, selectedCategoryId, debouncedSearch, activeTab, refreshTrigger, paymentStatus, showToast]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -167,7 +168,7 @@ function StokBarang() {
                 minimum_stok: parseInt(String(formData.minimum_stok))
             };
 
-            const response = await updateBarangStok(FixData, formData.id || 0);
+            await updateBarangStok(FixData, formData.id || 0);
             showToast("Berhasil memperbarui data stok barang.", "success");
             setIsModalOpen(false);
             setRefreshTrigger((prev) => prev + 1);

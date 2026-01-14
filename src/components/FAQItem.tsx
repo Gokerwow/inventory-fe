@@ -3,7 +3,7 @@ import type { FAQItem } from "../constant/roles";
 import { ChevronDown } from "lucide-react";
 
 // Komponen Kecil untuk Item Dropdown FAQ
-const FAQItem = ({ question, answer }: FAQItem) => {
+const FAQComponent = ({ question, answer }: FAQItem) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -31,4 +31,4 @@ const FAQItem = ({ question, answer }: FAQItem) => {
     );
 };
 
-export default FAQItem
+export default FAQComponent
