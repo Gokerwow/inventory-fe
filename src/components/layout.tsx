@@ -12,7 +12,9 @@ import { debugLog } from '../utils/debugLogger';
 function Layout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { isAuthenticated, isLoggingOut, login } = useAuth();
+    const { isAuthenticated, isLoggingOut, login, user } = useAuth();
+
+    console.log(user)
 
     // State untuk Mobile Sidebar
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

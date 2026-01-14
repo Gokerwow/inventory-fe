@@ -89,7 +89,7 @@ export default function MonitoringPage() {
     }
 
     const LOGColummns: ColumnDefinition<LogItem>[] = [
-        { header: 'NAME', cell: (item) => <span className="font-medium text-gray-900">{item.user}</span> },
+        { header: 'NAME', cell: (item) => <span className="font-medium text-gray-900">{item.name}</span> },
         { header: 'WAKTU', cell: (item) => <span className="text-gray-500">{item.waktu.substring(0, 5)} WIB</span> },
         { header: 'TANGGAL', cell: (item) => <span className="text-gray-500">{formatDate(item.tanggal)}</span> },
         {

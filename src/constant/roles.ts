@@ -23,7 +23,7 @@ export const ROLES = {
     ADMIN_GUDANG: 'admin-gudang-umum',
     PPK: 'tim-ppk',
     TEKNIS: 'tim-teknis',
-    INSTALASI: 'instalasi',
+    INSTALASI:  'Instalasi',
     PENANGGUNG_JAWAB: 'penanggung-jawab',
 };
 
@@ -259,8 +259,7 @@ export interface SelectedPihak {
 }
 
 export interface LogItem {
-    foto: string,
-    user: string,
+    name: string,
     waktu: string,
     tanggal: string,
     activity: string
