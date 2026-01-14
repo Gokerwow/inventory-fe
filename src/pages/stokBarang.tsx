@@ -93,7 +93,7 @@ function StokBarang() {
                     const lowStockItems = response.data.flat().filter((item: any) => item.total_stok <= item.minimum_stok);
 
                     if (lowStockItems.length > 0) {
-                        showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'error');
+                        showToast(`Perhatian: Terdapat ${lowStockItems.length} barang dengan stok menipis/habis!`, 'warning');
                     }
                 } else {
                     const response = await getBASTUnpaidList(currentPage, itemsPerPage, paymentStatus, selectedCategoryId, debouncedSearch);

@@ -15,8 +15,6 @@ import PaluIcon from '../assets/svgs/PaluIcon.svg?react'
 import PembersihIcon from '../assets/svgs/PembersihIcon.svg?react'
 import AtkIcon from '../assets/svgs/AtkIcon.svg?react'
 
-
-
 export type Usernames = 'superadmin' | 'admingudangumum' | 'ppk' | 'teknis' | 'penanggungjawab' | 'instalasi';
 
 

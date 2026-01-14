@@ -4,7 +4,7 @@ import { ToastContext } from './toastContext';
 
 export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
     
-    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const showToast = (message: string, type: 'success' | 'error' | "warning" = 'success') => {
         
         toast.dismiss();
 
