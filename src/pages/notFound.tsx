@@ -38,7 +38,7 @@ const NotFound = () => {
                             variant='primary'
                             className="w-full py-3 justify-center shadow-lg shadow-indigo-200"
                         >
-                            Kembali ke Dashboard
+                            Kembali ke Home
                         </Button>
 
                         <button

@@ -11,15 +11,19 @@ import { ROLES, type APIDataPenerimaan, type APIDetailPenerimaan, type Paginatio
 export const getPenerimaanList = async (
     page: number = 1,
     perPage?: number,
-    role?: string // ✅ 1. Tambahkan parameter role (optional)
+    role?: string,
+    search?: string
 ): Promise<PaginationResponse<PenerimaanItem>> => {
     console.log(`SERVICE: Mengambil daftar penerimaan halaman ${page}... Role: ${role}`);
 
     try {
         // Buat params untuk query string
-        const params: Record<string, number> = { page };
+        const params: Record<string, number | string> = { page };
         if (perPage) {
             params.per_page = perPage;
+        }
+        if (search) {
+            params.search = search;
         }
 
         // ✅ 2. Tentukan Endpoint berdasarkan Role

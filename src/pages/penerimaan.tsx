@@ -17,6 +17,7 @@ import Loader from '../components/loader';
 import ConfirmModal from '../components/confirmModal';
 import Button from '../components/button';
 import { useToast } from '../hooks/useToast';
+import SearchBar from '../components/searchBar';
 
 const penerimaanTabs = [
     {
@@ -36,6 +37,8 @@ const PenerimaanPage = () => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -44,10 +47,10 @@ const PenerimaanPage = () => {
 
     const [activeTab, setActiveTab] = useState('penerimaan');
     const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0); 
+    const [refreshKey, setRefreshKey] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     const { showToast } = useToast();
     const navigate = useNavigate();
 
@@ -96,7 +99,7 @@ const PenerimaanPage = () => {
                         setItemsPerPage(response.per_page || 10);
                         setTotalPages(response.last_page || 1);
                     } else {
-                        const response = await getPenerimaanList(currentPage, undefined, user?.role);
+                        const response = await getPenerimaanList(currentPage, undefined, user?.role, debouncedSearch);
                         setPenerimaanItems(response.data || []);
                         setTotalItems(response.total || 0);
                         setItemsPerPage(response.per_page || 10);
@@ -133,7 +136,12 @@ const PenerimaanPage = () => {
         };
 
         fetchData();
-    }, [user, checkAccess, hasAccess, activeTab, currentPage, refreshKey]);
+    }, [user, checkAccess, hasAccess, activeTab, currentPage, refreshKey, debouncedSearch]);
+
+    useEffect(() => {
+        const handler = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 500);
+        return () => clearTimeout(handler);
+    }, [search]);
 
     const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
     const handlePageChange = (page: number) => { setCurrentPage(page); };
@@ -166,16 +174,21 @@ const PenerimaanPage = () => {
                     <h2 className="text-lg md:text-xl font-bold">
                         {activeTab === 'penerimaan' ? 'Daftar Penerimaan' : 'Riwayat Penerimaan'}
                     </h2>
-                    {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (
-                        <Button
-                            variant="primary"
-                            onClick={() => navigate(PATHS.PENERIMAAN.TAMBAH)}
-                            className="flex items-center gap-2 shadow-sm w-full md:w-auto justify-center"
-                        >
-                            <Plus className="w-5 h-5" />
-                            <span>Tambah Barang Belanja</span>
-                        </Button>
-                    )}
+                    <div className='flex flex-1 justify-between gap-2 w-full md:w-auto'>
+                        <div className="md:w-72">
+                            <SearchBar placeholder='Cari Penerimaan...' onChange={(e) => setSearch(e.target.value)} value={search} />
+                        </div>
+                        {user?.role === ROLES.PPK && activeTab === 'penerimaan' && (
+                            <Button
+                                variant="primary"
+                                onClick={() => navigate(PATHS.PENERIMAAN.TAMBAH)}
+                                className="flex items-center gap-2 shadow-sm w-full md:w-auto justify-center"
+                            >
+                                <Plus className="w-5 h-5" />
+                                <span>Tambah Barang Belanja</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {isLoading ? (
