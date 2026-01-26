@@ -23,7 +23,7 @@ export const ROLES = {
     ADMIN_GUDANG: 'admin-gudang-umum',
     PPK: 'tim-ppk',
     TEKNIS: 'tim-teknis',
-    INSTALASI:  'Instalasi',
+    INSTALASI:  'instalasi',
     PENANGGUNG_JAWAB: 'penanggung-jawab',
 };
 
