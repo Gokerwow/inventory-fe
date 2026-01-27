@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom';
 import { PATHS } from "../Routes/path";
 import { useAuthorization } from "../hooks/useAuthorization";
 import { useAuth } from "../hooks/useAuth";
@@ -59,7 +59,7 @@ export default function PegawaiPage() {
     const handleClick = (tab: string) => { setActiveTab(tab); setCurrentPage(1); };
 
     const handleEditClick = (pegawaiData: DaftarPegawai) => {
-        navigate(PATHS.PEGAWAI.EDIT, {
+        navigate(generatePath(PATHS.PEGAWAI.EDIT, { id: pegawaiData.id.toString() }), {
             state: {
                 data: pegawaiData,
             }
