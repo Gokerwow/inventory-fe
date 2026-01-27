@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import PDFPreview from "../components/PDFPreview";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { PATHS } from "../Routes/path";

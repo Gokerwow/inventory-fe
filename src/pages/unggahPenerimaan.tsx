@@ -97,8 +97,8 @@ const LihatPenerimaan = () => {
             showToast('Harap pilih file PDF saja!', 'error');
             return;
         }
-        if (file.size > 100 * 1024 * 1024) { // 100MB
-            showToast('Ukuran file maksimal 100MB', 'error');
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            showToast('Ukuran file maksimal 2MB', 'error');
             return;
         }
         setFormData(prevState => ({
@@ -270,7 +270,7 @@ const LihatPenerimaan = () => {
                                     {formData.uploaded_signed_file ? "File siap diunggah" : "Klik untuk mengunggah atau seret dan lepas"}
                                 </p>
                                 <p className="text-gray-500 text-xs md:text-sm mb-4">
-                                    Format: Pdf (Maks. 100Mb)
+                                    Format: Pdf (Maks. 2Mb)
                                 </p>
                                 <p className="text-gray-400 text-[10px] md:text-xs max-w-xs">
                                     Dokumen BAST yang sudah ditandatangani secara basah
